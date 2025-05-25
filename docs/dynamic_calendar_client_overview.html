@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic AI Calendar for NCLEX Preparation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-top: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            font-size: 24px;
+            margin-top: 25px;
+        }
+        h3 {
+            color: #3498db;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+        h4 {
+            color: #16a085;
+            font-size: 18px;
+            margin-top: 15px;
+        }
+        p, li {
+            font-size: 16px;
+        }
+        strong {
+            font-weight: 600;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: #ddd;
+            margin: 30px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 15px;
+        }
+        th {
+            background-color: #f2f6f9;
+            color: #2c3e50;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+        }
+        td {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .note {
+            font-style: italic;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        @media print {
+            body {
+                padding: 0;
+                font-size: 12pt;
+            }
+            h1 {
+                font-size: 18pt;
+            }
+            h2 {
+                font-size: 16pt;
+            }
+            h3 {
+                font-size: 14pt;
+            }
+            h4 {
+                font-size: 13pt;
+            }
+            p, li {
+                font-size: 12pt;
+            }
+            table {
+                font-size: 11pt;
+                page-break-inside: avoid;
+            }
+            tr {
+                page-break-inside: avoid;
+            }
+            h1, h2, h3, h4 {
+                page-break-after: avoid;
+            }
+            hr {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Dynamic AI Calendar for NCLEX Preparation</h1>
+    <h2>Client Overview Document</h2>
+
+    <hr>
+
+    <h2>1. Your AI Dynamic Calendar at a Glance</h2>
+
+    <h3>What Makes Our Calendar Unique</h3>
+
+    <p>The ArcherReview Dynamic AI Calendar revolutionizes NCLEX preparation by creating a personalized, adaptive study experience. Unlike traditional static calendars, our system:</p>
+
+    <ul>
+        <li><strong>Adapts to individual learning patterns</strong> through AI-powered scheduling</li>
+        <li><strong>Evolves based on performance data</strong> to focus on areas needing improvement</li>
+        <li><strong>Provides a modern, intuitive interface</strong> with drag-and-drop functionality</li>
+        <li><strong>Balances structure with flexibility</strong> allowing students to modify their plan while maintaining optimal learning sequences</li>
+    </ul>
+
+    <h3>Current Implementation Guide</h3>
+
+    <h4>Getting Started</h4>
+
+    <ol>
+        <li><strong>Access the system</strong>: Visit our demo site (URL provided separately)</li>
+        <li><strong>Create an account or log in</strong>: The system will guide you through a brief onboarding process to collect your exam date and study preferences</li>
+        <li><strong>Dashboard overview</strong>: Upon login, you'll see your personalized dashboard with:
+            <ul>
+                <li>Today's scheduled tasks</li>
+                <li>Calendar overview</li>
+                <li>Study plan summary</li>
+                <li>Progress metrics</li>
+            </ul>
+        </li>
+    </ol>
+
+    <h4>Calendar Navigation</h4>
+
+    <ol>
+        <li><strong>View options</strong>: Toggle between day, week, and month views using the buttons in the top-right corner</li>
+        <li><strong>Date selection</strong>:
+            <ul>
+                <li>Use the arrows to navigate between days/weeks/months</li>
+                <li>Click the date display to open a date picker</li>
+                <li>Click "Today" to return to the current date</li>
+            </ul>
+        </li>
+        <li><strong>Task interaction</strong>:
+            <ul>
+                <li>Click on any task to view details</li>
+                <li>Drag and drop tasks to reschedule them</li>
+                <li>Tasks are color-coded by type (quiz, video, reading, practice, review)</li>
+            </ul>
+        </li>
+    </ol>
+
+    <h4>Task Management</h4>
+
+    <ol>
+        <li><strong>Creating tasks</strong>:
+            <ul>
+                <li>Click the "+ Add Task" button in the calendar header</li>
+                <li>Click on an empty time slot in day or week view</li>
+                <li>Complete the task creation form with title, description, type, topic, and duration</li>
+            </ul>
+        </li>
+        <li><strong>Filtering tasks</strong>:
+            <ul>
+                <li>Use the filter panel above the calendar to filter by task type, status, or topic</li>
+                <li>Toggle "Hide completed tasks" to focus on remaining work</li>
+                <li>Filters persist across sessions for a consistent experience</li>
+            </ul>
+        </li>
+        <li><strong>Viewing task details</strong>:
+            <ul>
+                <li>Click any task to see comprehensive details</li>
+                <li>Update task status (pending, in progress, completed, skipped)</li>
+                <li>Access linked content (quizzes, videos, readings)</li>
+            </ul>
+        </li>
+        <li><strong>Resetting your schedule</strong>:
+            <ul>
+                <li>If you've made too many changes and want to return to the AI-recommended plan</li>
+                <li>Click "Reset Schedule" at the bottom of the calendar</li>
+                <li>Confirm your choice in the dialog</li>
+            </ul>
+        </li>
+    </ol>
+
+    <hr>
+
+    <h2>2. Competitive Advantage: Features Implemented from Market Analysis</h2>
+
+    <p>Our extensive analysis of competing products identified key opportunities for innovation. We've studied the leading NCLEX preparation platforms and incorporated their best features while addressing their limitations.</p>
+
+    <h3>Comparative Analysis of Key Competitors</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>UWorld</th>
+                <th>Kaplan</th>
+                <th>NCSBN Learning Extension</th>
+                <th>Archer Review</th>
+                <th>Our Dynamic AI Calendar</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Study Planning</strong></td>
+                <td>Basic static calendar</td>
+                <td>Preset study plans</td>
+                <td>Fixed weekly schedules</td>
+                <td>Limited customization</td>
+                <td>AI-generated adaptive plans</td>
+            </tr>
+            <tr>
+                <td><strong>Personalization</strong></td>
+                <td>Limited to content selection</td>
+                <td>Minimal plan adjustments</td>
+                <td>None</td>
+                <td>Basic preferences</td>
+                <td>Full AI personalization</td>
+            </tr>
+            <tr>
+                <td><strong>Interface</strong></td>
+                <td>Functional but dated</td>
+                <td>Modern but complex</td>
+                <td>Basic and text-heavy</td>
+                <td>Simple but limited</td>
+                <td>Modern, intuitive, drag-and-drop</td>
+            </tr>
+            <tr>
+                <td><strong>Progress Tracking</strong></td>
+                <td>Basic completion metrics</td>
+                <td>Test score tracking</td>
+                <td>Simple completion tracking</td>
+                <td>Basic performance stats</td>
+                <td>Comprehensive analytics with AI insights</td>
+            </tr>
+            <tr>
+                <td><strong>Content Integration</strong></td>
+                <td>Siloed from calendar</td>
+                <td>Separate from planner</td>
+                <td>Minimal integration</td>
+                <td>Basic linking</td>
+                <td>Fully integrated with scheduling</td>
+            </tr>
+            <tr>
+                <td><strong>Mobile Experience</strong></td>
+                <td>Limited calendar features</td>
+                <td>Partial functionality</td>
+                <td>Basic viewing only</td>
+                <td>Simplified version</td>
+                <td>Fully responsive design</td>
+            </tr>
+            <tr>
+                <td><strong>Adaptivity</strong></td>
+                <td>None</td>
+                <td>Manual adjustments only</td>
+                <td>None</td>
+                <td>None</td>
+                <td>Automatic plan adjustments</td>
+            </tr>
+            <tr>
+                <td><strong>AI Implementation</strong></td>
+                <td>None</td>
+                <td>Limited to question selection</td>
+                <td>None</td>
+                <td>None</td>
+                <td>Multi-agent AI ecosystem</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Features Adopted and Enhanced from Competitors</h3>
+
+    <h4>From UWorld</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature Adopted</th>
+                <th>How We've Enhanced It</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Comprehensive question bank</td>
+                <td>Integrated directly with calendar scheduling</td>
+            </tr>
+            <tr>
+                <td>Performance analytics</td>
+                <td>Added AI interpretation and schedule adaptation</td>
+            </tr>
+            <tr>
+                <td>Content categorization</td>
+                <td>Implemented for intelligent topic sequencing</td>
+            </tr>
+            <tr>
+                <td>Exam simulation</td>
+                <td>Scheduled strategically by AI throughout study plan</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>From Kaplan</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature Adopted</th>
+                <th>How We've Enhanced It</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Decision tree methodology</td>
+                <td>Incorporated into our AI scheduling algorithm</td>
+            </tr>
+            <tr>
+                <td>Video content integration</td>
+                <td>Seamlessly embedded in calendar tasks</td>
+            </tr>
+            <tr>
+                <td>Readiness predictor</td>
+                <td>Enhanced with continuous AI assessment</td>
+            </tr>
+            <tr>
+                <td>Content variety</td>
+                <td>Expanded with adaptive difficulty progression</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>From NCSBN Learning Extension</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature Adopted</th>
+                <th>How We've Enhanced It</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Official content alignment</td>
+                <td>Maintained while adding personalization</td>
+            </tr>
+            <tr>
+                <td>Structured progression</td>
+                <td>Made adaptive based on performance</td>
+            </tr>
+            <tr>
+                <td>Comprehensive topic coverage</td>
+                <td>Enhanced with prerequisite-based sequencing</td>
+            </tr>
+            <tr>
+                <td>Focused review modules</td>
+                <td>Triggered automatically based on performance</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>From Archer Review</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature Adopted</th>
+                <th>How We've Enhanced It</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Affordable pricing model</td>
+                <td>Maintained while adding premium AI features</td>
+            </tr>
+            <tr>
+                <td>Simplified interface</td>
+                <td>Enhanced with modern design principles</td>
+            </tr>
+            <tr>
+                <td>Quick assessments</td>
+                <td>Integrated into adaptive scheduling</td>
+            </tr>
+            <tr>
+                <td>Focus on core content</td>
+                <td>Expanded with personalized emphasis</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Key Innovation Areas</h3>
+
+    <h4>Personalization & Adaptivity</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Competitor Limitation</th>
+                <th>Our Implementation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Static schedules with minimal customization</td>
+                <td>AI-generated plans based on exam date and personal availability</td>
+            </tr>
+            <tr>
+                <td>Manual rescheduling without optimization</td>
+                <td>Intelligent task rescheduling that maintains learning sequence integrity</td>
+            </tr>
+            <tr>
+                <td>One-size-fits-all content sequencing</td>
+                <td>Topic sequencing based on prerequisites and optimal learning paths</td>
+            </tr>
+            <tr>
+                <td>Limited visualization options</td>
+                <td>Multiple calendar views with color-coding and filtering capabilities</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>User Experience & Interface</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Competitor Limitation</th>
+                <th>Our Implementation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Outdated, cluttered interfaces</td>
+                <td>Modern, clean design with intuitive navigation</td>
+            </tr>
+            <tr>
+                <td>Complex, multi-step task management</td>
+                <td>One-click task creation and status updates</td>
+            </tr>
+            <tr>
+                <td>Limited mobile functionality</td>
+                <td>Responsive design that works across all devices</td>
+            </tr>
+            <tr>
+                <td>Confusing data visualization</td>
+                <td>Clear, actionable insights on dashboard and calendar</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>Content & Learning Approach</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Competitor Limitation</th>
+                <th>Our Implementation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Generic content without context</td>
+                <td>Topic-specific tasks tied to comprehensive NCLEX framework</td>
+            </tr>
+            <tr>
+                <td>Isolated learning activities</td>
+                <td>Integrated approach connecting related topics</td>
+            </tr>
+            <tr>
+                <td>Limited feedback mechanisms</td>
+                <td>Performance tracking with visual progress indicators</td>
+            </tr>
+            <tr>
+                <td>No remediation pathways</td>
+                <td>Identification of weak areas with focused review opportunities</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>Technical Innovation</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Competitor Limitation</th>
+                <th>Our Implementation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Client-side only functionality</td>
+                <td>Full-stack solution with secure data persistence</td>
+            </tr>
+            <tr>
+                <td>Limited data utilization</td>
+                <td>Comprehensive data collection for personalization</td>
+            </tr>
+            <tr>
+                <td>Single-algorithm approach</td>
+                <td>Multi-agent AI system with specialized components</td>
+            </tr>
+            <tr>
+                <td>Manual intervention requirements</td>
+                <td>Automated schedule adjustments and optimizations</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>3. Multi-Agent AI Ecosystem: Implementation Roadmap</h2>
+
+    <p>Our calendar system employs a sophisticated multi-agent architecture where specialized AI components work together to create a truly adaptive learning experience.</p>
+
+    <h3>Agent System Overview</h3>
+
+    <h4>Currently Implemented:</h4>
+
+    <p><strong>Scheduler Agent</strong></p>
+    <ul>
+        <li>Creates personalized study plans based on exam date and preferences</li>
+        <li>Implements intelligent topic sequencing with prerequisite consideration</li>
+        <li>Balances workload across available study days</li>
+        <li>Ensures comprehensive coverage of all NCLEX topics</li>
+    </ul>
+
+    <h4>Implementation Roadmap:</h4>
+
+    <p><strong>Monitor Agent</strong> (Next Development Phase)</p>
+    <ul>
+        <li>Tracks task completion and performance metrics</li>
+        <li>Identifies patterns in study behavior and effectiveness</li>
+        <li>Detects schedule deviations and completion rates</li>
+        <li>Provides data foundation for adaptive features</li>
+    </ul>
+
+    <p><strong>Adaptation Agent</strong> (Following Phase)</p>
+    <ul>
+        <li>Automatically reschedules missed tasks</li>
+        <li>Adjusts content difficulty based on performance</li>
+        <li>Implements personalized spaced repetition intervals</li>
+        <li>Injects remedial content for weak areas</li>
+        <li>Rebalances overall plan as student progresses</li>
+    </ul>
+
+    <p><strong>Feedback Agent</strong> (Advanced Feature Phase)</p>
+    <ul>
+        <li>Processes explicit and implicit user feedback</li>
+        <li>Generates recommendations for system improvements</li>
+        <li>Creates personalized motivational messaging</li>
+        <li>Refines user experience based on preference patterns</li>
+    </ul>
+
+    <p><strong>AI Tutor Agent</strong> (Final Phase)</p>
+    <ul>
+        <li>Provides contextual learning assistance</li>
+        <li>Answers topic-specific questions</li>
+        <li>Suggests alternative learning approaches</li>
+        <li>Offers just-in-time concept clarification</li>
+        <li>Creates personalized practice for weak areas</li>
+    </ul>
+
+    <h3>Agent Collaboration Framework</h3>
+
+    <p>What makes our system truly powerful is how these agents work together:</p>
+
+    <ol>
+        <li><strong>Information Flow</strong>: Centralized knowledge repository ensures decisions are made with complete context</li>
+        <li><strong>Hierarchical Decision Making</strong>: Scheduler establishes foundation, while Monitor and Adaptation make incremental adjustments</li>
+        <li><strong>Feedback Loops</strong>: Performance data continuously flows between agents, creating a self-improving system</li>
+        <li><strong>Conflict Resolution</strong>: Priority system ensures most important adjustments take precedence when agents suggest competing changes</li>
+    </ol>
+
+    <h3>Implementation Timeline</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Phase</th>
+                <th>Focus</th>
+                <th>Timeline</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Foundation</td>
+                <td>Scheduler Agent & Core Calendar</td>
+                <td>Completed</td>
+            </tr>
+            <tr>
+                <td>Monitoring</td>
+                <td>Performance Tracking & Data Collection</td>
+                <td>Q2 2025</td>
+            </tr>
+            <tr>
+                <td>Adaptation</td>
+                <td>Dynamic Adjustments & Personalization</td>
+                <td>Q3 2025</td>
+            </tr>
+            <tr>
+                <td>Advanced Features</td>
+                <td>Feedback Processing & Tutoring</td>
+                <td>Q4 2025</td>
+            </tr>
+            <tr>
+                <td>Refinement</td>
+                <td>System Optimization & Integration</td>
+                <td>Q1 2026</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Next Steps</h2>
+
+    <p>We're excited to continue developing this revolutionary approach to NCLEX preparation. Our immediate focus is on:</p>
+
+    <ol>
+        <li>Gathering user feedback on the current implementation</li>
+        <li>Implementing the Monitor Agent to begin collecting performance data</li>
+        <li>Enhancing mobile experience for on-the-go studying</li>
+        <li>Expanding content integration for a more comprehensive learning experience</li>
+    </ol>
+
+    <p>We welcome your thoughts on prioritization as we move forward with development.</p>
+
+    <hr>
+
+    <p class="note">This document provides a high-level overview of the ArcherReview Dynamic AI Calendar. For technical specifications or detailed feature documentation, please request additional materials.</p>
+</body>
+</html>

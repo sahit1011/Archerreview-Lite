@@ -1,0 +1,527 @@
+@import "tailwindcss";
+
+:root {
+  /* Archer Review Light Theme Palette */
+  --archer-dark-teal: #0A2533; /* Original dark blue/teal - kept for specific elements */
+  --archer-darker-teal: #071A25; /* Original darker variation - kept for specific elements */
+  --archer-medium-teal: #0F3244; /* Original medium variation - kept for specific elements */
+  --archer-light-teal: #1A4D6D; /* Original lighter teal - kept for specific elements */
+  --archer-bright-teal: #00A99D; /* Primary accent color - bright teal */
+  --archer-light-blue: #42B0E8; /* Secondary accent color - light blue */
+  --archer-purple: #6366F1; /* Accent color for special elements */
+  --archer-pink: #EC4899; /* Accent color for highlights */
+  --archer-white: #FFFFFF;
+  --archer-light-grey: #f0f0f0;
+  --archer-dark-text: #171717;
+  --archer-light-text: #333333; /* Updated for light theme */
+
+  /* Light Theme Background Colors */
+  --light-bg-primary: #F5F9FC; /* Very light blue/white for main background */
+  --light-bg-secondary: #E8F4FC; /* Light blue for secondary background */
+  --light-bg-gradient-start: #F5F9FC; /* Gradient start - very light blue */
+  --light-bg-gradient-end: #E1F0FA; /* Gradient end - slightly darker light blue */
+
+  /* Light Theme Card Backgrounds */
+  --card-background-light: #FFFFFF; /* White for cards */
+  --card-background-medium: #F5F9FC; /* Very light blue for medium emphasis cards */
+  --card-background-dark: #E8F4FC; /* Light blue for higher emphasis cards */
+  --card-background-lighter: #FFFFFF; /* White for highlighted cards */
+
+  /* Task colors - vibrant, cool colors matching ArcherReview */
+  --task-video: #3B82F6; /* Blue */
+  --task-quiz: #8B5CF6; /* Purple */
+  --task-reading: #10B981; /* Green */
+  --task-practice: #F59E0B; /* Amber/Orange */
+  --task-review: #EF4444; /* Red */
+  --task-overloaded: #8B5CF6; /* Purple */
+
+  /* Border colors for light theme */
+  --border-color-light: rgba(0, 0, 0, 0.05);
+  --border-color-medium: rgba(0, 0, 0, 0.1);
+  --border-color-dark: rgba(0, 0, 0, 0.15);
+
+  /* Light Theme - Modern and Professional */
+  --background-gradient-start: var(--light-bg-gradient-start);
+  --background-gradient-end: var(--light-bg-gradient-end);
+  --foreground: var(--archer-dark-text);
+  --primary-accent: var(--archer-bright-teal);
+  --secondary-accent: var(--archer-light-blue);
+  --card-background: var(--card-background-light);
+  --card-background-alt: var(--card-background-medium);
+  --border-color: var(--border-color-medium);
+
+  /* Enhanced Shadow variables for 3D effect - subtle shadows for light theme */
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --card-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --button-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --button-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Light theme to match ArcherReview website */
+:root {
+  /* Light Theme */
+  --background-gradient-start: var(--light-bg-gradient-start);
+  --background-gradient-end: var(--light-bg-gradient-end);
+  --foreground: var(--archer-dark-text);
+  --primary-accent: var(--archer-bright-teal);
+  --secondary-accent: var(--archer-light-blue);
+  --card-background: var(--card-background-light);
+  --card-background-alt: var(--card-background-medium);
+  --border-color: var(--border-color-medium);
+}
+
+/* Tailwind theme variables */
+:root {
+  --color-background-start: var(--background-gradient-start);
+  --color-background-end: var(--background-gradient-end);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary-accent);
+  --color-secondary: var(--secondary-accent);
+  --font-sans: var(--font-poppins), var(--font-montserrat), 'Inter', Arial, sans-serif;
+  --font-mono: var(--font-roboto-mono), monospace;
+}
+
+body {
+  /* Updated gradient direction for a more modern look - light theme */
+  background: linear-gradient(135deg, var(--background-gradient-start) 0%, var(--background-gradient-end) 100%);
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: 0.015em;
+}
+
+/* Enhanced Card styling for 3D effect - light theme */
+.card, .bg-card, .bg-card-background-dark {
+  background-color: var(--card-background);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color-light) !important;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.card:hover, .interactive-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-3px);
+}
+
+/* Card header styling - light theme */
+.card-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color-light);
+  font-weight: 600;
+  color: var(--archer-dark-text);
+}
+
+/* Card content styling */
+.card-content {
+  padding: 1.5rem;
+}
+
+/* Enhanced Button styling to match ArcherReview - light theme */
+.btn, .button, button[type="submit"], button[type="button"] {
+  box-shadow: var(--button-shadow);
+  transition: all 0.2s ease;
+  border: none;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.01em;
+}
+
+.btn:hover, .button:hover, button[type="submit"]:hover, button[type="button"]:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--button-shadow-hover);
+}
+
+/* Primary button - teal */
+.btn-primary {
+  background-color: var(--archer-bright-teal);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #00c2b5; /* Slightly lighter teal on hover */
+}
+
+/* Secondary button - light blue */
+.btn-secondary {
+  background-color: var(--archer-light-blue);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #54c0fa; /* Slightly lighter blue on hover */
+}
+
+/* FullCalendar Customizations - Light Theme */
+.fc .fc-toolbar.fc-header-toolbar {
+  background-color: var(--primary-accent) !important; /* Teal toolbar */
+  color: white !important;
+  padding: 0.5em !important;
+  border-radius: 4px 4px 0 0 !important;
+  border-bottom: 1px solid var(--border-color-medium) !important;
+}
+
+.fc .fc-toolbar-title {
+  color: white !important;
+  font-size: 1.1em !important; /* Toolbar title font size */
+}
+
+/* General button styling within FullCalendar toolbar */
+.fc-header-toolbar .fc-button,
+.fc .fc-button-primary { /* Catch all primary buttons from FC */
+  background-color: var(--primary-accent) !important;
+  border: 1px solid var(--primary-accent) !important;
+  color: white !important;
+  box-shadow: var(--button-shadow) !important;
+  text-transform: capitalize !important;
+  padding: 0.3em 0.7em !important;
+  font-size: 0.85em !important;
+  opacity: 1 !important;
+  transition: all 0.2s ease;
+}
+
+/* Hover state specifically for toolbar buttons */
+.fc-header-toolbar .fc-button:hover,
+.fc .fc-button-primary:hover {
+  background-color: #00c2b5 !important; /* Slightly lighter teal on hover */
+  border-color: #00c2b5 !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: var(--button-shadow-hover) !important;
+}
+
+.fc-header-toolbar .fc-button:disabled,
+.fc .fc-button-primary:disabled {
+  background-color: var(--primary-accent) !important;
+  border-color: var(--primary-accent) !important;
+  color: white !important;
+  opacity: 0.5 !important;
+}
+
+/* Active/selected state for toolbar buttons */
+.fc-header-toolbar .fc-button:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  background-color: #008f85 !important; /* Slightly darker teal for active state */
+  border-color: #008f85 !important;
+  color: white !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.15) !important;
+}
+
+/* Day headers (e.g., Sun, Mon, Tue) - Light Theme */
+.fc .fc-col-header-cell {
+  background-color: var(--primary-accent) !important; /* Teal background for day headers */
+}
+.fc .fc-col-header-cell-cushion {
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 0.5em !important;
+  font-size: 0.9em;
+}
+
+/* Day numbers in month/week view - Light Theme */
+.fc-daygrid-day-number {
+  color: var(--archer-dark-text) !important;
+  padding: 0.25em 0.4em !important;
+  font-size: 0.85em;
+}
+
+/* Today's date highlighting - Light Theme */
+.fc-day-today {
+  background-color: rgba(0, 169, 157, 0.1) !important; /* Light teal background */
+}
+.fc-day-today .fc-daygrid-day-number {
+  background-color: var(--primary-accent) !important;
+  color: white !important;
+  border-radius: 50% !important;
+  padding: 0.25em 0.4em !important;
+  display: inline-block !important;
+  min-width: 1.5em;
+  text-align: center;
+}
+
+/* Timegrid slot labels (e.g., 8:00 AM) - Light Theme */
+.fc .fc-timegrid-slot-label-cushion {
+  color: var(--archer-dark-text) !important;
+  font-size: 0.8em;
+}
+
+.fc-event {
+  border-radius: 4px !important;
+  font-size: 0.8em !important;
+  padding: 0 !important;
+  border-width: 1px !important; /* Allow border to be visible */
+  overflow: hidden !important;
+}
+
+/* Fix for FullCalendar event rendering */
+.fc-h-event {
+  background-color: inherit !important;
+  border-color: inherit !important;
+}
+
+.fc-v-event {
+  background-color: inherit !important;
+  border-color: inherit !important;
+}
+
+.fc-event-main {
+  /* Styling handled by eventContent in InteractiveCalendar.tsx */
+  padding: 2px 4px; /* Add some padding if not handled by eventContent */
+}
+
+/* Direct styling for calendar events - updated with ArcherReview colors */
+.fc-event {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+  color: white !important;
+  border-radius: 6px !important;
+}
+
+/* Video task - Blue */
+.fc-event.video-task {
+  background-color: var(--task-video) !important;
+  border-color: #2563eb !important; /* Slightly darker blue */
+}
+
+/* Quiz task - Purple */
+.fc-event.quiz-task {
+  background-color: var(--task-quiz) !important;
+  border-color: #7c3aed !important; /* Slightly darker purple */
+}
+
+/* Reading task - Green */
+.fc-event.reading-task {
+  background-color: var(--task-reading) !important;
+  border-color: #059669 !important; /* Slightly darker green */
+}
+
+/* Practice task - Orange */
+.fc-event.practice-task {
+  background-color: var(--task-practice) !important;
+  border-color: #d97706 !important; /* Slightly darker orange */
+}
+
+/* Review task - Red */
+.fc-event.review-task {
+  background-color: var(--task-review) !important;
+  border-color: #dc2626 !important; /* Slightly darker red */
+}
+
+/* Overloaded task - Purple */
+.fc-event.overloaded-task {
+  background-color: var(--task-overloaded) !important;
+  border-color: #7c3aed !important; /* Slightly darker purple */
+}
+
+/* Missed task - Gray with red dashed border */
+.fc-event.missed-task {
+  background-color: #374151 !important;
+  border-color: var(--task-review) !important;
+  border-style: dashed !important;
+  border-width: 2px !important;
+}
+
+/* Default task - Dark Blue */
+.fc-event.default-task {
+  background-color: var(--archer-dark-teal) !important;
+  border-color: var(--archer-darker-teal) !important;
+}
+
+/* Make sure text is white */
+.fc-event-title,
+.fc-event-time,
+.fc-event-main {
+  color: white !important;
+}
+
+/* Fix for FullCalendar event rendering */
+.fc-daygrid-event-harness > a,
+.fc-timegrid-event-harness > a {
+  color: white !important;
+}
+
+/* Additional fixes for FullCalendar */
+.fc-event.video-task a,
+.fc-event.quiz-task a,
+.fc-event.reading-task a,
+.fc-event.practice-task a,
+.fc-event.review-task a,
+.fc-event.overloaded-task a,
+.fc-event.missed-task a,
+.fc-event.default-task a {
+  background-color: inherit !important;
+  border-color: inherit !important;
+  color: white !important;
+}
+
+/* Force background color on all event elements */
+.fc-event.video-task *,
+.fc-event.quiz-task *,
+.fc-event.reading-task *,
+.fc-event.practice-task *,
+.fc-event.review-task *,
+.fc-event.overloaded-task *,
+.fc-event.missed-task *,
+.fc-event.default-task * {
+  color: white !important;
+}
+
+/* Direct styling for FullCalendar event elements */
+.fc-daygrid-event.video-task,
+.fc-daygrid-event.quiz-task,
+.fc-daygrid-event.reading-task,
+.fc-daygrid-event.practice-task,
+.fc-daygrid-event.review-task,
+.fc-daygrid-event.overloaded-task,
+.fc-daygrid-event.missed-task,
+.fc-daygrid-event.default-task,
+.fc-timegrid-event.video-task,
+.fc-timegrid-event.quiz-task,
+.fc-timegrid-event.reading-task,
+.fc-timegrid-event.practice-task,
+.fc-timegrid-event.review-task,
+.fc-timegrid-event.overloaded-task,
+.fc-timegrid-event.missed-task,
+.fc-timegrid-event.default-task {
+  background-color: inherit !important;
+  border-color: inherit !important;
+}
+
+/* Enhanced calendar styling - Light Theme */
+.fc .fc-scrollgrid {
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+  border: 1px solid var(--border-color-light) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+/* Calendar container styling - Light Theme */
+.interactive-calendar {
+  padding: 1rem !important;
+  border-radius: 1rem !important;
+  box-shadow: var(--card-shadow-hover) !important;
+  border: 1px solid var(--border-color-light) !important;
+  background-color: white !important;
+  margin-bottom: 2rem !important;
+}
+
+/* Calendar filter section styling - Light Theme */
+.calendar-filters {
+  background-color: var(--card-background-medium) !important;
+  border-radius: 0.75rem !important;
+  padding: 1rem !important;
+  margin-bottom: 1rem !important;
+  box-shadow: var(--card-shadow) !important;
+  border: 1px solid var(--border-color-light) !important;
+}
+
+/* Calendar day styling - Light Theme */
+.fc-day {
+  background-color: white !important;
+  border-color: var(--border-color-light) !important;
+}
+
+/* Calendar header styling - Light Theme */
+.fc-col-header {
+  background-color: var(--primary-accent) !important;
+}
+
+/* Calendar today styling - Light Theme */
+.fc-day-today {
+  background-color: rgba(0, 169, 157, 0.1) !important;
+  font-weight: bold !important;
+}
+
+/* Chart styling for evolution components - Light Theme */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.chart-bar {
+  transition: height 0.3s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-bar:hover {
+  filter: brightness(1.1);
+}
+
+.chart-tooltip {
+  position: absolute;
+  background-color: white;
+  color: var(--archer-dark-text);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  z-index: 10;
+  box-shadow: var(--card-shadow);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  border: 1px solid var(--border-color-light);
+}
+
+.chart-tooltip.visible {
+  opacity: 1;
+}
+
+/* Circular progress chart styling - Light Theme */
+.circular-chart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.circular-chart-background {
+  fill: none;
+  stroke: #E1E1E1; /* Light gray for background */
+  stroke-width: 3;
+  opacity: 0.5;
+}
+
+.circular-chart-current {
+  fill: none;
+  stroke: var(--archer-bright-teal);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.5s ease-in-out;
+}
+
+.circular-chart-projected {
+  fill: none;
+  stroke: var(--archer-light-blue);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0.7;
+  transition: stroke-dasharray 0.5s ease-in-out;
+}
+
+/* Custom scrollbar styling - Light Theme */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thumb-archer-bright-teal::-webkit-scrollbar-thumb {
+  background-color: var(--archer-bright-teal);
+}
+
+.scrollbar-track-archer-dark-teal\/30::-webkit-scrollbar-track {
+  background-color: rgba(225, 240, 250, 0.5); /* Light blue background */
+}
+
+.scrollbar-thumb-rounded-full::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+}
+
+.scrollbar-track-rounded-full::-webkit-scrollbar-track {
+  border-radius: 9999px;
+}

@@ -1,0 +1,152 @@
+/* Modern Light Theme CSS for ArcherReview-inspired UI */
+
+:root {
+  /* Archer Review Light Theme Palette */
+  --archer-dark-teal: #0A2533; /* Original dark blue/teal - kept for specific elements */
+  --archer-medium-teal: #0F3244; /* Original medium variation - kept for specific elements */
+  --archer-light-teal: #1A4D6D; /* Original lighter teal - kept for specific elements */
+  --archer-bright-teal: #00A99D; /* Primary accent color - bright teal */
+  --archer-light-blue: #42B0E8; /* Secondary accent color - light blue */
+  --archer-purple: #6366F1; /* Accent color for special elements */
+  --archer-pink: #EC4899; /* Accent color for highlights */
+  --archer-white: #FFFFFF;
+  --archer-light-grey: #f0f0f0;
+  --archer-dark-text: #171717;
+  --archer-light-text: #333333; /* Updated for light theme */
+
+  /* Light Theme Background Colors */
+  --light-bg-primary: #F5F9FC; /* Very light blue/white for main background */
+  --light-bg-secondary: #E8F4FC; /* Light blue for secondary background */
+  --light-bg-gradient-start: #F5F9FC; /* Gradient start - very light blue */
+  --light-bg-gradient-end: #E1F0FA; /* Gradient end - slightly darker light blue */
+
+  /* Light Theme Card Backgrounds */
+  --card-background-light: #FFFFFF; /* White for cards */
+  --card-background-medium: #F5F9FC; /* Very light blue for medium emphasis cards */
+  --card-background-dark: #E8F4FC; /* Light blue for higher emphasis cards */
+
+  /* Task colors - vibrant, cool colors matching ArcherReview */
+  --task-video: #3B82F6; /* Blue */
+  --task-quiz: #8B5CF6; /* Purple */
+  --task-reading: #10B981; /* Green */
+  --task-practice: #F59E0B; /* Amber/Orange */
+  --task-review: #EF4444; /* Red */
+  --task-overloaded: #8B5CF6; /* Purple */
+
+  /* Border colors for light theme */
+  --border-color-light: rgba(0, 0, 0, 0.05);
+  --border-color-medium: rgba(0, 0, 0, 0.1);
+
+  /* Enhanced Shadow variables for 3D effect - subtle shadows for light theme */
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --card-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --button-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --button-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Apply the modern light theme */
+body {
+  background: linear-gradient(135deg, var(--light-bg-gradient-start) 0%, var(--light-bg-gradient-end) 100%);
+  background-attachment: fixed;
+  color: var(--archer-dark-text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: 0.015em;
+}
+
+/* Modern Card styling - Light Theme */
+.modern-card {
+  background-color: var(--card-background-light);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color-light) !important;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.modern-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-3px);
+}
+
+/* Card header styling - Light Theme */
+.modern-card-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color-light);
+  font-weight: 600;
+  background-color: var(--card-background-medium);
+  color: var(--archer-dark-text);
+}
+
+/* Card content styling - Light Theme */
+.modern-card-content {
+  padding: 1.5rem;
+  background-color: var(--card-background-light);
+}
+
+/* Modern Button styling - Light Theme */
+.modern-button {
+  background-color: var(--archer-bright-teal);
+  color: white;
+  box-shadow: var(--button-shadow);
+  transition: all 0.2s ease;
+  border: none;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.01em;
+}
+
+.modern-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--button-shadow-hover);
+  background-color: #00c2b5; /* Slightly lighter teal on hover */
+}
+
+/* Secondary button - light blue */
+.modern-button-secondary {
+  background-color: var(--archer-light-blue);
+  color: white;
+}
+
+.modern-button-secondary:hover {
+  background-color: #54c0fa; /* Slightly lighter blue on hover */
+}
+
+/* Utility classes for modern light theme */
+.bg-modern-card {
+  background-color: var(--card-background-light);
+}
+
+.bg-modern-card-light {
+  background-color: var(--card-background-light);
+}
+
+.bg-modern-card-dark {
+  background-color: var(--card-background-medium);
+}
+
+.text-modern-primary {
+  color: var(--archer-bright-teal);
+}
+
+.text-modern-secondary {
+  color: var(--archer-light-blue);
+}
+
+.border-modern-light {
+  border-color: var(--border-color-light);
+}
+
+.shadow-modern {
+  box-shadow: var(--card-shadow);
+}
+
+.shadow-modern-hover {
+  box-shadow: var(--card-shadow-hover);
+}
