@@ -65,69 +65,49 @@ export default function InteractiveCalendar({
   // Convert tasks to calendar events
   useEffect(() => {
     if (!tasks || tasks.length === 0) return;
+    console.log(`[InteractiveCalendar] Task processing triggered. received ${tasks.length} tasks.`);
 
-    const mappedEvents = tasks.map((task) => {
+    const eventMap = new Map<string, CalendarEvent>();
+
+    tasks.forEach((task) => {
       // Check if task is missed (past due and not completed)
       const isMissed = task.status === 'PENDING' && new Date(task.endTime) < new Date();
 
       // Create CSS class based on task type
       let className = '';
-      let backgroundColor = '';
-      let borderColor = '';
-
       if (isMissed) {
         className = 'missed-task';
-        backgroundColor = '#374151'; // gray-700
-        borderColor = '#EF4444'; // red-500
       } else {
         switch (task.type) {
           case 'VIDEO':
             className = 'video-task';
-            backgroundColor = 'rgba(29, 78, 216, 0.8)'; // blue-700/80
-            borderColor = '#1e40af'; // blue-800
             break;
           case 'QUIZ':
             className = 'quiz-task';
-            backgroundColor = 'rgba(0, 48, 73, 0.9)'; // archer-dark-teal/90
-            borderColor = 'rgba(0, 169, 157, 0.8)'; // archer-bright-teal/80
             break;
           case 'READING':
             className = 'reading-task';
-            backgroundColor = 'rgba(4, 120, 87, 0.8)'; // emerald-700/80
-            borderColor = '#065f46'; // emerald-800
             break;
           case 'PRACTICE':
             className = 'practice-task';
-            backgroundColor = 'rgba(217, 119, 6, 0.8)'; // amber-600/80
-            borderColor = '#b45309'; // amber-700
             break;
           case 'REVIEW':
             className = 'review-task';
-            backgroundColor = 'rgba(190, 18, 60, 0.8)'; // rose-700/80
-            borderColor = '#9f1239'; // rose-800
             break;
           case 'OVERLOADED':
             className = 'overloaded-task';
-            backgroundColor = 'rgba(109, 40, 217, 0.8)'; // violet-700/80
-            borderColor = '#5b21b6'; // violet-800
             break;
           default:
             className = 'default-task';
-            backgroundColor = 'rgba(30, 58, 138, 0.9)'; // archer-dark-blue/90
-            borderColor = '#1e3a8a'; // archer-dark-blue
         }
       }
 
-      return {
+      const event: CalendarEvent = {
         id: task._id,
         title: task.title,
         start: new Date(task.startTime).toISOString(),
         end: new Date(task.endTime).toISOString(),
         className: className,
-        backgroundColor: backgroundColor,
-        borderColor: borderColor,
-        textColor: '#FFFFFF', // white text for all
-        display: 'block',
         extendedProps: {
           taskId: task._id,
           type: task.type,
@@ -135,12 +115,13 @@ export default function InteractiveCalendar({
           description: task.description,
           duration: task.duration,
           topic: task.topic,
-          isMissed // Add flag for missed tasks
+          isMissed
         }
       };
+      eventMap.set(task._id, event);
     });
 
-    setEvents(mappedEvents);
+    setEvents(Array.from(eventMap.values()));
   }, [tasks]);
 
   // Handle event drop (drag and drop)
@@ -215,15 +196,20 @@ export default function InteractiveCalendar({
 
     // Find the day element with the matching date attribute
     // Try different selectors based on the current view
-    let dayElement = document.querySelector(`.fc-day[data-date="${formattedDate}"]`);
+    const selectors = [
+      `.fc-day[data-date="${formattedDate}"]`,
+      `.fc-daygrid-day[data-date="${formattedDate}"]`,
+      `.fc-col-header-cell[data-date="${formattedDate}"]`,
+      `.fc-timegrid-day[data-date="${formattedDate}"]`,
+      `.fc-timegrid-col[data-date="${formattedDate}"]`,
+      `[data-date="${formattedDate}"]`
+    ];
 
-    // If not found, try alternative selectors for different FullCalendar views
-    if (!dayElement) {
-      dayElement = document.querySelector(`.fc-daygrid-day[data-date="${formattedDate}"]`);
-    }
-
-    if (!dayElement) {
-      dayElement = document.querySelector(`.fc-col-header-cell[data-date="${formattedDate}"]`);
+    // Try each selector until we find a matching element
+    let dayElement = null;
+    for (const selector of selectors) {
+      dayElement = document.querySelector(selector);
+      if (dayElement) break;
     }
 
     // If we found a matching element, add the selected class
@@ -231,7 +217,19 @@ export default function InteractiveCalendar({
       dayElement.classList.add('fc-day-selected');
       console.log(`Applied selected styling to date: ${formattedDate}`);
     } else {
-      console.log(`Could not find element for date: ${formattedDate}`);
+      console.log(`Could not find element for date: ${formattedDate}. Will try again after a delay.`);
+      
+      // Try again after a longer delay to ensure the calendar has fully rendered
+      setTimeout(() => {
+        for (const selector of selectors) {
+          dayElement = document.querySelector(selector);
+          if (dayElement) {
+            dayElement.classList.add('fc-day-selected');
+            console.log(`Applied selected styling to date after delay: ${formattedDate}`);
+            break;
+          }
+        }
+      }, 500);
     }
   };
 
@@ -239,88 +237,303 @@ export default function InteractiveCalendar({
   // in the useEffect hook above, so these helper functions are no longer needed.
 
   return (
-    <div className="interactive-calendar bg-card-background-light rounded-xl shadow-card hover:shadow-card-hover transition-all border border-border-color-light p-1">
+    <div className="interactive-calendar">
       <style jsx global>{`
-        /* Increase the height of time slots for better visibility of short tasks */
-        .fc-timegrid-slot {
-          height: 3em !important;
+        /* Glassmorphic FullCalendar styling */
+        .interactive-calendar .fc {
+          --fc-border-color: rgba(255, 255, 255, 0.1);
+          --fc-page-bg-color: transparent;
+          --fc-neutral-bg-color: rgba(255, 255, 255, 0.05);
+          --fc-event-border-width: 1px;
+          font-family: var(--font-geist-sans);
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 1rem;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
-        /* Modern styling for the calendar - KEEPING THESE as they are structural/layout */
-        .fc {
-          /* --fc-border-color: rgba(226, 232, 240, 0.8); /* Let globals.css handle this */
-          /* --fc-page-bg-color: #fff; /* Let globals.css handle this */
-          /* --fc-neutral-bg-color: #f8fafc; /* Let globals.css handle this */
-          --fc-event-border-width: 1px; /* Allow borders to be visible */
-          font-family: var(--font-geist-sans); /* This is fine */
-        }
-
-        .fc .fc-scrollgrid {
-          border-radius: 0.5rem;
+        .interactive-calendar .fc .fc-scrollgrid {
+          border: none;
+          border-radius: 1rem;
           overflow: hidden;
-          border: none; /* Let globals.css handle border if needed via --fc-border-color */
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* This is fine */
+          background: transparent;
         }
 
-        /* REMOVED specific .fc-toolbar, .fc-toolbar-title, button styles as they are in globals.css */
-
-        /* Day headers - these should now be themed by globals.css or inherit */
-        /* .fc .fc-col-header-cell { ... } */
-        /* .fc .fc-col-header-cell-cushion { ... } */
-
-        /* Time slots - these should now be themed by globals.css or inherit */
-        /* .fc .fc-timegrid-slot-label { ... } */
-
-        /* Current time indicator - let globals.css or FC defaults handle this for now */
-        /* .fc .fc-timegrid-now-indicator-line { ... } */
-        /* .fc .fc-timegrid-now-indicator-arrow { ... } */
-
-        /* Event styling - eventContent function now handles this with Tailwind classes */
-        /* .fc-event { ... } */
-        /* .fc-event:hover { ... } */
-        /* .fc-event .fc-event-main { ... } */
-
-        .fc-timegrid-event { /* Minimum height for events */
-          min-height: 2.5em !important;
+        .interactive-calendar .fc .fc-toolbar {
+          padding: 1.5rem;
+          background: rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 1rem 1rem 0 0;
         }
 
-        .fc-daygrid-day { /* Month view day height */
+        .interactive-calendar .fc .fc-toolbar-title {
+          color: rgba(255, 255, 255, 0.95);
+          font-size: 1.5rem;
+          font-weight: 700;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .interactive-calendar .fc .fc-button {
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.9);
+          border-radius: 0.75rem;
+          padding: 0.75rem 1.25rem;
+          font-weight: 600;
+          backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .interactive-calendar .fc .fc-button:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 255, 255, 0.3);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .interactive-calendar .fc .fc-button-active {
+          background: rgba(99, 102, 241, 0.3);
+          border-color: rgba(99, 102, 241, 0.5);
+          color: white;
+          box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Day headers */
+        .interactive-calendar .fc .fc-col-header-cell {
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+          border-color: rgba(255, 255, 255, 0.1);
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.8);
+          padding: 1rem 0.5rem;
+          text-transform: uppercase;
+          font-size: 0.75rem;
+          letter-spacing: 0.1em;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Calendar days - Compact */
+        .interactive-calendar .fc-daygrid-day {
+          background: rgba(255, 255, 255, 0.02);
+          backdrop-filter: blur(5px);
+          border-color: rgba(255, 255, 255, 0.08);
           min-height: 6rem !important;
+          position: relative;
+          transition: all 0.3s ease;
         }
 
-        /* .fc-daygrid-day-number { ... } /* Let globals.css handle */
+        .interactive-calendar .fc-daygrid-day:hover {
+          background: rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(15px);
+          border-color: rgba(255, 255, 255, 0.15);
+          box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
 
-        /* .fc-daygrid-day.fc-day-today { ... } /* Let globals.css handle */
-        /* .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { ... } /* Let globals.css handle */
-
-        .fc-daygrid-day-frame { /* Calendar days styling */
+        .interactive-calendar .fc-daygrid-day-frame {
           padding: 0.5rem !important;
+          min-height: 4rem;
         }
 
-        .fc-daygrid-day-events {
-          margin-top: 0.25rem !important;
+        .interactive-calendar .fc-daygrid-day-number {
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.9);
+          padding: 0.5rem;
+          font-size: 0.875rem;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
-        /* .fc-daygrid-event { ... } /* eventContent handles this */
-        /* .fc-daygrid-event .fc-event-main { ... } */
-        /* .fc-daygrid-event .fc-event-title { ... } */
-
-        /* Selected date styling */
-        .fc-day-selected {
-          background-color: var(--primary-accent-light, rgba(0, 169, 157, 0.1)) !important;
-          border: 2px solid var(--primary-accent) !important;
+        .interactive-calendar .fc-daygrid-day.fc-day-today {
+          background: rgba(99, 102, 241, 0.15);
+          backdrop-filter: blur(20px);
+          border-color: rgba(99, 102, 241, 0.3);
+          box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);
         }
-        .fc-day-selected .fc-daygrid-day-number {
-          background-color: var(--primary-accent) !important;
-          color: var(--archer-white) !important;
+
+        .interactive-calendar .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+          background: linear-gradient(135deg, #6366F1, #8B5CF6);
+          color: white;
+          border-radius: 50%;
+          width: 2.5rem;
+          height: 2.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+          backdrop-filter: blur(10px);
+        }
+
+        /* Glassmorphic Events - Compact */
+        .interactive-calendar .fc-daygrid-event {
+          border: 1px solid !important;
+          border-radius: 0.375rem !important;
+          margin: 0.125rem 0 !important;
+          font-size: 0.7rem !important;
+          padding: 0.25rem 0.5rem !important;
+          font-weight: 600 !important;
+          backdrop-filter: blur(10px) !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+          opacity: 0.95 !important;
+          transition: all 0.3s ease !important;
+          height: 1.5rem !important;
+          min-height: 1.5rem !important;
+        }
+
+        .interactive-calendar .fc-daygrid-event:hover {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+          opacity: 1 !important;
+        }
+
+        .interactive-calendar .fc-daygrid-event .fc-event-main {
+          padding: 0 !important;
+        }
+
+        .interactive-calendar .fc-daygrid-event .fc-event-title {
+          font-weight: 600 !important;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        /* Glassmorphic task colors */
+        .interactive-calendar .fc-event {
+            --event-bg-color: rgba(255, 255, 255, 0.1);
+            --event-border-color: rgba(255, 255, 255, 0.2);
+            --event-text-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .interactive-calendar .fc-event.video-task {
+            --event-bg-color: rgba(59, 130, 246, 0.25);
+            --event-border-color: rgba(59, 130, 246, 0.4);
+            --event-text-color: rgba(147, 197, 253, 1);
+        }
+
+        .interactive-calendar .fc-event.quiz-task {
+            --event-bg-color: rgba(20, 184, 166, 0.25);
+            --event-border-color: rgba(20, 184, 166, 0.4);
+            --event-text-color: rgba(94, 234, 212, 1);
+        }
+        
+        .interactive-calendar .fc-event.reading-task {
+            --event-bg-color: rgba(34, 197, 94, 0.25);
+            --event-border-color: rgba(34, 197, 94, 0.4);
+            --event-text-color: rgba(134, 239, 172, 1);
+        }
+
+        .interactive-calendar .fc-event.practice-task {
+            --event-bg-color: rgba(245, 158, 11, 0.25);
+            --event-border-color: rgba(245, 158, 11, 0.4);
+            --event-text-color: rgba(253, 224, 71, 1);
+        }
+
+        .interactive-calendar .fc-event.review-task {
+            --event-bg-color: rgba(236, 72, 153, 0.25);
+            --event-border-color: rgba(236, 72, 153, 0.4);
+            --event-text-color: rgba(244, 114, 182, 1);
+        }
+
+        .interactive-calendar .fc-event.missed-task {
+            --event-bg-color: rgba(239, 68, 68, 0.25);
+            --event-border-color: rgba(239, 68, 68, 0.4);
+            --event-text-color: rgba(248, 113, 113, 1);
+        }
+
+        .interactive-calendar .fc-event,
+        .interactive-calendar .fc-event-main {
+            background-color: var(--event-bg-color) !important;
+            border-color: var(--event-border-color) !important;
+            color: var(--event-text-color) !important;
+        }
+
+        /* Glassmorphic Time grid styling */
+        .interactive-calendar .fc-timegrid-slot {
+          height: 3em !important;
+          border-color: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+        }
+
+        .interactive-calendar .fc-timegrid-slot-label {
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 0.875rem;
+          font-weight: 600;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .interactive-calendar .fc-timegrid-event {
+          border-radius: 0.75rem !important;
+          border-width: 1px !important;
+          border-style: solid !important;
+          backdrop-filter: blur(15px) !important;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+          padding: 0.5rem 0.75rem !important;
+          opacity: 0.95 !important;
+          transition: all 0.3s ease !important;
+        }
+
+        .interactive-calendar .fc-timegrid-event:hover {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+          opacity: 1 !important;
+        }
+
+        .interactive-calendar .fc-timegrid-event .fc-event-main,
+        .interactive-calendar .fc-timegrid-event .fc-event-title,
+        .interactive-calendar .fc-timegrid-event .fc-event-time {
+          color: var(--event-text-color) !important;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .interactive-calendar .fc-timegrid-event .fc-event-main {
+          font-weight: 600 !important;
+        }
+
+        /* Glassmorphic Selected date styling */
+        .interactive-calendar .fc-day-selected {
+          background: rgba(99, 102, 241, 0.2) !important;
+          backdrop-filter: blur(20px) !important;
+          border: 2px solid rgba(99, 102, 241, 0.5) !important;
+          box-shadow: 0 0 30px rgba(99, 102, 241, 0.3) !important;
+        }
+
+        .interactive-calendar .fc-day-selected .fc-daygrid-day-number {
+          background: linear-gradient(135deg, #6366F1, #8B5CF6) !important;
+          color: white !important;
           border-radius: 50% !important;
-          padding: 0.25em 0.4em !important;
-          display: inline-block !important;
-          min-width: 1.5em;
-          text-align: center;
+          width: 2.5rem !important;
+          height: 2.5rem !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4) !important;
+          backdrop-filter: blur(10px) !important;
         }
+
+        /* Additional glassmorphic effects */
+        .interactive-calendar .fc-scrollgrid-section-header > * {
+          background: rgba(255, 255, 255, 0.05) !important;
+          backdrop-filter: blur(10px) !important;
+        }
+
+        .interactive-calendar .fc-scrollgrid-section-body {
+          background: rgba(255, 255, 255, 0.02) !important;
+        }
+
+        .interactive-calendar .fc-timegrid-axis {
+          background: rgba(255, 255, 255, 0.05) !important;
+          backdrop-filter: blur(10px) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .interactive-calendar .fc-timegrid-divider {
+          background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .interactive-calendar .fc-scrollgrid-sync-table {
+          background: transparent !important;
         }
       `}</style>
+
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -328,36 +541,7 @@ export default function InteractiveCalendar({
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',
-          right: 'addTaskButton timeGridDay,timeGridWeek,dayGridMonth'
-        }}
-        customButtons={{
-          today: {
-            text: 'Today',
-            click: () => {
-              const calendarApi = calendarRef.current?.getApi();
-              calendarApi?.today();
-            }
-          },
-          addTaskButton: {
-            text: '+ Add Task',
-            click: () => {
-              if (onAddTask) {
-                // Use the currently selected date or current date
-                const calendarApi = calendarRef.current?.getApi();
-                const currentDate = calendarApi?.getDate() || new Date();
-
-                // Set time to current time rounded to nearest half hour
-                const now = new Date();
-                const minutes = now.getMinutes();
-                const roundedMinutes = minutes < 30 ? 30 : 0;
-                const hours = minutes < 30 ? now.getHours() : now.getHours() + 1;
-
-                currentDate.setHours(hours, roundedMinutes, 0, 0);
-
-                onAddTask(currentDate);
-              }
-            }
-          }
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
         }}
         events={events}
         editable={!!onTaskUpdate}
@@ -387,33 +571,13 @@ export default function InteractiveCalendar({
           day: 'numeric'
         }}
         nowIndicator={true}
-        eventMinHeight={30}
-        eventContent={(eventInfo) => {
-          const { type, isMissed, duration } = eventInfo.event.extendedProps;
-          const isMonthView = currentView === 'dayGridMonth';
-
-          if (isMonthView) {
-            return (
-              <div className="relative text-xs p-1 rounded truncate w-full h-full text-white">
-                {isMissed && <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border border-white" />}
-                {eventInfo.timeText} {eventInfo.event.title}
-              </div>
-            );
-          }
-
-          return (
-            <div className="relative p-2 h-full flex flex-col justify-between rounded-lg w-full text-white">
-              {isMissed && <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border border-white" />}
-              <div className="font-medium text-sm truncate">{eventInfo.event.title}</div>
-              <div className="flex justify-between items-center mt-1 text-xs">
-                <span>{eventInfo.timeText} • {duration}min</span>
-                <span className={`px-2 py-0.5 rounded capitalize ${isMissed ? 'bg-red-100 text-red-700' : 'bg-black/20'}`}>
-                  {isMissed ? 'Missed' : type.toLowerCase()}
-                </span>
-              </div>
-            </div>
-          );
-        }}
+        eventMinHeight={20}
+        eventContent={(eventInfo) => (
+          <div className="relative px-2 py-1 h-full flex items-center justify-between rounded w-full">
+            <div className="font-medium text-xs truncate flex-1 mr-2">{eventInfo.event.title}</div>
+            <div className="text-xs font-medium whitespace-nowrap opacity-80">{eventInfo.timeText}</div>
+          </div>
+        )}
       />
     </div>
   );

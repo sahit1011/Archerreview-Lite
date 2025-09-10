@@ -50,13 +50,13 @@ export default function MainNav() {
   ];
 
   return (
-    <nav className="bg-gradient-to-r from-archer-bright-teal to-archer-light-blue text-white shadow-md">
+    <nav className="glassmorphic-card border-b border-white/10 backdrop-blur-20 relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 font-bold text-xl flex items-center">
               <span className="text-white mr-1">Archer</span>
-              <span className="text-white">Review</span>
+              <span className="text-indigo-400">Review</span>
             </Link>
             <div className="hidden md:block">
               {/* @ts-ignore Framer Motion type issue with className */}
@@ -78,10 +78,10 @@ export default function MainNav() {
                     >
                       <Link
                         href={item.href}
-                        className={`px-4 py-2 rounded-md text-sm font-medium shadow-button ${
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                           isActive
-                            ? 'bg-white text-archer-bright-teal'
-                            : 'bg-white/20 text-white backdrop-blur-sm hover:bg-white/30'
+                            ? 'text-indigo-400 bg-indigo-500/20 backdrop-blur-sm'
+                            : 'text-gray-300 hover:text-white hover:bg-white/10 backdrop-blur-sm'
                         }`}
                       >
                         {item.name}
@@ -96,7 +96,7 @@ export default function MainNav() {
             <div className="ml-4 flex items-center md:ml-6">
               <button
                 type="button"
-                className="p-2 rounded-full bg-archer-bright-teal/20 text-archer-bright-teal hover:bg-archer-bright-teal/30 focus:outline-none shadow-button"
+                className="p-2 rounded-full text-gray-300 hover:text-white hover:bg-white/10 focus:outline-none transition-all"
               >
                 <span className="sr-only">View notifications</span>
                 <svg
@@ -121,7 +121,7 @@ export default function MainNav() {
                 <div>
                   <button
                     type="button"
-                    className="bg-archer-bright-teal text-white rounded-full flex items-center text-sm focus:outline-none shadow-button hover:bg-archer-bright-teal/90"
+                    className="bg-indigo-500/80 backdrop-blur-sm text-white rounded-full flex items-center text-sm focus:outline-none hover:bg-indigo-500 transition-all"
                   >
                     <span className="sr-only">Open user menu</span>
                     <div className="h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold">
@@ -137,7 +137,7 @@ export default function MainNav() {
             {/* @ts-ignore Framer Motion type issue with type and className */}
             <motion.button
               type="button"
-              className="bg-archer-bright-teal/20 inline-flex items-center justify-center p-2 rounded-md text-archer-bright-teal hover:bg-archer-bright-teal/30 focus:outline-none shadow-button"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-300 hover:text-white hover:bg-white/10 focus:outline-none transition-all"
               onClick={toggleMobileMenu}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -176,7 +176,7 @@ export default function MainNav() {
           >
             {/* @ts-ignore Framer Motion type issue with className */}
             <motion.div
-              className="px-2 pt-2 pb-3 space-y-2 sm:px-3 bg-white backdrop-blur-sm shadow-lg"
+              className="px-2 pt-2 pb-3 space-y-2 sm:px-3 glassmorphic-card shadow-lg border-t border-white/10"
               variants={fadeInDown}
               initial="hidden"
               animate="visible"
@@ -191,10 +191,10 @@ export default function MainNav() {
                   >
                     <Link
                       href={item.href}
-                      className={`block px-4 py-2 rounded-md text-base font-medium shadow-button ${
+                      className={`block px-4 py-2 rounded-md text-base font-medium transition-all ${
                         isActive
-                          ? 'bg-archer-bright-teal text-white'
-                          : 'bg-light-bg-secondary text-archer-dark-text hover:bg-light-bg-gradient-end'
+                          ? 'text-indigo-400 bg-indigo-500/20 backdrop-blur-sm'
+                          : 'text-gray-300 hover:text-white hover:bg-white/10 backdrop-blur-sm'
                       }`}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import AppLayout from '@/components/layouts/AppLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useUser } from '@/context/UserContext';
@@ -297,91 +298,250 @@ export default function ProgressPage() {
   return (
     <ProtectedRoute>
       <AppLayout>
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-archer-white">Progress Tracking</h1>
-          <p className="text-archer-light-text/80">Monitor your NCLEX preparation progress and readiness.</p>
+        <div className="mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center mb-4"
+          >
+            <motion.svg
+              className="w-10 h-10 mr-4 text-archer-bright-teal"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              animate={{
+                scale: [1, 1.1, 1],
+                color: ["rgba(20, 184, 166, 1)", "rgba(34, 197, 94, 1)", "rgba(20, 184, 166, 1)"]
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </motion.svg>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-archer-bright-teal via-blue-400 to-purple-400 bg-clip-text text-transparent tracking-tight">
+              Progress Tracking
+            </h1>
+          </motion.div>
+          <motion.p
+            className="text-lg text-archer-light-text/80 max-w-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            Monitor your NCLEX preparation progress and readiness with detailed analytics and insights.
+          </motion.p>
         </div>
 
         {/* Main Tabs */}
-        <div className="mb-6 border-b border-border-color-dark">
+        <motion.div
+          className="mb-8 glassmorphic-card rounded-xl p-2 shadow-lg"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+        >
           <nav className="flex -mb-px overflow-x-auto">
-            <button
-              className={`mr-8 py-4 px-1 border-b-2 font-medium text-sm ${
+            <motion.button
+              className={`mr-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
                 activeMainTab === 'overview'
-                  ? 'border-archer-bright-teal text-archer-bright-teal'
-                  : 'border-transparent text-archer-light-text/70 hover:text-archer-light-text hover:border-archer-light-text/30'
+                  ? 'bg-archer-bright-teal text-white shadow-lg transform scale-105'
+                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
               }`}
               onClick={() => setActiveMainTab('overview')}
+              whileHover={{ scale: activeMainTab === 'overview' ? 1.05 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
             >
-              Overview
-            </button>
-            <button
-              className={`mr-8 py-4 px-1 border-b-2 font-medium text-sm ${
+              <motion.span
+                animate={{
+                  color: activeMainTab === 'overview' ? '#ffffff' : undefined
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                Overview
+              </motion.span>
+            </motion.button>
+            <motion.button
+              className={`mr-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
                 activeMainTab === 'performance'
-                  ? 'border-archer-bright-teal text-archer-bright-teal'
-                  : 'border-transparent text-archer-light-text/70 hover:text-archer-light-text hover:border-archer-light-text/30'
+                  ? 'bg-archer-bright-teal text-archer-dark-bg shadow-lg transform scale-105'
+                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
               }`}
               onClick={() => setActiveMainTab('performance')}
+              whileHover={{ scale: activeMainTab === 'performance' ? 1.05 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
             >
-              Performance by Topic
-            </button>
-            <button
-              className={`mr-8 py-4 px-1 border-b-2 font-medium text-sm ${
+              <motion.span
+                animate={{
+                  color: activeMainTab === 'performance' ? '#0f172a' : undefined
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                Performance by Topic
+              </motion.span>
+            </motion.button>
+            <motion.button
+              className={`mr-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
                 activeMainTab === 'readiness'
-                  ? 'border-archer-bright-teal text-archer-bright-teal'
-                  : 'border-transparent text-archer-light-text/70 hover:text-archer-light-text hover:border-archer-light-text/30'
+                  ? 'bg-archer-bright-teal text-archer-dark-bg shadow-lg transform scale-105'
+                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
               }`}
               onClick={() => setActiveMainTab('readiness')}
+              whileHover={{ scale: activeMainTab === 'readiness' ? 1.05 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
             >
-              Readiness Details
-            </button>
-            <button
-              className={`mr-8 py-4 px-1 border-b-2 font-medium text-sm ${
+              <motion.span
+                animate={{
+                  color: activeMainTab === 'readiness' ? '#0f172a' : undefined
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                Readiness Details
+              </motion.span>
+            </motion.button>
+            <motion.button
+              className={`mr-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
                 activeMainTab === 'adaptations'
-                  ? 'border-archer-bright-teal text-archer-bright-teal'
-                  : 'border-transparent text-archer-light-text/70 hover:text-archer-light-text hover:border-archer-light-text/30'
+                  ? 'bg-archer-bright-teal text-archer-bright-teal shadow-lg transform scale-105'
+                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
               }`}
               onClick={() => setActiveMainTab('adaptations')}
+              whileHover={{ scale: activeMainTab === 'adaptations' ? 1.05 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
             >
-              Plan Adaptations
-            </button>
-            <button
-              className={`mr-8 py-4 px-1 border-b-2 font-medium text-sm ${
+              <motion.span
+                animate={{
+                  color: activeMainTab === 'adaptations' ? '#0f172a' : undefined
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                Plan Adaptations
+              </motion.span>
+            </motion.button>
+            <motion.button
+              className={`py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
                 activeMainTab === 'evolution'
-                  ? 'border-archer-bright-teal text-archer-bright-teal'
-                  : 'border-transparent text-archer-light-text/70 hover:text-archer-light-text hover:border-archer-light-text/30'
+                  ? 'bg-archer-bright-teal text-archer-dark-bg shadow-lg transform scale-105'
+                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
               }`}
               onClick={() => setActiveMainTab('evolution')}
+              whileHover={{ scale: activeMainTab === 'evolution' ? 1.05 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
             >
-              Long-Term Evolution
-            </button>
+              <motion.span
+                animate={{
+                  color: activeMainTab === 'evolution' ? '#0f172a' : undefined
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                Long-Term Evolution
+              </motion.span>
+            </motion.button>
           </nav>
-        </div>
+        </motion.div>
 
         {/* Tab Content */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-64">
-            <div className="w-16 h-16 border-t-4 border-archer-bright-teal border-solid rounded-full animate-spin"></div>
-            <p className="mt-4 text-archer-dark-text">Loading your progress data...</p>
-          </div>
+          <motion.div
+            className="flex flex-col items-center justify-center h-64 glassmorphic-card rounded-xl p-8"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <motion.div
+              className="w-16 h-16 border-t-4 border-archer-bright-teal border-solid rounded-full"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            ></motion.div>
+            <motion.p
+              className="mt-4 text-archer-light-text text-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              Loading your progress data...
+            </motion.p>
+          </motion.div>
         ) : error ? (
-          <div className="bg-red-100 border border-red-300 text-red-600 rounded-lg p-4 mb-6">
-            <div className="flex">
-              <svg className="h-5 w-5 text-red-600 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          <motion.div
+            className="glassmorphic-card p-8 text-center text-red-400 rounded-xl mb-6"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            whileHover={{
+              scale: 1.02,
+              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15), 0 0 5px rgba(239, 68, 68, 0.3)",
+              transition: { duration: 0.3 }
+            }}
+          >
+            <motion.div
+              className="flex items-center justify-center mb-4"
+              animate={{
+                scale: [1, 1.1, 1],
+                color: ["rgba(248, 113, 113, 1)", "rgba(239, 68, 68, 1)", "rgba(248, 113, 113, 1)"]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <svg className="w-8 h-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
-              <p>{error}</p>
-            </div>
-          </div>
+              <span className="text-xl font-semibold">Error Loading Progress</span>
+            </motion.div>
+            <p className="text-archer-light-text/80 mb-4">{error}</p>
+            <motion.button
+              className="px-6 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg font-medium transition-all shadow-button"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </motion.button>
+          </motion.div>
         ) : (
           <>
             {/* Overview Tab */}
             {activeMainTab === 'overview' && (
               <div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <motion.div
+                  className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.6 }}
+                >
                   {/* Readiness Score */}
-                  <div className="bg-card-background-dark rounded-xl shadow-md border border-border-color-dark p-6">
-                    <h2 className="text-xl font-semibold text-archer-white mb-6">NCLEX Readiness Score</h2>
+                  <motion.div
+                    className="glassmorphic-card rounded-xl shadow-lg border border-border-color-dark p-6"
+                    whileHover={{
+                      scale: 1.02,
+                      boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(20, 184, 166, 0.2)",
+                      transition: { duration: 0.4 }
+                    }}
+                  >
+                    <motion.div
+                      className="flex items-center mb-6"
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <motion.svg
+                        className="w-8 h-8 mr-3 text-archer-bright-teal"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        animate={{
+                          scale: [1, 1.1, 1],
+                          color: ["rgba(20, 184, 166, 1)", "rgba(34, 197, 94, 1)", "rgba(20, 184, 166, 1)"]
+                        }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </motion.svg>
+                      <h2 className="text-xl font-semibold text-archer-white">NCLEX Readiness Score</h2>
+                    </motion.div>
                     <div className="flex justify-center mb-6">
                       <div className="relative h-48 w-48">
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -408,19 +568,51 @@ export default function ProgressPage() {
                         </svg>
                       </div>
                     </div>
-                    <div className="text-center">
+                    <motion.div
+                      className="text-center"
+                      initial={{ opacity: 0.8 }}
+                      whileHover={{ opacity: 1 }}
+                      transition={{ duration: 0.2 }}
+                    >
                       <p className="text-sm text-archer-light-text/80 mb-2">
                         Your exam is in <span className="font-medium text-archer-light-text">{daysUntilExam} days</span>
                       </p>
                       <p className="text-sm text-archer-light-text/80">
                         Projected score: <span className="font-medium text-archer-light-text">{readinessScore.projectedScore}%</span>
                       </p>
-                    </div>
-                  </div>
+                    </motion.div>
+                  </motion.div>
 
                   {/* Task Completion */}
-                  <div className="bg-card-background-dark rounded-xl shadow-md border border-border-color-dark p-6">
-                    <h2 className="text-xl font-semibold text-archer-white mb-6">Task Completion</h2>
+                  <motion.div
+                    className="glassmorphic-card rounded-xl shadow-lg border border-border-color-dark p-6"
+                    whileHover={{
+                      scale: 1.02,
+                      boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(59, 130, 246, 0.2)",
+                      transition: { duration: 0.4 }
+                    }}
+                  >
+                    <motion.div
+                      className="flex items-center mb-6"
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <motion.svg
+                        className="w-8 h-8 mr-3 text-blue-400"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        animate={{
+                          scale: [1, 1.1, 1],
+                          color: ["rgba(96, 165, 250, 1)", "rgba(59, 130, 246, 1)", "rgba(96, 165, 250, 1)"]
+                        }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </motion.svg>
+                      <h2 className="text-xl font-semibold text-archer-white">Task Completion</h2>
+                    </motion.div>
                     <div className="flex justify-center mb-6">
                       <div className="relative h-40 w-40">
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -465,8 +657,8 @@ export default function ProgressPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
 
                 {/* Performance Charts */}
                 <PerformanceCharts
@@ -476,8 +668,38 @@ export default function ProgressPage() {
                 />
 
                 {/* Strengths & Weaknesses */}
-                <div className="bg-card-background-dark rounded-xl shadow-md border border-border-color-dark p-6 mb-6">
-                  <h2 className="text-xl font-semibold text-archer-white mb-6">Strengths & Weaknesses</h2>
+                <motion.div
+                  className="glassmorphic-card rounded-xl shadow-lg border border-border-color-dark p-6 mb-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8, duration: 0.6 }}
+                  whileHover={{
+                    scale: 1.01,
+                    boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(34, 197, 94, 0.2)",
+                    transition: { duration: 0.4 }
+                  }}
+                >
+                  <motion.div
+                    className="flex items-center mb-6"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <motion.svg
+                      className="w-8 h-8 mr-3 text-green-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      animate={{
+                        scale: [1, 1.1, 1],
+                        color: ["rgba(34, 197, 94, 1)", "rgba(20, 184, 166, 1)", "rgba(34, 197, 94, 1)"]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </motion.svg>
+                    <h2 className="text-xl font-semibold text-archer-white">Strengths & Weaknesses</h2>
+                  </motion.div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -532,7 +754,7 @@ export default function ProgressPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Monitor Agent Insights */}
                 <MonitorInsights userId="6818ed80539a47f3e1d5b9ab" />

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import { useOnboarding, OnboardingStep } from '@/context/OnboardingContext';
+import OnboardingProgressBar from '@/components/onboarding/OnboardingProgressBar';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -70,23 +71,15 @@ export default function WelcomePage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h1 className="text-3xl font-bold text-archer-bright-teal mb-4">
+        <h1 className="text-5xl font-bold gradient-text mb-6">
           Step 2: Set Your Exam Date
         </h1>
-        <p className="text-archer-light-text max-w-2xl mx-auto">
-          Now that you've created your account, let's set up your personalized NCLEX study plan. We'll need a few details to get started.
+        <p className="text-xl text-white/80 max-w-2xl mx-auto mb-8 glassmorphic p-4 rounded-xl backdrop-blur-xl">
+          Let's set up your personalized NCLEX study plan based on your exam date. This helps us create a schedule that works best for you.
         </p>
-        <div className="flex justify-center mt-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">✓</div>
-            <div className="w-16 h-1 bg-archer-bright-teal"></div>
-            <div className="w-8 h-8 rounded-full bg-archer-bright-teal text-archer-dark-teal flex items-center justify-center font-bold">2</div>
-            <div className="w-16 h-1 bg-archer-dark-teal/30"></div>
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">3</div>
-            <div className="w-16 h-1 bg-archer-dark-teal/30"></div>
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">4</div>
-          </div>
-        </div>
+        
+        <OnboardingProgressBar currentStep="examDate" />
+
       </motion.div>
 
       <motion.div
@@ -95,50 +88,53 @@ export default function WelcomePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-archer-white mb-4">When is your NCLEX exam?</h2>
-          <p className="text-archer-light-text mb-4">
+        <div className="glassmorphic p-8 rounded-xl">
+          <h2 className="text-2xl font-semibold text-white/90 mb-6">When is your NCLEX exam?</h2>
+          <p className="text-white/80 mb-6 text-lg">
             This helps us create a study plan that ensures you're fully prepared by your exam date.
           </p>
-          <div className="mt-4">
-            <label htmlFor="exam-date" className="block text-sm font-medium text-archer-light-text">
-              Exam Date
+          <div className="mt-6 space-y-4">
+            <label htmlFor="exam-date" className="block text-white/90 text-sm font-medium">
+              Select Your Exam Date
             </label>
-            <input
-              type="date"
-              id="exam-date"
-              name="exam-date"
-              className="mt-1 block w-full rounded-md border-archer-dark-teal/50 bg-archer-dark-teal/30 text-archer-white shadow-sm focus:border-archer-bright-teal focus:ring-archer-bright-teal"
-              min={new Date().toISOString().split('T')[0]}
-              value={selectedDate}
-              onChange={handleDateChange}
-            />
+            <div className="relative">
+              <input
+                type="date"
+                id="exam-date"
+                name="exam-date"
+                className="appearance-none bg-white/5 border border-white/10 rounded-xl w-full py-3 px-4 text-white placeholder-white/40 leading-tight focus:outline-none focus:ring-2 focus:ring-[#00A99D] focus:border-transparent transition-all duration-200"
+                min={new Date().toISOString().split('T')[0]}
+                value={selectedDate}
+                onChange={handleDateChange}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00A99D]/5 to-[#42B0E8]/5 rounded-xl pointer-events-none"></div>
+            </div>
             {error && (
-              <p className="mt-2 text-sm text-red-400">{error}</p>
+              <p className="text-red-400/90 text-sm mt-2">{error}</p>
             )}
           </div>
         </div>
 
-        <motion.div
-          className="flex justify-between"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
+        <div className="flex justify-between items-center mt-8">
           <Link
-            href="/"
-            className="bg-archer-dark-teal hover:bg-archer-dark-teal/80 text-archer-light-text font-medium py-2 px-4 rounded-lg text-center transition-colors shadow-button"
+            href="/onboarding/account-creation"
+            className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 font-medium transition-all duration-200 flex items-center gap-2 group"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
             Back
           </Link>
           <button
             onClick={handleContinue}
-            className="bg-archer-bright-teal hover:bg-archer-bright-teal/90 text-archer-dark-bg font-medium py-2 px-4 rounded-lg text-center transition-colors shadow-button"
-            disabled={!!error}
-          >
+            className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#00A99D] to-[#42B0E8] text-white font-medium transform hover:translate-y-[-1px] hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            disabled={!!error}>
             Continue
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
-        </motion.div>
+        </div>
       </motion.div>
     </OnboardingLayout>
   );

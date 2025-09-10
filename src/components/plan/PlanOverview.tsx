@@ -22,37 +22,47 @@ export default function PlanOverview({ examDate, studyHoursPerDay, availableDays
   // Calculate total study hours
   const totalStudyHours = totalStudyDays * studyHoursPerDay;
 
+  const overviewItems = [
+    {
+      label: 'Study Duration',
+      value: `${weeksUntilExam} Weeks`,
+      subValue: `${daysUntilExam} days until exam`,
+    },
+    {
+      label: 'Daily Study Time',
+      value: `${studyHoursPerDay} Hours`,
+      subValue: `${availableDays.length} days per week`,
+    },
+    {
+      label: 'Total Study Hours',
+      value: `${totalStudyHours} Hours`,
+      subValue: `Across ${totalStudyDays} study days`,
+    },
+  ];
+
   return (
-    <div className="bg-card-background-dark p-6 rounded-lg border border-white/10 shadow-card">
-      <h2 className="text-xl font-semibold text-archer-white mb-4">Plan Overview</h2>
+    <div>
+      <h2 className="text-2xl font-semibold text-white/90 mb-4 flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+        <span>Plan Overview</span>
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div
-          className="bg-card-background-lighter p-4 rounded-lg shadow-card border border-white/5"
-          whileHover={{ y: -5, boxShadow: "0 12px 24px rgba(0, 0, 0, 0.25), 0 6px 12px rgba(0, 0, 0, 0.15)" }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="text-archer-white/80 text-sm">Study Duration</div>
-          <div className="text-2xl font-bold text-archer-bright-teal">{weeksUntilExam} Weeks</div>
-          <div className="text-archer-white/70 text-xs mt-1">{daysUntilExam} days until exam</div>
-        </motion.div>
-        <motion.div
-          className="bg-card-background-lighter p-4 rounded-lg shadow-card border border-white/5"
-          whileHover={{ y: -5, boxShadow: "0 12px 24px rgba(0, 0, 0, 0.25), 0 6px 12px rgba(0, 0, 0, 0.15)" }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="text-archer-white/80 text-sm">Daily Study Time</div>
-          <div className="text-2xl font-bold text-archer-bright-teal">{studyHoursPerDay} Hours</div>
-          <div className="text-archer-white/70 text-xs mt-1">{availableDays.length} days per week</div>
-        </motion.div>
-        <motion.div
-          className="bg-card-background-lighter p-4 rounded-lg shadow-card border border-white/5"
-          whileHover={{ y: -5, boxShadow: "0 12px 24px rgba(0, 0, 0, 0.25), 0 6px 12px rgba(0, 0, 0, 0.15)" }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="text-archer-white/80 text-sm">Total Study Hours</div>
-          <div className="text-2xl font-bold text-archer-bright-teal">{totalStudyHours} Hours</div>
-          <div className="text-archer-white/70 text-xs mt-1">Across {totalStudyDays} study days</div>
-        </motion.div>
+        {overviewItems.map((item, index) => (
+          <motion.div
+            key={index}
+            className="bg-white/5 p-4 rounded-xl shadow-lg border border-white/10 backdrop-blur-md"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 + index * 0.1 }}
+            whileHover={{ y: -5, scale: 1.02, boxShadow: '0 10px 20px rgba(0,0,0,0.2)' }}
+          >
+            <div className="text-white/70 text-sm mb-1">{item.label}</div>
+            <div className="text-3xl font-bold text-teal-400">{item.value}</div>
+            <div className="text-white/60 text-xs mt-1">{item.subValue}</div>
+          </motion.div>
+        ))}
       </div>
     </div>
   );

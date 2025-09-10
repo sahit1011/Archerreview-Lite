@@ -2,7 +2,10 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import AppLayout from '@/components/layouts/AppLayout';
 import ChatInterface from '@/components/tutor/ChatInterface';
+import ClientOnly from '@/components/common/ClientOnly';
+import ParticleBackground from '@/components/common/ParticleBackground';
 
 export default function TutorPage() {
   const searchParams = useSearchParams();
@@ -35,8 +38,24 @@ export default function TutorPage() {
   }, [searchParams]);
 
   return (
-    <div className="h-[calc(100vh-64px)] overflow-hidden bg-card-background-dark">
-      <ChatInterface userId={userId} initialPrompt={initialPrompt} conversationTitle={conversationTitle} />
-    </div>
+    <AppLayout>
+      <div className="h-full w-full overflow-hidden relative">
+        <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 -z-10"></div>
+        <div className="relative z-0 text-white h-full">
+          {/* Enhanced Particle Background */}
+          <ClientOnly>
+            <ParticleBackground
+              particleCount={60}
+              colors={['#6366F1', '#8B5CF6', '#EC4899', '#10B981', '#0EA5E9']}
+              className="opacity-40"
+            />
+          </ClientOnly>
+
+          <div className="h-full">
+            <ChatInterface userId={userId} initialPrompt={initialPrompt} conversationTitle={conversationTitle} />
+          </div>
+        </div>
+      </div>
+    </AppLayout>
   );
 }

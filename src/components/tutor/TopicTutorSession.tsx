@@ -323,31 +323,34 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full relative">
+      {/* Background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 -z-10"></div>
+      
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white p-4 flex items-center justify-between">
+      <div className="glassmorphic-card border-b border-white/10 p-4 flex items-center justify-between">
         <div className="flex items-center">
           <button
             onClick={onBack || (() => router.push(userId ? `/dashboard?userId=${userId}` : '/dashboard'))}
-            className="mr-4 text-gray-500 hover:text-gray-700"
+            className="mr-4 text-gray-300 hover:text-white transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-xl font-semibold text-gray-800">{topic.name}</h1>
-            <p className="text-sm text-gray-500">{topic.category}</p>
+            <h1 className="text-xl font-semibold text-white">{topic.name}</h1>
+            <p className="text-sm text-gray-300">{topic.category}</p>
           </div>
         </div>
         <div className="flex space-x-2">
           <button
             onClick={handleScheduleReview}
-            className="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200"
+            className="px-3 py-1.5 glassmorphic text-indigo-300 rounded-lg text-sm font-medium hover:bg-white/10 transition-all"
           >
             Schedule Review
           </button>
           <button
             onClick={handleCompleteSession}
-            className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+            className="px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition-all"
           >
             Complete Session
           </button>
@@ -365,7 +368,7 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
                   key={message.id}
                   id={message.id}
                   content={message.content}
-                  role={message.role}
+                  role={message.role === 'system' ? 'assistant' : message.role}
                   timestamp={message.timestamp}
                 />
               ))}
@@ -375,7 +378,7 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
           </div>
 
           {/* Input area */}
-          <div className="border-t border-gray-200 bg-white p-4">
+          <div className="glassmorphic-card border-t border-white/10 p-4">
             <div className="max-w-3xl mx-auto">
               <ChatInput onSendMessage={handleSendMessage} isLoading={isTyping} />
             </div>
@@ -383,26 +386,26 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
         </div>
 
         {/* Sidebar with topic info and resources */}
-        <div className="w-80 border-l border-gray-200 bg-gray-50 overflow-y-auto hidden md:block">
+        <div className="w-80 glassmorphic border-l border-white/10 overflow-y-auto hidden md:block">
           <div className="p-4">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Topic Information</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">Topic Information</h2>
 
             {/* Performance stats */}
             {performance && (
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Your Performance</h3>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 space-y-2">
+                <h3 className="text-sm font-medium text-gray-300 mb-2">Your Performance</h3>
+                <div className="glassmorphic rounded-lg border border-white/10 p-3 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Average Score</span>
-                    <span className="font-medium">{performance.averageScore ? `${performance.averageScore}%` : 'N/A'}</span>
+                    <span className="text-sm text-gray-400">Average Score</span>
+                    <span className="font-medium text-white">{performance.averageScore ? `${performance.averageScore}%` : 'N/A'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Confidence</span>
-                    <span className="font-medium">{performance.confidenceLevel ? `${performance.confidenceLevel}/5` : 'N/A'}</span>
+                    <span className="text-sm text-gray-400">Confidence</span>
+                    <span className="font-medium text-white">{performance.confidenceLevel ? `${performance.confidenceLevel}/5` : 'N/A'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Completed Tasks</span>
-                    <span className="font-medium">{performance.completedTasks}</span>
+                    <span className="text-sm text-gray-400">Completed Tasks</span>
+                    <span className="font-medium text-white">{performance.completedTasks}</span>
                   </div>
                 </div>
               </div>
@@ -411,10 +414,10 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
             {/* Related content */}
             {relatedContent.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Related Resources</h3>
+                <h3 className="text-sm font-medium text-gray-300 mb-2">Related Resources</h3>
                 <div className="space-y-2">
                   {relatedContent.map((content) => (
-                    <div key={content._id} className="bg-white rounded-lg border border-gray-200 p-3">
+                    <div key={content._id} className="glassmorphic rounded-lg border border-white/10 p-3">
                       <div className="flex items-start">
                         <div className="flex-shrink-0 mt-1">
                           {content.type === 'READING' && <BookOpenIcon className="h-4 w-4 text-blue-500" />}
@@ -422,11 +425,11 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
                           {content.type === 'VIDEO' && <ClockIcon className="h-4 w-4 text-red-500" />}
                         </div>
                         <div className="ml-2">
-                          <h4 className="text-sm font-medium">{content.title}</h4>
-                          <p className="text-xs text-gray-500">{content.duration} min • {content.difficulty}</p>
+                          <h4 className="text-sm font-medium text-white">{content.title}</h4>
+                          <p className="text-xs text-gray-400">{content.duration} min • {content.difficulty}</p>
                           <button
                             onClick={() => router.push(`/content/${content._id}`)}
-                            className="text-xs text-indigo-600 hover:text-indigo-800 mt-1"
+                            className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 transition-colors"
                           >
                             View Resource
                           </button>

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useUser } from '@/context/UserContext';
+import OnboardingProgressBar from '@/components/onboarding/OnboardingProgressBar';
 
 export default function AccountCreationPage() {
   const router = useRouter();
@@ -79,41 +80,33 @@ export default function AccountCreationPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h1 className="text-3xl font-bold text-primary mb-4">
+        <h1 className="text-5xl font-bold gradient-text mb-6">
           Step 1: Create Your Account
         </h1>
-        <p className="text-foreground/80 max-w-2xl mx-auto">
+        <p className="text-xl text-white/80 max-w-2xl mx-auto mb-8 glassmorphic p-4 rounded-xl backdrop-blur-xl">
           Let's start by creating your account. This is the first step in setting up your personalized NCLEX study plan.
         </p>
-        <div className="flex justify-center mt-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold">1</div>
-            <div className="w-16 h-1 bg-border"></div>
-            <div className="w-8 h-8 rounded-full bg-card text-foreground/60 flex items-center justify-center font-bold">2</div>
-            <div className="w-16 h-1 bg-border"></div>
-            <div className="w-8 h-8 rounded-full bg-card text-foreground/60 flex items-center justify-center font-bold">3</div>
-            <div className="w-16 h-1 bg-border"></div>
-            <div className="w-8 h-8 rounded-full bg-card text-foreground/60 flex items-center justify-center font-bold">4</div>
-          </div>
-        </div>
+        
+        <OnboardingProgressBar currentStep="account" />
+
       </motion.div>
 
       {/* @ts-ignore Framer Motion type issue with className */}
       <motion.div
-        className="max-w-md mx-auto"
+        className="max-w-md w-full mx-auto"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
         {error && (
-          <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-600 px-4 py-3 rounded-md" role="alert">
+          <div className="mb-6 glassmorphic bg-red-500/5 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl backdrop-blur-xl" role="alert">
             <p>{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="glassmorphic p-8 rounded-xl space-y-6">
           <div>
-            <label htmlFor="name" className="block text-foreground text-sm font-medium mb-2">
+            <label htmlFor="name" className="block text-white/90 text-sm font-medium mb-2">
               Full Name
             </label>
             <input
@@ -124,13 +117,13 @@ export default function AccountCreationPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="appearance-none border border-border rounded-md w-full py-2 px-3 text-foreground leading-tight focus:outline-none focus:ring-2 focus:ring-primary"
+              className="appearance-none bg-white/5 border border-white/10 rounded-xl w-full py-3 px-4 text-white placeholder-white/40 leading-tight focus:outline-none focus:ring-2 focus:ring-[#00A99D] focus:border-transparent transition-all duration-200"
               placeholder="John Doe"
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-foreground text-sm font-medium mb-2">
+            <label htmlFor="email" className="block text-white/90 text-sm font-medium mb-2">
               Email Address
             </label>
             <input
@@ -141,13 +134,13 @@ export default function AccountCreationPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="appearance-none border border-border rounded-md w-full py-2 px-3 text-foreground leading-tight focus:outline-none focus:ring-2 focus:ring-primary"
+              className="appearance-none bg-white/5 border border-white/10 rounded-xl w-full py-3 px-4 text-white placeholder-white/40 leading-tight focus:outline-none focus:ring-2 focus:ring-[#00A99D] focus:border-transparent transition-all duration-200"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-foreground text-sm font-medium mb-2">
+            <label htmlFor="password" className="block text-white/90 text-sm font-medium mb-2">
               Password
             </label>
             <input
@@ -158,13 +151,13 @@ export default function AccountCreationPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="appearance-none border border-border rounded-md w-full py-2 px-3 text-foreground leading-tight focus:outline-none focus:ring-2 focus:ring-primary"
+              className="appearance-none bg-white/5 border border-white/10 rounded-xl w-full py-3 px-4 text-white placeholder-white/40 leading-tight focus:outline-none focus:ring-2 focus:ring-[#00A99D] focus:border-transparent transition-all duration-200"
               placeholder="••••••••"
             />
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-foreground text-sm font-medium mb-2">
+            <label htmlFor="confirmPassword" className="block text-white/90 text-sm font-medium mb-2">
               Confirm Password
             </label>
             <input
@@ -175,7 +168,7 @@ export default function AccountCreationPage() {
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="appearance-none border border-border rounded-md w-full py-2 px-3 text-foreground leading-tight focus:outline-none focus:ring-2 focus:ring-primary"
+              className="appearance-none bg-white/5 border border-white/10 rounded-xl w-full py-3 px-4 text-white placeholder-white/40 leading-tight focus:outline-none focus:ring-2 focus:ring-[#00A99D] focus:border-transparent transition-all duration-200"
               placeholder="••••••••"
             />
           </div>
@@ -184,17 +177,17 @@ export default function AccountCreationPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
+              className="modern-button w-full py-3 text-lg font-semibold hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
             >
               {isLoading ? 'Creating account...' : 'Continue'}
             </button>
           </div>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-foreground/80">
+        <div className="mt-8 text-center glassmorphic py-4 px-6 rounded-xl">
+          <p className="text-white/80">
             Already have an account?{' '}
-            <Link href="/auth/login" className="font-medium text-primary hover:text-primary/90">
+            <Link href="/auth/login" className="text-[#00A99D] hover:text-[#42B0E8] font-medium transition-colors duration-200">
               Sign in
             </Link>
           </p>

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Poppins, Montserrat, Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import "./modern-theme.css";
+import ClientThemeProvider from "@/components/ClientThemeProvider";
 import { UserProvider } from "@/context/UserContext";
 import { OnboardingProvider } from "@/context/OnboardingContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -44,7 +46,9 @@ export default function RootLayout({
         <ThemeProvider>
           <UserProvider>
             <OnboardingProvider>
-              {children}
+              <ClientThemeProvider>
+                {children}
+              </ClientThemeProvider>
             </OnboardingProvider>
           </UserProvider>
         </ThemeProvider>

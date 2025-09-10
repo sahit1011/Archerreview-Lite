@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import { useOnboarding, OnboardingStep } from '@/context/OnboardingContext';
+import OnboardingProgressBar from '@/components/onboarding/OnboardingProgressBar';
 
 export default function DiagnosticPage() {
   const { goToPreviousStep, goToNextStep, setDiagnosticSkipped, goToStep } = useOnboarding();
@@ -27,81 +28,89 @@ export default function DiagnosticPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h1 className="text-3xl font-bold text-archer-bright-teal mb-4">
+        <h1 className="text-5xl font-bold gradient-text mb-6">
           Step 3: Diagnostic Assessment
         </h1>
-        <p className="text-archer-light-text max-w-2xl mx-auto">
+        <p className="text-xl text-white/80 max-w-2xl mx-auto mb-8 glassmorphic p-4 rounded-xl backdrop-blur-xl">
           This optional assessment helps us personalize your study plan. It will take about 15-20 minutes to complete.
         </p>
-        <div className="flex justify-center mt-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">✓</div>
-            <div className="w-16 h-1 bg-archer-bright-teal"></div>
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">✓</div>
-            <div className="w-16 h-1 bg-archer-bright-teal"></div>
-            <div className="w-8 h-8 rounded-full bg-archer-bright-teal text-archer-dark-bg flex items-center justify-center font-bold">3</div>
-            <div className="w-16 h-1 bg-archer-dark-teal/30"></div>
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">4</div>
-          </div>
-        </div>
+        
+        <OnboardingProgressBar currentStep="assessment" />
+
       </motion.div>
 
       <motion.div
-        className="bg-archer-dark-teal/30 p-6 rounded-lg border border-archer-dark-teal/50 mb-8 shadow-card"
+        className="max-w-2xl mx-auto glassmorphic p-8 rounded-xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <h2 className="text-xl font-semibold text-archer-bright-teal mb-4">Why take the assessment?</h2>
-        <ul className="space-y-2 text-archer-light-text">
-          <li className="flex items-start">
-            <svg className="h-5 w-5 text-archer-bright-teal mr-2 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span>Identify your strengths and weaknesses</span>
+        <h2 className="text-2xl font-semibold text-white/90 mb-6">Why take the assessment?</h2>
+        <ul className="space-y-6">
+          <li className="flex items-start group">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#00A99D]/10 to-[#42B0E8]/10 flex items-center justify-center transform transition-all duration-300 group-hover:scale-105 mr-4 backdrop-blur-sm">
+              <svg className="h-6 w-6 text-[#00A99D]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-white/90 font-medium mb-1">Identify your strengths and weaknesses</h3>
+              <p className="text-white/70">Get a clear picture of which topics need more focus during your preparation.</p>
+            </div>
           </li>
-          <li className="flex items-start">
-            <svg className="h-5 w-5 text-archer-bright-teal mr-2 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span>Get a more personalized study plan</span>
+          <li className="flex items-start group">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#00A99D]/10 to-[#42B0E8]/10 flex items-center justify-center transform transition-all duration-300 group-hover:scale-105 mr-4 backdrop-blur-sm">
+              <svg className="h-6 w-6 text-[#00A99D]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-white/90 font-medium mb-1">Get a personalized study plan</h3>
+              <p className="text-white/70">We'll create a custom schedule that adapts to your knowledge level and exam date.</p>
+            </div>
           </li>
-          <li className="flex items-start">
-            <svg className="h-5 w-5 text-archer-bright-teal mr-2 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span>Focus your study time more efficiently</span>
+          <li className="flex items-start group">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#00A99D]/10 to-[#42B0E8]/10 flex items-center justify-center transform transition-all duration-300 group-hover:scale-105 mr-4 backdrop-blur-sm">
+              <svg className="h-6 w-6 text-[#00A99D]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-white/90 font-medium mb-1">Study more efficiently</h3>
+              <p className="text-white/70">Focus your time on the topics that will have the biggest impact on your success.</p>
+            </div>
           </li>
         </ul>
       </motion.div>
 
-      <motion.div
-        className="flex justify-between"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-      >
+      <div className="flex justify-between items-center mt-8 max-w-2xl mx-auto">
         <button
           onClick={goToPreviousStep}
-          className="bg-archer-dark-teal hover:bg-archer-dark-teal/80 text-archer-light-text font-medium py-2 px-4 rounded-lg text-center transition-colors shadow-button"
+          className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 font-medium transition-all duration-200 flex items-center gap-2 group"
         >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
           Back
         </button>
-        <div className="space-x-4">
+        <div className="flex items-center gap-4">
           <button
             onClick={handleSkip}
-            className="bg-archer-dark-teal hover:bg-archer-dark-teal/80 text-archer-light-text font-medium py-2 px-4 rounded-lg text-center transition-colors shadow-button"
+            className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 font-medium transition-all duration-200"
           >
             Skip for Now
           </button>
           <button
             onClick={handleStartAssessment}
-            className="bg-archer-bright-teal hover:bg-archer-bright-teal/90 text-archer-dark-bg font-medium py-2 px-4 rounded-lg text-center transition-colors shadow-button"
+            className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#00A99D] to-[#42B0E8] text-white font-medium transform hover:translate-y-[-1px] hover:shadow-lg transition-all duration-200 flex items-center gap-2"
           >
             Start Assessment
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
-      </motion.div>
+      </div>
     </OnboardingLayout>
   );
 }

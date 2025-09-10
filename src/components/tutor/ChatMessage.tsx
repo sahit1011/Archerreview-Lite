@@ -13,6 +13,7 @@ export interface ChatMessageProps {
 
 export default function ChatMessage({ content, role, timestamp }: ChatMessageProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
 
   const isUser = role === 'user';
   const formattedTime = new Intl.DateTimeFormat('en-US', {
@@ -20,6 +21,15 @@ export default function ChatMessage({ content, role, timestamp }: ChatMessagePro
     minute: 'numeric',
     hour12: true,
   }).format(new Date(timestamp));
+
+  // Generate a simple summary of long responses
+  const getSummary = (text: string): string => {
+    // Extract key points from the response
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+    const keyPoints = sentences.slice(0, 3).map(s => s.trim());
+
+    return `📋 **Summary:**\n${keyPoints.map(point => `• ${point}`).join('\n')}\n\n💡 *Click "Show full" to see complete response*`;
+  };
 
   // Format code blocks in the message
   const formatMessage = (text: string) => {
@@ -57,74 +67,87 @@ export default function ChatMessage({ content, role, timestamp }: ChatMessagePro
   };
 
   return (
-    <div className="mb-8 last:mb-4">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        {/* Message header with avatar and role */}
-        <div className="flex items-center mb-3">
-          <div className={`flex-shrink-0 h-9 w-9 rounded-full flex items-center justify-center mr-3 shadow-card`}
-               style={{ backgroundColor: isUser ? 'rgba(0, 169, 157, 0.2)' : 'rgba(66, 176, 232, 0.2)' }}>
-            {isUser ? (
-              <div className="h-9 w-9 rounded-full text-white flex items-center justify-center font-semibold shadow-card bg-archer-bright-teal">
-                U
-              </div>
-            ) : (
-              <SparklesIcon className="h-5 w-5 text-archer-light-blue" />
-            )}
-          </div>
-          <div className="text-sm font-semibold text-white">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className={`mb-6 last:mb-2 ${isUser ? 'flex justify-end' : 'flex justify-start'}`}
+    >
+      <div className={`max-w-[80%] ${isUser ? 'order-2' : 'order-1'}`}>
+        {/* Message header */}
+        <div className={`flex items-center mb-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
+          <div className="text-xs text-gray-400 font-medium">
             {isUser ? 'You' : 'AI Tutor'}
           </div>
-          <div className="text-xs text-archer-light-text/70 ml-2">
+          <div className="text-xs text-gray-500 ml-2">
             {formattedTime}
           </div>
         </div>
 
         {/* Message content */}
-        <div className="pl-12">
+        <div className={`relative group ${isUser ? 'ml-auto' : 'mr-auto'}`}>
           <div
-            className={`${content.length > 300 && !isExpanded ? 'line-clamp-5' : ''} p-5 rounded-xl text-white shadow-card`}
-            style={{
-              backgroundColor: isUser ? 'var(--card-background-dark)' : 'var(--card-background-darker)',
-              borderLeft: isUser ? '4px solid var(--archer-bright-teal)' : '4px solid var(--archer-light-blue)'
-            }}>
-            {formatMessage(content)}
+            className={`px-4 py-3 rounded-2xl shadow-lg backdrop-blur-sm border ${
+              isUser
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-indigo-400/30 rounded-br-md'
+                : 'bg-white/10 text-white border-white/20 rounded-bl-md'
+            }`}
+          >
+            <div className={`${content.length > 500 && !isExpanded ? 'line-clamp-6' : ''} text-sm leading-relaxed`}>
+              {showSummary && !isUser ? getSummary(content) : formatMessage(content)}
+            </div>
+
+            {content.length > 500 && !isUser && (
+              <div className="mt-2 flex items-center space-x-2">
+                <button
+                  onClick={() => setShowSummary(!showSummary)}
+                  className="text-xs font-medium text-blue-300 hover:text-blue-200 transition-colors"
+                >
+                  {showSummary ? 'Show full' : 'Show summary'}
+                </button>
+                <span className="text-gray-500">•</span>
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-xs font-medium text-gray-300 hover:text-white transition-colors"
+                >
+                  {isExpanded ? 'Show less' : 'Show more'}
+                </button>
+              </div>
+            )}
+
+            {content.length > 500 && isUser && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mt-2 text-xs font-medium text-indigo-200 hover:text-white transition-colors"
+              >
+                {isExpanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
           </div>
 
-          {content.length > 300 && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="mt-2 text-sm font-medium text-archer-light-blue hover:text-archer-bright-teal transition-colors"
-            >
-              {isExpanded ? 'Show less' : 'Show more'}
-            </button>
-          )}
-
-          {/* Only show for AI messages */}
+          {/* Message actions for AI responses */}
           {!isUser && (
-            <div className="mt-3 flex space-x-3">
-              <button className="text-archer-dark-teal p-2 rounded-full bg-archer-bright-teal hover:bg-archer-bright-teal/90 shadow-button hover:shadow-card-hover transform hover:-translate-y-1 transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+            <div className="flex items-center space-x-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                title="Copy message"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               </button>
-              <button className="text-archer-dark-teal p-2 rounded-full bg-archer-bright-teal hover:bg-archer-bright-teal/90 shadow-button hover:shadow-card-hover transform hover:-translate-y-1 transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                </svg>
-              </button>
-              <button className="text-archer-dark-teal p-2 rounded-full bg-archer-bright-teal hover:bg-archer-bright-teal/90 shadow-button hover:shadow-card-hover transform hover:-translate-y-1 transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+              <button
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                title="Regenerate response"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
             </div>
           )}
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 }

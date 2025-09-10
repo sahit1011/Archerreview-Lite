@@ -42,7 +42,12 @@ export default function WeeklySchedulePreview({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-archer-white mb-4">Weekly Schedule</h2>
+      <h2 className="text-2xl font-semibold text-white/90 mb-4 flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span>Weekly Schedule Preview</span>
+      </h2>
       <div className="grid grid-cols-7 gap-2 mb-4">
         {daysOfWeek.map((day, index) => {
           const isAvailable = availableDays.includes(day.id);
@@ -52,37 +57,37 @@ export default function WeeklySchedulePreview({
               className="text-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * index }}
+              transition={{ delay: 0.5 + index * 0.05 }}
               whileHover={isAvailable ? { scale: 1.05 } : {}}
             >
-              <div className="mb-2 text-sm font-medium text-archer-white">{day.label}</div>
+              <div className="mb-2 text-sm font-medium text-white/70">{day.label}</div>
               <div
-                className={`h-24 rounded-md flex items-center justify-center shadow-card ${
+                className={`h-28 rounded-xl flex items-center justify-center shadow-lg border transition-all duration-300 ${
                   isAvailable
-                    ? 'bg-card-background-lighter border border-white/10'
-                    : 'bg-card-background-dark border border-white/5'
+                    ? 'bg-white/10 border-white/20 backdrop-blur-md'
+                    : 'bg-white/5 border-white/10'
                 }`}
               >
                 {isAvailable ? (
                   <div className="text-center p-2">
-                    <div className="text-archer-bright-teal font-medium">{studyHoursPerDay} hrs</div>
-                    <div className="text-archer-light-blue text-xs">{preferredStudyTime}</div>
+                    <div className="text-teal-400 font-bold text-xl">{studyHoursPerDay}h</div>
+                    <div className="text-white/60 text-xs capitalize">{preferredStudyTime}</div>
                   </div>
                 ) : (
-                  <div className="text-archer-white/40 text-sm">Off</div>
+                  <div className="text-white/40 text-sm">Off</div>
                 )}
               </div>
             </motion.div>
           );
         })}
       </div>
-      <div className="bg-card-background-lighter p-4 rounded-lg border border-white/10 text-sm text-archer-white shadow-card">
+      <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-sm text-white/80 shadow-lg backdrop-blur-md">
         <div className="flex items-center">
-          <svg className="h-5 w-5 text-archer-bright-teal mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="h-5 w-5 text-teal-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
           </svg>
           <span>
-            Your preferred study time is during the <span className="font-medium text-archer-bright-teal">{preferredStudyTime}</span> ({timeRange}).
+            Your preferred study time is during the <span className="font-medium text-teal-400 capitalize">{preferredStudyTime}</span> ({timeRange}).
           </span>
         </div>
       </div>

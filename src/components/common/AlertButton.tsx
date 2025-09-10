@@ -97,18 +97,18 @@ const AlertButton: React.FC<AlertButtonProps> = ({ userId, position = 'top-right
     <div className="relative z-50">
       <button
         onClick={togglePopup}
-        className={`relative p-2 rounded-full bg-card-background-lighter shadow-button hover:bg-archer-dark-teal/70 transition-all transform hover:-translate-y-1 ${loading ? 'opacity-70' : ''}`}
+        className={`relative p-3 rounded-full bg-white shadow-lg hover:shadow-xl border border-gray-200 hover:bg-gray-50 transition-all transform hover:-translate-y-1 ${loading ? 'opacity-70' : ''}`}
         disabled={loading}
         aria-label="Alerts"
       >
         {unreadCount > 0 ? (
-          <BellAlertIcon className="h-6 w-6 text-archer-bright-teal" />
+          <BellAlertIcon className="h-6 w-6 text-indigo-600" />
         ) : (
-          <BellIcon className="h-6 w-6 text-archer-light-text" />
+          <BellIcon className="h-6 w-6 text-gray-600" />
         )}
 
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-400 text-archer-dark-teal text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-button">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

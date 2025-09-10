@@ -18,8 +18,8 @@ interface FocusAreasProps {
 
 // Helper function to get category display name
 const getCategoryDisplayName = (category: string) => {
-  const words = category.split('_');
-  return words.map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ');
+  const words = category.replace(/_/g, ' ').toLowerCase().split(' ');
+  return words.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
 // Default focus areas if diagnostic was skipped
@@ -87,13 +87,18 @@ export default function FocusAreas({
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-archer-white">Focus Areas</h2>
+        <h2 className="text-2xl font-semibold text-white/90 flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>Focus Areas</span>
+        </h2>
         {diagnosticSkipped && (
           <button
             onClick={handleEditClick}
-            className="text-archer-bright-teal hover:text-archer-light-blue text-sm font-medium flex items-center transition-colors"
+            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 font-medium text-sm transition-all duration-200 flex items-center gap-2 group"
           >
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 mr-1 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
             Customize Priorities
@@ -102,16 +107,16 @@ export default function FocusAreas({
       </div>
 
       {diagnosticSkipped && (
-        <div className="bg-card-background-lighter p-4 rounded-lg border border-white/10 mb-4 shadow-card">
+        <div className="bg-white/5 p-4 rounded-xl border border-white/10 mb-4 shadow-lg backdrop-blur-md">
           <div className="flex items-start">
-            <svg className="h-5 w-5 text-archer-bright-teal mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="h-5 w-5 text-teal-400 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
             </svg>
             <div>
-              <h3 className="font-medium text-archer-bright-teal">
+              <h3 className="font-medium text-teal-400">
                 {customizedTopics.length > 0 ? 'Customized Focus Areas' : 'Default Focus Areas'}
               </h3>
-              <p className="text-sm text-archer-white mt-1">
+              <p className="text-sm text-white/80 mt-1">
                 {customizedTopics.length > 0
                   ? 'You have customized your focus areas. You can edit them again using the "Customize Priorities" button.'
                   : 'Since you skipped the diagnostic assessment, we\'ve created a balanced plan based on NCLEX exam weightings. You can customize these priorities using the "Customize Priorities" button.'}
@@ -124,44 +129,38 @@ export default function FocusAreas({
       <div className="space-y-3">
         {focusAreas.map((area, index) => {
           // Determine color and priority based on importance
-          let color, priority, bgColor, textColor;
+          let colorClass, priorityText;
 
           if (area.importance === 'High') {
-            color = 'border-red-500/20';
-            bgColor = 'bg-red-500/10';
-            textColor = 'text-red-400';
-            priority = 'High Priority';
+            colorClass = 'border-red-400/30 bg-red-400/10 text-red-300';
+            priorityText = 'High Priority';
           } else if (area.importance === 'Medium') {
-            color = 'border-amber-500/20';
-            bgColor = 'bg-amber-500/10';
-            textColor = 'text-amber-400';
-            priority = 'Medium Priority';
+            colorClass = 'border-amber-400/30 bg-amber-400/10 text-amber-300';
+            priorityText = 'Medium Priority';
           } else {
-            color = 'border-green-500/20';
-            bgColor = 'bg-green-500/10';
-            textColor = 'text-green-400';
-            priority = 'Low Priority';
+            colorClass = 'border-sky-400/30 bg-sky-400/10 text-sky-300';
+            priorityText = 'Low Priority';
           }
 
           return (
             <motion.div
               key={area.category}
-              className={`p-3 rounded-lg border ${color} ${bgColor} flex justify-between items-center shadow-card`}
+              className={`p-3 rounded-lg border flex justify-between items-center shadow-lg backdrop-blur-md ${colorClass}`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 * index }}
-              whileHover={{ scale: 1.02, boxShadow: "0 12px 24px rgba(0, 0, 0, 0.25), 0 6px 12px rgba(0, 0, 0, 0.15)" }}
+              transition={{ delay: 0.6 + index * 0.05 }}
+              whileHover={{ scale: 1.02, y: -2, boxShadow: '0 8px 16px rgba(0,0,0,0.2)' }}
             >
               <div>
-                <div className={`font-medium ${textColor}`}>{getCategoryDisplayName(area.category)}</div>
+                <div className="font-medium">{getCategoryDisplayName(area.category)}</div>
                 {diagnosticCompleted && categoryScores.length > 0 && (
-                  <div className="text-xs mt-1 text-archer-white/70">
+                  <div className="text-xs mt-1 text-white/70">
                     Score: {Math.round(categoryScores.find(s => s.category === area.category)?.score || 0)}%
                   </div>
                 )}
               </div>
-              <div className={`text-xs font-medium px-2 py-1 rounded-full bg-card-background-dark ${textColor} shadow-button`}>
-                {priority}
+              <div className="text-xs font-medium px-2 py-1 rounded-full bg-white/5">
+                {priorityText}
               </div>
             </motion.div>
           );

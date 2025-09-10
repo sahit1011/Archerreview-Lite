@@ -15,10 +15,10 @@ export async function GET(
     await dbConnect();
 
     // Get the conversation ID from params
-    const id = await Promise.resolve(params.id);
+    const { id } = await params;
 
     // Find conversation by ID
-    const conversation = await Conversation.findOne({ id });
+    const conversation = await (Conversation as any).findOne({ id });
 
     // Check if conversation exists
     if (!conversation) {
@@ -67,10 +67,10 @@ export async function PUT(
     const body = await request.json();
 
     // Get the conversation ID from params
-    const id = await Promise.resolve(params.id);
+    const { id } = await params;
 
     // Find conversation by ID
-    const conversation = await Conversation.findOne({ id });
+    const conversation = await (Conversation as any).findOne({ id });
 
     // Check if conversation exists
     if (!conversation) {
@@ -126,10 +126,10 @@ export async function DELETE(
     await dbConnect();
 
     // Get the conversation ID from params
-    const id = await Promise.resolve(params.id);
+    const { id } = await params;
 
     // Find conversation by ID
-    const conversation = await Conversation.findOne({ id });
+    const conversation = await (Conversation as any).findOne({ id });
 
     // Check if conversation exists
     if (!conversation) {

@@ -3,11 +3,18 @@ import { getAgentPrompt } from '../utils/agentPrompts'; // Changed to relative
 import { setCacheItem, getCacheItem } from '../utils/serverCacheUtils'; // Changed to relative
 
 // Initialize the Google Generative AI client
-const apiKey = process.env.GOOGLE_GENERATIVE_AI_KEY || '';
-const modelName = process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pro';
+const geminiApiKey = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_KEY || '';
+const geminiModelName = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pro';
 
-// Create a client with the API key
-const genAI = new GoogleGenerativeAI(apiKey);
+// Initialize OpenRouter configuration
+const openRouterApiKey = process.env.OPENROUTER_API_KEY || '';
+const openRouterModel = process.env.OPENROUTER_MODEL || 'qwen/qwen3-coder:free';
+
+console.log('AgentAI - Gemini API Key:', geminiApiKey ? 'API key is set' : 'API key is not set');
+console.log('AgentAI - OpenRouter API Key:', openRouterApiKey ? 'API key is set' : 'API key is not set');
+
+// Create Gemini client (only if API key is available)
+const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
 
 // Safety settings to prevent harmful content
 const safetySettings = [
@@ -53,6 +60,53 @@ let lastHourReset = Date.now();
 
 // Agent types
 export type AgentType = 'monitor' | 'adaptation' | 'feedback' | 'remediation' | 'scheduler';
+
+/**
+ * Call OpenRouter API as fallback
+ */
+async function callOpenRouter(prompt: string): Promise<string> {
+  try {
+    if (!openRouterApiKey) {
+      throw new Error('OpenRouter API key not configured');
+    }
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openRouterApiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+        'X-Title': 'ArcherReview AI Agent'
+      },
+      body: JSON.stringify({
+        model: openRouterModel,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2048
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response from OpenRouter API');
+    }
+
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error calling OpenRouter:', error);
+    throw error;
+  }
+}
 
 /**
  * Reset rate limiting counters if needed
@@ -124,34 +178,51 @@ export async function generateAgentResponse(
   console.time(`[AgentAI] ${agentType} response time`);
 
   try {
-    // Check if API key is available
-    if (!apiKey) {
-      console.error('[AgentAI] Google Generative AI API key is not configured');
-      return { text: getFallbackResponse(agentType, prompt), cached: false };
+    // Try Google Gemini first
+    if (genAI && geminiApiKey) {
+      try {
+        // Check rate limits
+        if (isRateLimited()) {
+          console.warn('[AgentAI] Rate limit exceeded, falling back to OpenRouter');
+          // Fall through to OpenRouter
+        } else {
+          // Get the model
+          const model = genAI.getGenerativeModel({ model: geminiModelName });
+
+          // Get the agent-specific prompt
+          const systemPrompt = getAgentPrompt(agentType, context);
+
+          // Generate content with retries
+          const result = await generateWithRetries(model, systemPrompt, prompt);
+
+          // Record the API request for rate limiting
+          recordApiRequest();
+
+          // Extract the response text
+          const text = result.response.text();
+
+          // Calculate a simple confidence score based on response length and coherence
+          const confidence = calculateConfidence(text);
+
+          // Cache the response if a cache key is provided
+          if (cacheKey) {
+            setCacheItem(cacheKey, { text, confidence }, cacheDuration);
+          }
+
+          console.timeEnd(`[AgentAI] ${agentType} response time`);
+          return { text, cached: false, confidence };
+        }
+      } catch (geminiError) {
+        console.warn('[AgentAI] Gemini API failed, falling back to OpenRouter:', geminiError);
+        // Fall through to OpenRouter
+      }
     }
 
-    // Check rate limits
-    if (isRateLimited()) {
-      console.warn('[AgentAI] Rate limit exceeded, using fallback response');
-      return { text: getFallbackResponse(agentType, prompt), cached: false };
-    }
-
-    // Get the model
-    const model = genAI.getGenerativeModel({ model: modelName });
-
-    // Get the agent-specific prompt
+    // Fallback to OpenRouter
+    console.log('[AgentAI] Using OpenRouter fallback for agent response');
     const systemPrompt = getAgentPrompt(agentType, context);
-
-    // Generate content with retries
-    const result = await generateWithRetries(model, systemPrompt, prompt);
-
-    // Record the API request for rate limiting
-    recordApiRequest();
-
-    // Extract the response text
-    const text = result.response.text();
-
-    // Calculate a simple confidence score based on response length and coherence
+    const fullPrompt = `${systemPrompt}\n\nUser Input: ${prompt}`;
+    const text = await callOpenRouter(fullPrompt);
     const confidence = calculateConfidence(text);
 
     // Cache the response if a cache key is provided
@@ -161,6 +232,7 @@ export async function generateAgentResponse(
 
     console.timeEnd(`[AgentAI] ${agentType} response time`);
     return { text, cached: false, confidence };
+
   } catch (error) {
     console.error(`[AgentAI] Error generating ${agentType} agent response:`, error);
     console.timeEnd(`[AgentAI] ${agentType} response time`);

@@ -1,61 +1,53 @@
-'use client';
+"use client";
 
-import React, { ReactNode } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { cardHover } from '@/utils/animationUtils';
-import { useAnimateInView } from '@/hooks/useAnimation';
+import { fadeIn, hoverScale, hoverGlow } from '@/utils/animationUtils';
 
 interface AnimatedCardProps {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
-  interactive?: boolean;
-  onClick?: () => void;
   delay?: number;
-  animate?: boolean;
+  hover?: boolean;
+  glow?: boolean;
+  onClick?: () => void;
+  gradient?: boolean;
 }
 
-export default function AnimatedCard({
+const AnimatedCard: React.FC<AnimatedCardProps> = ({
   children,
   className = '',
-  interactive = false,
-  onClick,
   delay = 0,
-  animate = true,
-}: AnimatedCardProps) {
-  const { ref, shouldAnimate } = useAnimateInView({ delay });
+  hover = true,
+  glow = false,
+  onClick,
+  gradient = false
+}) => {
+  const baseClasses = `
+    dashboard-card rounded-xl
+    ${gradient ? 'bg-gradient-to-br from-white/95 to-white/85' : ''}
+    ${onClick ? 'cursor-pointer' : ''}
+    ${className}
+  `;
 
-  // Base styles - removed bg-white to allow custom backgrounds
-  const baseStyles = 'rounded-lg overflow-hidden';
-
-  // Interactive styles
-  const interactiveStyles = interactive ? 'cursor-pointer' : '';
-
-  // Combined styles
-  const combinedStyles = `${baseStyles} ${interactiveStyles} ${className}`;
+  const hoverEffects = hover ? {
+    whileHover: glow ? { ...hoverScale, ...hoverGlow } : hoverScale,
+    whileTap: { scale: 0.98 }
+  } : {};
 
   return (
     <motion.div
-      ref={ref as React.RefObject<HTMLDivElement>}
-      className={combinedStyles}
-      initial={animate ? "hidden" : "visible"}
-      animate={shouldAnimate ? "visible" : "hidden"}
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-          opacity: 1,
-          y: 0,
-          transition: {
-            duration: 0.4,
-            delay: delay,
-            ease: [0.25, 0.1, 0.25, 1.0]
-          }
-        }
-      }}
-      whileHover={interactive ? "hover" : undefined}
-      variants={interactive ? cardHover : undefined}
+      className={baseClasses}
+      initial="hidden"
+      animate="visible"
+      variants={fadeIn}
+      transition={{ delay }}
       onClick={onClick}
+      {...hoverEffects}
     >
       {children}
     </motion.div>
   );
-}
+};
+
+export default AnimatedCard;

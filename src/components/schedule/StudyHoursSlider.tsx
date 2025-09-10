@@ -30,12 +30,7 @@ export default function StudyHoursSlider({
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseFloat(e.target.value);
     setLocalValue(newValue);
-  };
-
-  // Handle slider release
-  const handleSliderRelease = () => {
-    onChange(localValue);
-    setIsDragging(false);
+    onChange(newValue); // Update parent state immediately for smoother feedback
   };
 
   // Calculate the percentage for styling
@@ -46,7 +41,7 @@ export default function StudyHoursSlider({
 
   return (
     <div className="w-full">
-      <div className="flex items-center mb-2">
+      <div className="flex items-center">
         <input
           type="range"
           min={min}
@@ -55,23 +50,23 @@ export default function StudyHoursSlider({
           value={localValue}
           onChange={handleSliderChange}
           onMouseDown={() => setIsDragging(true)}
-          onMouseUp={handleSliderRelease}
+          onMouseUp={() => setIsDragging(false)}
           onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={handleSliderRelease}
-          className="w-full h-2 bg-archer-dark-teal/30 rounded-lg appearance-none cursor-pointer"
+          onTouchEnd={() => setIsDragging(false)}
+          className="w-full h-3 appearance-none cursor-pointer rounded-full bg-white/10"
           style={{
-            background: `linear-gradient(to right, #00A99D 0%, #00A99D ${percentage}%, rgba(0, 169, 157, 0.2) ${percentage}%, rgba(0, 169, 157, 0.2) 100%)`
+            background: `linear-gradient(to right, #0D9488 0%, #059669 ${percentage}%, rgba(255, 255, 255, 0.1) ${percentage}%, rgba(255, 255, 255, 0.1) 100%)`
           }}
         />
         <motion.div
-          className="ml-4 min-w-[3rem] text-center font-medium text-archer-bright-teal bg-archer-dark-teal/30 px-2 py-1 rounded-md shadow-card"
+          className="ml-4 min-w-[4rem] text-center font-bold text-white bg-gradient-to-br from-teal-500 to-green-600 px-3 py-2 rounded-lg shadow-lg shadow-teal-500/30"
           animate={{ scale: isDragging ? 1.1 : 1 }}
-          transition={{ duration: 0.2 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
-          {displayValue} {localValue === 1 ? 'hour' : 'hours'}
+          {displayValue}
         </motion.div>
       </div>
-      <div className="flex justify-between text-xs text-archer-light-text/70 px-1">
+      <div className="flex justify-between text-xs text-white/50 px-1 mt-2">
         <span>{min} hour</span>
         <span>{max} hours</span>
       </div>

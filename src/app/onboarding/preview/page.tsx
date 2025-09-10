@@ -8,6 +8,7 @@ import PlanOverview from '@/components/plan/PlanOverview';
 import WeeklySchedulePreview from '@/components/plan/WeeklySchedulePreview';
 import FocusAreas, { TopicPriority } from '@/components/plan/FocusAreas';
 import { useOnboarding } from '@/context/OnboardingContext';
+import OnboardingProgressBar from '@/components/onboarding/OnboardingProgressBar';
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -208,155 +209,142 @@ export default function PreviewPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h1 className="text-3xl font-bold text-archer-bright-teal mb-4">
+        <h1 className="text-5xl font-bold gradient-text mb-6">
           Final Step: Review Your Study Plan
         </h1>
-        <p className="text-archer-light-text max-w-2xl mx-auto">
+        <p className="text-xl text-white/80 max-w-2xl mx-auto mb-8 glassmorphic p-4 rounded-xl backdrop-blur-xl">
           Based on your inputs, we've created a personalized study plan to help you prepare for your NCLEX exam.
         </p>
-        <div className="flex justify-center mt-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">✓</div>
-            <div className="w-16 h-1 bg-archer-bright-teal"></div>
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">✓</div>
-            <div className="w-16 h-1 bg-archer-bright-teal"></div>
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">✓</div>
-            <div className="w-16 h-1 bg-archer-bright-teal"></div>
-            <div className="w-8 h-8 rounded-full bg-archer-dark-teal text-archer-light-text flex items-center justify-center font-bold">✓</div>
-          </div>
-        </div>
+        
+        <OnboardingProgressBar currentStep="preview" />
+
       </motion.div>
 
       <motion.div
-        className="mb-8 space-y-8"
+        className="max-w-4xl mx-auto glassmorphic p-8 rounded-xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        {/* Plan Overview */}
-        {examDate && (
-          <PlanOverview
-            examDate={examDate}
-            studyHoursPerDay={studyHoursPerDay}
+        <div className="space-y-12">
+          {/* Plan Overview */}
+          {examDate && (
+            <PlanOverview
+              examDate={examDate}
+              studyHoursPerDay={studyHoursPerDay}
+              availableDays={availableDays}
+            />
+          )}
+
+          {/* Weekly Schedule */}
+          <WeeklySchedulePreview
             availableDays={availableDays}
+            studyHoursPerDay={studyHoursPerDay}
+            preferredStudyTime={preferredStudyTime}
           />
-        )}
 
-        {/* Weekly Schedule */}
-        <WeeklySchedulePreview
-          availableDays={availableDays}
-          studyHoursPerDay={studyHoursPerDay}
-          preferredStudyTime={preferredStudyTime}
-        />
+          {/* Focus Areas */}
+          <FocusAreas
+            diagnosticCompleted={diagnosticCompleted}
+            diagnosticSkipped={diagnosticSkipped}
+            categoryScores={categoryScores}
+            onUpdatePriorities={setCustomizedTopics}
+          />
 
-        {/* Focus Areas */}
-        <FocusAreas
-          diagnosticCompleted={diagnosticCompleted}
-          diagnosticSkipped={diagnosticSkipped}
-          categoryScores={categoryScores}
-          onUpdatePriorities={setCustomizedTopics}
-        />
-
-        {/* Weekly Breakdown */}
-        <div>
-          <h2 className="text-xl font-semibold text-archer-white mb-4">Weekly Breakdown</h2>
-          <div className="space-y-4">
-            {getWeeklyBreakdown().map((week, index) => (
-              <motion.div
-                key={week.weekNumber}
-                className="border border-white/10 bg-card-background-lighter rounded-lg p-4 shadow-card"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + (index * 0.1) }}
-                whileHover={{
-                  scale: 1.02,
-                  boxShadow: "0 12px 24px rgba(0, 0, 0, 0.25), 0 6px 12px rgba(0, 0, 0, 0.15)",
-                  y: -5
-                }}
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-medium text-archer-bright-teal">Week {week.weekNumber}</h3>
-                  <span className="text-sm text-archer-white/70">{week.dateRange}</span>
-                </div>
-                <div className="text-archer-white">{week.topics}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        <motion.div
-          className="bg-card-background-lighter p-4 rounded-lg border border-white/10 shadow-card"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          <div className="flex items-start">
-            <svg className="h-5 w-5 text-archer-bright-teal mr-2 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-            </svg>
-            <div>
-              <h3 className="font-medium text-archer-bright-teal">This plan will adapt to your progress</h3>
-              <p className="text-sm text-archer-white mt-1">
-                As you complete tasks and quizzes, our AI will adjust your plan to focus on areas where you need more practice.
-              </p>
+          {/* Weekly Breakdown */}
+          <div>
+            <h2 className="text-2xl font-semibold text-white/90 mb-4 flex items-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              <span>Weekly Breakdown</span>
+            </h2>
+            <div className="space-y-4">
+              {getWeeklyBreakdown().map((week, index) => (
+                <motion.div
+                  key={week.weekNumber}
+                  className="border border-white/10 bg-white/5 rounded-lg p-4 shadow-lg hover:bg-white/10 transition-all duration-300"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 + (index * 0.1) }}
+                  whileHover={{ y: -3, scale: 1.01 }}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-medium text-[#00A99D]">Week {week.weekNumber}</h3>
+                    <span className="text-sm text-white/70">{week.dateRange}</span>
+                  </div>
+                  <div className="text-white/90">{week.topics}</div>
+                </motion.div>
+              ))}
             </div>
           </div>
-        </motion.div>
+
+          <motion.div
+            className="bg-white/5 p-4 rounded-lg border border-white/10 shadow-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+          >
+            <div className="flex items-start">
+              <svg className="h-5 w-5 text-[#00A99D] mr-3 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h3 className="font-medium text-[#00A99D]">This plan will adapt to your progress</h3>
+                <p className="text-sm text-white/80 mt-1">
+                  As you complete tasks and quizzes, our AI will adjust your plan to focus on areas where you need more practice.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </motion.div>
 
       {error && (
         <motion.div
-          className="bg-red-900/20 p-4 rounded-lg border border-red-900/30 mb-6 shadow-card"
+          className="bg-red-900/20 p-4 rounded-lg border border-red-900/30 my-6 shadow-lg"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
           <div className="flex items-start">
-            <svg className="h-5 w-5 text-red-400 mr-2 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-red-400 mr-3 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <div>
               <h3 className="font-medium text-red-400">Error</h3>
-              <p className="text-sm text-archer-light-text mt-1">{error}</p>
+              <p className="text-sm text-white/80 mt-1">{error}</p>
             </div>
           </div>
         </motion.div>
       )}
 
-      <motion.div
-        className="flex justify-between"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-      >
-        <motion.button
+      <div className="flex justify-between items-center mt-8 max-w-4xl mx-auto">
+        <button
           onClick={goToPreviousStep}
-          className="bg-card-background-dark hover:bg-card-background-dark/90 text-archer-white font-medium py-2 px-4 rounded-lg text-center transition-all shadow-button hover:shadow-card-hover transform hover:-translate-y-1 border border-white/10"
+          className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 font-medium transition-all duration-200 flex items-center gap-2 group"
           disabled={isLoading}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
         >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
           Back
-        </motion.button>
-        <motion.button
+        </button>
+        <button
           onClick={handleStartPlan}
-          className={`${
-            isLoading
-              ? 'bg-archer-bright-teal/50 cursor-not-allowed'
-              : 'bg-archer-bright-teal hover:bg-archer-bright-teal/90'
-          } text-archer-dark-bg font-medium py-2 px-4 rounded-lg text-center transition-all flex items-center shadow-button hover:shadow-card-hover transform hover:-translate-y-1 border border-white/10`}
+          className={`px-8 py-3 rounded-xl bg-gradient-to-r from-[#00A99D] to-[#42B0E8] text-white font-medium transform hover:translate-y-[-1px] hover:shadow-lg transition-all duration-200 flex items-center gap-2 ${
+            isLoading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
           disabled={isLoading}
-          whileHover={isLoading ? {} : { scale: 1.05 }}
-          whileTap={isLoading ? {} : { scale: 0.95 }}
         >
           {isLoading && (
-            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-archer-dark-bg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           )}
           {isLoading ? 'Generating Plan...' : 'Complete Onboarding & Start My Plan'}
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
     </OnboardingLayout>
   );
 }

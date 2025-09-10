@@ -37,15 +37,15 @@ export default function WeeklyCalendar({ selectedDays, onChange }: WeeklyCalenda
           const isSelected = selectedDays.includes(day.id);
           return (
             <div key={day.id} className="text-center">
-              <div className="mb-2 text-sm font-medium text-archer-light-text">{day.label}</div>
+              <div className="mb-2 text-sm font-medium text-white/70">{day.label}</div>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => toggleDay(day.id)}
-                className={`w-full h-12 rounded-md transition-colors duration-200 shadow-button ${
+                className={`w-full h-12 rounded-lg transition-all duration-300 flex items-center justify-center font-bold text-lg ${
                   isSelected
-                    ? 'bg-archer-bright-teal text-archer-dark-bg'
-                    : 'bg-archer-dark-teal/50 text-archer-light-text hover:bg-archer-dark-teal/80'
+                    ? 'bg-gradient-to-br from-teal-500 to-green-600 text-white shadow-lg shadow-teal-500/30'
+                    : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
                 }`}
                 aria-label={`Toggle ${day.id}`}
                 aria-pressed={isSelected}
@@ -58,13 +58,13 @@ export default function WeeklyCalendar({ selectedDays, onChange }: WeeklyCalenda
                       clipRule="evenodd"
                     />
                   </svg>
-                ) : null}
+                ) : <div className="w-2 h-2 rounded-full bg-white/20"></div>}
               </motion.button>
             </div>
           );
         })}
       </div>
-      <div className="mt-4 text-sm text-archer-light-text/70 text-center">
+      <div className="mt-4 text-sm text-white/50 text-center">
         Click on days to select when you're available to study
       </div>
     </div>

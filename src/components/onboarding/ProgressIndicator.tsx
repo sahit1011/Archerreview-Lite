@@ -17,37 +17,49 @@ export default function ProgressIndicator() {
   const currentIndex = steps.findIndex(step => step.id === currentStep);
   
   return (
-    <div className="w-full max-w-3xl mx-auto mb-8">
-      <div className="flex items-center justify-between">
+    <div className="w-full max-w-3xl mx-auto mb-12">
+      <div className="relative flex items-center justify-between">
+        {/* Background blur effect */}
+        <div className="absolute inset-0 bg-white/5 rounded-2xl backdrop-blur-xl"></div>
+        
+        {/* Progress line background */}
+        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white/10 transform -translate-y-1/2"></div>
+        
+        {/* Active progress line */}
+        <div 
+          className="absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-[#00A99D] to-[#42B0E8] transform -translate-y-1/2 transition-all duration-500"
+          style={{ width: `${(currentIndex / (steps.length - 1)) * 100}%` }}
+        ></div>
+
         {steps.map((step, index) => (
-          <div key={step.id} className="flex flex-col items-center">
+          <div key={step.id} className="relative flex flex-col items-center px-4 py-6 z-10">
             <div className="relative">
-              {/* Line before the step (except for the first step) */}
-              {index > 0 && (
-                <div 
-                  className={`absolute top-1/2 right-full w-full h-1 -translate-y-1/2 ${
-                    index <= currentIndex ? 'bg-indigo-600' : 'bg-gray-300'
-                  }`}
-                  style={{ width: 'calc(100% + 4rem)' }}
-                ></div>
+              {/* Glow effect for active step */}
+              {index === currentIndex && (
+                <div className="absolute -inset-4 bg-[#42B0E8] opacity-20 blur-xl rounded-full"></div>
               )}
               
-              {/* Step circle */}
+              {/* Step circle with animations */}
               <div 
-                className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 transform hover:scale-110 ${
                   index < currentIndex 
-                    ? 'bg-indigo-600 border-indigo-600 text-white' 
+                    ? 'bg-gradient-to-br from-[#00A99D] to-[#42B0E8] text-white shadow-lg shadow-[#00A99D]/20' 
                     : index === currentIndex
-                    ? 'bg-white border-indigo-600 text-indigo-600'
-                    : 'bg-white border-gray-300 text-gray-400'
+                    ? 'bg-gradient-to-br from-[#00A99D] to-[#42B0E8] text-white ring-2 ring-[#42B0E8]/30 shadow-lg shadow-[#00A99D]/20'
+                    : 'bg-white/10 text-white/60 backdrop-blur-sm hover:bg-white/20'
                 }`}
               >
                 {index < currentIndex ? (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
                   </svg>
                 ) : (
-                  <span className="text-sm font-medium">{index + 1}</span>
+                  <>
+                    <span className="text-base font-semibold">{index + 1}</span>
+                    {index === currentIndex && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#42B0E8] border-2 border-white animate-pulse"></div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

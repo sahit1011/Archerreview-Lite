@@ -2,56 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 import AppLayout from '@/components/layouts/AppLayout';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useUser } from '@/context/UserContext';
-import AlertButton from '@/components/common/AlertButton';
 import MonitorSummary from '@/components/dashboard/MonitorSummary';
 import CombinedFocusRemediationCard from '@/components/dashboard/CombinedFocusRemediationCard';
 import { useRemediationAgent } from '@/hooks/useRemediationAgent';
+import AnimatedCard from '@/components/common/AnimatedCard';
+import AnimatedProgressCircle from '@/components/common/AnimatedProgressCircle';
+import EnhancedTaskCard from '@/components/dashboard/EnhancedTaskCard';
+import EnhancedExamCountdown from '@/components/dashboard/EnhancedExamCountdown';
+import ParticleBackground from '@/components/common/ParticleBackground';
+import { fadeIn, fadeInUp, staggerContainer } from '@/utils/animationUtils';
 
-// Exam Countdown Component
-const ExamCountdown = ({ examDate }: { examDate: Date | string }) => {
-  const [daysRemaining, setDaysRemaining] = useState<number>(0);
-  const [formattedDate, setFormattedDate] = useState<string>('');
-
-  useEffect(() => {
-    // Format the exam date
-    const examDateObj = new Date(examDate);
-    setFormattedDate(format(examDateObj, 'MMMM d, yyyy'));
-
-    // Calculate initial days remaining
-    const calculateDaysRemaining = () => {
-      const now = new Date();
-      const examDateObj = new Date(examDate);
-      const timeDiff = examDateObj.getTime() - now.getTime();
-      return Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-    };
-
-    setDaysRemaining(calculateDaysRemaining());
-
-    // Update days remaining every minute
-    const intervalId = setInterval(() => {
-      setDaysRemaining(calculateDaysRemaining());
-    }, 60000); // Update every minute
-
-    return () => clearInterval(intervalId);
-  }, [examDate]);
-
-  return (
-    <>
-      <div className="text-4xl font-bold text-archer-bright-teal mb-2">
-        {daysRemaining}
-      </div>
-      <div className="text-archer-light-text">Days Remaining</div>
-      <div className="mt-4 text-sm text-archer-light-text/70">
-        Exam Date: {formattedDate}
-      </div>
-    </>
-  );
-};
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
@@ -361,7 +327,7 @@ export default function DashboardPage() {
       case 'READING':
         return (
           <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c-1.255 0-2.443.29-3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
           </svg>
         );
       case 'PRACTICE':
@@ -389,17 +355,17 @@ export default function DashboardPage() {
   const getTaskBgColor = (type: string): string => {
     switch (type) {
       case 'VIDEO':
-        return 'bg-archer-light-blue/20 text-archer-light-blue';
+        return 'bg-blue-100 text-blue-600';
       case 'QUIZ':
-        return 'bg-archer-bright-teal/20 text-archer-bright-teal';
+        return 'bg-purple-100 text-purple-600';
       case 'READING':
-        return 'bg-green-400/20 text-green-400';
+        return 'bg-green-100 text-green-600';
       case 'PRACTICE':
-        return 'bg-amber-400/20 text-amber-400';
+        return 'bg-amber-100 text-amber-600';
       case 'REVIEW':
-        return 'bg-red-400/20 text-red-400';
+        return 'bg-red-100 text-red-600';
       default:
-        return 'bg-archer-light-text/10 text-archer-light-text';
+        return 'bg-gray-100 text-gray-600';
     }
   };
 
@@ -449,19 +415,19 @@ export default function DashboardPage() {
     // These are status colors, might keep them distinct or map to theme status colors if defined
     switch (type) {
       case 'weak':
-        return 'bg-red-900/20 text-red-400';
+        return 'bg-red-50 text-red-800 border-red-500';
       case 'strong':
-        return 'bg-green-900/20 text-green-400';
+        return 'bg-green-50 text-green-800 border-green-500';
       default:
-        return 'bg-archer-light-blue/20 text-archer-light-blue';
+        return 'bg-blue-50 text-blue-800 border-blue-500';
     }
   };
 
   // Get category score color based on score - using theme colors
   const getCategoryScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-archer-bright-teal'; // Teal for good scores
-    if (score >= 60) return 'bg-archer-light-blue'; // Light blue for medium scores
-    return 'bg-red-400'; // Keep red for low scores (warning)
+    if (score >= 80) return 'bg-green-500'; // Green for good scores
+    if (score >= 60) return 'bg-amber-500'; // Amber for medium scores
+    return 'bg-red-500'; // Red for low scores (warning)
   };
 
   // Handle refreshing focus areas
@@ -537,8 +503,8 @@ export default function DashboardPage() {
       <ProtectedRoute>
         <AppLayout>
           <div className="flex flex-col items-center justify-center h-64">
-            <div className="w-16 h-16 border-t-4 border-archer-bright-teal border-solid rounded-full animate-spin"></div>
-            <p className="mt-4 text-archer-light-text">Loading your dashboard...</p>
+            <div className="w-16 h-16 border-t-4 border-indigo-500 border-solid rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600">Loading your dashboard...</p>
           </div>
         </AppLayout>
       </ProtectedRoute>
@@ -549,15 +515,15 @@ export default function DashboardPage() {
     return (
       <ProtectedRoute>
         <AppLayout>
-          <div className="bg-red-900/20 border border-red-900/30 text-red-400 rounded-lg p-4 mb-6">
+          <div className="bg-red-100 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
             <div className="flex">
-              <svg className="h-5 w-5 text-red-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-5 w-5 text-red-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <p>{error}</p>
             </div>
             <div className="mt-4">
-              <Link href="/" className="text-red-400 hover:text-red-300 font-medium">
+              <Link href="/" className="text-red-600 hover:text-red-800 font-medium">
                 Back to Home →
               </Link>
             </div>
@@ -569,225 +535,250 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <AppLayout>
-        <div className="mb-6 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-archer-white">Dashboard</h1>
-            <p className="text-archer-light-text/80">Welcome back, {user?.name}! Here's your study plan for today.</p>
-          </div>
-          <div className="flex space-x-4">
-            {user && <AlertButton userId={user._id} />}
-          </div>
-        </div>
+      <AppLayout light>
+        <div className="relative min-h-screen">
+          {/* Particle Background */}
+          <ParticleBackground
+            particleCount={25}
+            colors={['#6366F1', '#8B5CF6', '#EC4899', '#10B981']}
+            className="opacity-20"
+          />
 
-        {/* Monitor Summary - Shows key insights from the Monitor Agent */}
-        {user && <MonitorSummary userId={user._id} />}
-
-      {/* Gamification Section - Completely removed */}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2">
-          <div className="bg-card-background-dark rounded-xl shadow-card p-6 mb-6 hover:shadow-card-hover transition-all">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-archer-white">Today's Tasks</h2>
-              <span className="text-sm text-archer-light-text/70">{format(new Date(), 'MMMM d, yyyy')}</span>
-            </div>
-
-            {todaysTasks.length === 0 ? (
-              <div className="text-center py-8">
-                <svg className="mx-auto h-12 w-12 text-archer-light-text/40" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-archer-light-text">No tasks for today</h3>
-                <p className="mt-1 text-sm text-archer-light-text/70">
-                  {user?.name === "New User"
-                    ? "You don't have any tasks scheduled yet. Your study plan will be generated soon."
-                    : "You don't have any tasks scheduled for today."}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+            className="relative z-10"
+          >
+            {/* Header */}
+            <motion.div
+              className="mb-8 flex justify-between items-start"
+              variants={fadeIn}
+            >
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900 bg-gradient-to-r from-indigo-600 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent tracking-tight mb-2">
+                  Dashboard
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  Welcome back, <span className="font-semibold text-gray-800">{user?.name}</span>. Here's your focus for today.
                 </p>
-                <div className="mt-6">
-                  <Link
-                    href={`/calendar?userId=${user?._id}`}
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-archer-dark-teal bg-archer-bright-teal hover:bg-archer-bright-teal/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-archer-bright-teal"
-                  >
-                    View Calendar
-                  </Link>
-                </div>
               </div>
-            ) : (
-              <div className="h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-archer-bright-teal scrollbar-track-archer-dark-teal/30 scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
-                <div className="space-y-4">
-                  {todaysTasks.map((task) => (
-                    <div
-                      key={task._id}
-                      className={`bg-card-background-lighter rounded-lg p-4 hover:bg-archer-dark-teal/50 shadow-card hover:shadow-card-hover transition-all transform hover:-translate-y-1 ${task.type === 'QUIZ' && task.content ? 'cursor-pointer' : ''}`}
-                      onClick={() => {
-                        // Only navigate to quiz interface for quiz tasks
-                        if (task.type === 'QUIZ' && task.content) {
-                          router.push(`/quiz/${task.content._id}?taskId=${task._id}&userId=${user?._id}`);
-                        }
-                        // No action for other task types when clicking the card
-                      }}
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="flex items-center">
-                          <div className={`h-10 w-10 rounded-full ${getTaskBgColor(task.type)} flex items-center justify-center mr-3 shadow-button`}>
-                            {getTaskIcon(task.type)}
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-archer-white">{task.title}</h3>
-                            <div className="text-sm text-archer-light-text/70">
-                              {task.type === 'QUIZ' ? `${task.description} • ${task.duration} minutes` : task.description}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          <div className="bg-green-900/20 text-green-400 text-xs font-medium px-3 py-1 rounded-full shadow-button mr-2">
-                            {format(new Date(task.startTime), 'h:mm a')}
-                          </div>
-                          {task.status !== 'COMPLETED' && (
-                            <div className="relative group">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation(); // Prevent the parent onClick from firing
-                                  handleTaskStatusChange(task._id, 'COMPLETED');
-                                }}
-                                className="bg-green-900/30 text-green-400 hover:text-green-300 p-1.5 rounded-full hover:bg-green-900/50 transition-all shadow-button hover:shadow-card-hover"
-                                aria-label="Mark as completed"
-                              >
-                                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              </button>
-                              <div className="absolute right-0 top-full mt-2 w-40 bg-archer-dark-teal text-archer-light-text text-xs rounded-lg py-1 px-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-                                Click to mark as completed
-                              </div>
-                            </div>
-                          )}
-                        </div>
+            </motion.div>
+
+            {/* Monitor Summary - Shows key insights from the Monitor Agent */}
+            {user && <MonitorSummary userId={user._id} />}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+              {/* Today's Tasks Section */}
+              <div className="lg:col-span-2">
+                <AnimatedCard className="p-8 mb-6" gradient>
+                  <motion.div variants={fadeInUp}>
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-gray-800 tracking-tight flex items-center">
+                        <svg className="w-6 h-6 mr-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Today's Tasks
+                      </h2>
+                      <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        {format(new Date(), 'MMMM d, yyyy')}
+                      </span>
+                    </div>
+
+                    {todaysTasks.length === 0 ? (
+                      <motion.div
+                        className="text-center py-12"
+                        variants={fadeIn}
+                      >
+                        <motion.div
+                          animate={{
+                            y: [0, -10, 0],
+                            rotate: [0, 5, -5, 0]
+                          }}
+                          transition={{
+                            duration: 4,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </motion.div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">You're all caught up! 🎉</h3>
+                        <p className="text-gray-600 mb-6">
+                          {user?.name === "New User"
+                            ? "Your study plan is being generated. Check back shortly."
+                            : "No tasks scheduled for today. Explore your calendar or start a review."}
+                        </p>
+                        <Link
+                          href={`/calendar?userId=${user?._id}`}
+                          className="group inline-flex items-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-fuchsia-600 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                        >
+                          <span className="mr-2">View Calendar</span>
+                          <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L13.586 10l-3.293-3.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                          </svg>
+                        </Link>
+                      </motion.div>
+                    ) : (
+                      <div className="max-h-[400px] overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-gray-200 scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
+                        {todaysTasks.map((task, index) => (
+                          <EnhancedTaskCard
+                            key={task._id}
+                            task={task}
+                            index={index}
+                            onStatusChange={handleTaskStatusChange}
+                            onTaskClick={(task) => {
+                              if (task.type === 'QUIZ' && task.content) {
+                                router.push(`/quiz/${task.content._id}?taskId=${task._id}&userId=${user?._id}`);
+                              }
+                            }}
+                            userId={user?._id}
+                          />
+                        ))}
                       </div>
-                      {task.status !== 'PENDING' && (
-                        <div className="mt-2 flex justify-end">
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full shadow-button ${
-                            task.status === 'COMPLETED'
-                              ? 'bg-green-900/20 text-green-400'
-                              : task.status === 'IN_PROGRESS'
-                                ? 'bg-blue-900/20 text-blue-400'
-                                : 'bg-archer-light-text/10 text-archer-light-text/80'
-                          }`}>
-                            {task.status}
-                          </span>
+                    )}
+
+                    <motion.div
+                      className="mt-8 text-center"
+                      variants={fadeIn}
+                    >
+                      <Link
+                        href={`/calendar?userId=${user?._id}`}
+                        className="group inline-flex items-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-fuchsia-600 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                      >
+                        <span className="mr-2">View Full Schedule</span>
+                        <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L13.586 10l-3.293-3.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                        </svg>
+                      </Link>
+                    </motion.div>
+                  </motion.div>
+                </AnimatedCard>
+              </div>
+
+              {/* Right Sidebar */}
+              <div className="space-y-6">
+                {/* NCLEX Readiness */}
+                <AnimatedCard className="p-6" gradient delay={0.2}>
+                  <motion.div variants={fadeInUp}>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-tight flex items-center">
+                      <svg className="w-6 h-6 mr-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      NCLEX Readiness
+                    </h2>
+                    
+                    <div className="flex justify-center mb-6">
+                      <AnimatedProgressCircle
+                        percentage={readinessScore.overallScore}
+                        size={160}
+                        strokeWidth={10}
+                        label="Ready"
+                        duration={2.5}
+                        delay={0.5}
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      {readinessScore.categoryScores.slice(0, 3).map((category, index) => (
+                        <motion.div
+                          key={category.category}
+                          className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-white/20"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 1 + index * 0.1 }}
+                        >
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="text-gray-700 font-medium">
+                              {category.category.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                            </span>
+                            <span className="font-bold text-gray-800">{category.score}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${category.score}%` }}
+                              transition={{
+                                duration: 1.5,
+                                delay: 1.2 + index * 0.1,
+                                ease: "easeOut"
+                              }}
+                            />
+                          </div>
+                        </motion.div>
+                      ))}
+
+                      {readinessScore.categoryScores.length === 0 && (
+                        <div className="text-center py-6">
+                          <p className="text-gray-500">
+                            {user?.name === "New User"
+                              ? "Complete some tasks to see your readiness score."
+                              : "No category scores available yet."}
+                          </p>
                         </div>
                       )}
                     </div>
-                  ))}
-                </div>
+
+                    <motion.div
+                      className="mt-6 text-center"
+                      variants={fadeIn}
+                    >
+                      <Link
+                        href={`/progress?userId=${user?._id}`}
+                        className="group inline-flex items-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-fuchsia-600 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                      >
+                        <span className="mr-2">View Detailed Progress</span>
+                        <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L13.586 10l-3.293-3.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                        </svg>
+                      </Link>
+                    </motion.div>
+                  </motion.div>
+                </AnimatedCard>
+
+                {/* Exam Countdown */}
+                <AnimatedCard className="p-6" delay={0.4}>
+                  <motion.div variants={fadeInUp}>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-tight flex items-center">
+                      <svg className="w-6 h-6 mr-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Exam Countdown
+                    </h2>
+                    {user?.examDate ? (
+                      <EnhancedExamCountdown examDate={user.examDate} />
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="text-6xl mb-4">📅</div>
+                        <p className="text-gray-500">No exam date set.</p>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatedCard>
               </div>
+            </div>
+
+            {/* Combined Focus Areas and Remediation Card */}
+            {user && (
+              <motion.div variants={fadeInUp}>
+                <CombinedFocusRemediationCard
+                  focusAreas={focusAreas}
+                  remediationSuggestions={remediationSuggestions}
+                  onRefreshFocusAreas={handleRefreshFocusAreas}
+                  onGenerateRemediationSuggestions={handleGenerateRemediationSuggestions}
+                  onResolve={resolveSuggestion}
+                  onStartTutorSession={startTutorSession}
+                  onScheduleReview={scheduleReviewSession}
+                  userId={user._id}
+                />
+              </motion.div>
             )}
-
-            <div className="mt-6 text-center">
-              <Link
-                href={`/calendar?userId=${user?._id}`}
-                className="inline-flex items-center px-4 py-2 bg-archer-bright-teal text-archer-dark-teal rounded-lg font-medium shadow-button hover:shadow-card-hover transition-all hover:-translate-y-1"
-              >
-                View Full Schedule →
-              </Link>
-            </div>
-          </div>
+          </motion.div>
         </div>
-
-        <div>
-          <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
-            <h2 className="text-xl font-semibold text-archer-white mb-4">NCLEX Readiness</h2>
-            <div className="flex justify-center mb-4">
-              <div className="relative h-36 w-36">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-archer-bright-teal">{readinessScore.overallScore}%</div>
-                    <div className="text-sm text-archer-light-text/70">Ready</div>
-                  </div>
-                </div>
-                <svg className="h-full w-full" viewBox="0 0 36 36">
-                  <path
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="var(--archer-dark-teal)"
-                    strokeWidth="3"
-                    strokeDasharray="100, 100"
-                  />
-                  <path
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="var(--archer-bright-teal)"
-                    strokeWidth="3"
-                    strokeDasharray={`${readinessScore.overallScore}, 100`}
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="space-y-3 text-archer-light-text">
-              {readinessScore.categoryScores.slice(0, 3).map((category) => (
-                <div key={category.category} className="bg-card-background-dark p-3 rounded-lg shadow-button">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-archer-light-text/80">{category.category.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}</span>
-                    <span className="font-medium text-archer-light-text">{category.score}%</span>
-                  </div>
-                  <div className="w-full bg-archer-dark-teal rounded-full h-2">
-                    <div className={`${getCategoryScoreColor(category.score)} h-2 rounded-full`} style={{ width: `${category.score}%` }}></div>
-                  </div>
-                </div>
-              ))}
-
-              {readinessScore.categoryScores.length === 0 && (
-                <div className="text-center py-4">
-                  <p className="text-sm text-archer-light-text/70">
-                    {user?.name === "New User"
-                      ? "Complete some tasks to see your readiness score."
-                      : "No category scores available yet."}
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="mt-6 text-center">
-              <Link
-                href={`/progress?userId=${user?._id}`}
-                className="inline-flex items-center px-4 py-2 bg-archer-bright-teal text-archer-dark-teal rounded-lg font-medium shadow-button hover:shadow-card-hover transition-all hover:-translate-y-1"
-              >
-                View Detailed Progress →
-              </Link>
-            </div>
-          </div>
-
-          <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6">
-            <h2 className="text-xl font-semibold text-archer-white mb-4">Exam Countdown</h2>
-            <div className="text-center">
-              {user?.examDate ? (
-                <div className="bg-card-background-dark p-6 rounded-lg shadow-button">
-                  <ExamCountdown examDate={user.examDate} />
-                </div>
-              ) : (
-                <div className="text-sm text-archer-light-text/70 py-4">
-                  No exam date set.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Combined Focus Areas and Remediation Card */}
-      {user && (
-        <CombinedFocusRemediationCard
-          focusAreas={focusAreas}
-          remediationSuggestions={remediationSuggestions}
-          onRefreshFocusAreas={handleRefreshFocusAreas}
-          onGenerateRemediationSuggestions={handleGenerateRemediationSuggestions}
-          onResolve={resolveSuggestion}
-          onStartTutorSession={startTutorSession}
-          onScheduleReview={scheduleReviewSession}
-          userId={user._id}
-        />
-      )}
-    </AppLayout>
+      </AppLayout>
     </ProtectedRoute>
   );
 }

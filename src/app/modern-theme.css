@@ -1,0 +1,320 @@
+/* Modern Theme Additions */
+:root {
+  --dark-bg: #111111;
+  --dark-card: #1a1a1a;
+  --light-bg: #ffffff;
+  --light-card: #f8f9fa;
+  --primary-gradient: linear-gradient(135deg, #00A99D 0%, #42B0E8 100%);
+  --button-gradient: linear-gradient(135deg, #00A99D 0%, #42B0E8 100%);
+  
+  /* Default dark theme variables */
+  --bg-main: var(--dark-bg);
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --text-primary: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  --hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Light Theme Styles */
+[data-theme="light"] {
+  --bg-main: var(--light-bg);
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --text-primary: rgba(0, 0, 0, 0.9);
+  --text-secondary: rgba(0, 0, 0, 0.7);
+  --card-border: rgba(0, 0, 0, 0.1);
+  --card-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1), 0 2px 10px -5px rgba(0, 0, 0, 0.04);
+  --hover-bg: rgba(0, 0, 0, 0.02);
+  --input-bg: rgba(0, 0, 0, 0.03);
+  --input-border: rgba(0, 0, 0, 0.1);
+  --input-text: rgba(0, 0, 0, 0.8);
+  --input-placeholder: rgba(0, 0, 0, 0.4);
+}
+
+/* Light theme overrides */
+[data-theme="light"] body {
+  background: var(--bg-main) !important;
+}
+
+[data-theme="light"] .glassmorphic {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .text-white\/90 {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .text-white\/70 {
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .theme-toggle {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+}
+
+[data-theme="light"] .hover-card:hover {
+  box-shadow: 0 8px 30px -5px rgba(0, 0, 0, 0.1), 0 4px 15px -5px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 1);
+}
+
+/* Light mode form styles */
+[data-theme="light"] .glassmorphic {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+    0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] input {
+  background: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--input-text) !important;
+}
+
+[data-theme="light"] input::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
+[data-theme="light"] label {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .text-white\/90 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .text-white\/80 {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="light"] .gradient-text {
+  filter: none;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+[data-theme="light"] .bg-white\/5 {
+  background: var(--input-bg);
+}
+
+[data-theme="light"] .border-white\/10 {
+  border-color: var(--input-border);
+}
+
+[data-theme="light"] .text-white {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .placeholder-white\/40::placeholder {
+  color: var(--input-placeholder);
+}
+
+/* Light mode progress steps */
+[data-theme="light"] .bg-white\/5 {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .bg-white\/10 {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .text-white\/40 {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* Light mode form error */
+[data-theme="light"] .bg-red-500\/5 {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+[data-theme="light"] .text-red-400 {
+  color: rgb(220, 38, 38);
+}
+
+[data-theme="dark"] {
+  --bg-primary: var(--dark-bg);
+  --bg-card: var(--dark-card);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="light"] {
+  --bg-primary: var(--light-bg);
+  --bg-card: var(--light-card);
+  --text-primary: #111111;
+  --text-secondary: rgba(0, 0, 0, 0.7);
+}
+
+.glassmorphic {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.glassmorphic:hover {
+  box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 3px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.gradient-text {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  position: relative;
+  display: inline-block;
+  font-weight: 700;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.modern-button {
+  background: var(--button-gradient);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.modern-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 3px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.modern-button.secondary {
+  background: transparent;
+  border: 2px solid #00A99D;
+  color: #00A99D;
+}
+
+.modern-button.secondary:hover {
+  background: rgba(0, 169, 157, 0.1);
+}
+
+.gradient-border {
+  position: relative;
+  background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  border-radius: 0.75rem;
+  padding: 1px;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  padding: 2px;
+  background: linear-gradient(45deg, var(--archer-bright-teal), var(--archer-light-blue));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.hover-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+  background: linear-gradient(45deg, var(--archer-bright-teal), var(--archer-light-blue));
+  border-radius: 12px;
+  padding: 8px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 169, 157, 0.2);
+}
+
+.hero-pattern {
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 169, 157, 0.1) 1px, transparent 0);
+  background-size: 40px 40px;
+  background-position: -19px -19px;
+}
+
+.text-shadow {
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 3D Button Effect */
+.button-3d {
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 0 var(--archer-darker-teal);
+}
+
+.button-3d:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 var(--archer-darker-teal);
+}
+
+/* Animated Background */
+.animated-bg {
+  background: linear-gradient(
+    -45deg,
+    var(--archer-dark-teal),
+    var(--archer-medium-teal),
+    var(--archer-bright-teal),
+    var(--archer-light-blue)
+  );
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Modern Card Styles */
+.modern-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}

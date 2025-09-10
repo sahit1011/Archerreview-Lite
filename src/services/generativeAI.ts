@@ -2,14 +2,20 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/ge
 import { getNCLEXPrompt, getTopicSpecificPrompt } from '../utils/prompts'; // Changed to relative
 
 // Initialize the Google Generative AI client
-const apiKey = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_KEY || '';
-const modelName = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pro';
+const geminiApiKey = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_KEY || '';
+const geminiModelName = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pro';
 
-console.log('API Key:', apiKey ? 'API key is set' : 'API key is not set');
-console.log('Model Name:', modelName);
+// Initialize OpenRouter configuration
+const openRouterApiKey = process.env.OPENROUTER_API_KEY || '';
+const openRouterModel = process.env.OPENROUTER_MODEL || 'qwen/qwen3-coder:free';
 
-// Create a client with the API key
-const genAI = new GoogleGenerativeAI(apiKey);
+console.log('Gemini API Key:', geminiApiKey ? 'API key is set' : 'API key is not set');
+console.log('Gemini Model Name:', geminiModelName);
+console.log('OpenRouter API Key:', openRouterApiKey ? 'API key is set' : 'API key is not set');
+console.log('OpenRouter Model:', openRouterModel);
+
+// Create Gemini client (only if API key is available)
+const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
 
 // Configure safety settings
 const safetySettings = [
@@ -38,29 +44,116 @@ const safetySettings = [
  * @param conversationHistory Previous messages in the conversation
  * @returns AI-generated response
  */
+/**
+ * Call OpenRouter API as fallback
+ */
+async function callOpenRouter(prompt: string): Promise<string> {
+  try {
+    if (!openRouterApiKey) {
+      throw new Error('OpenRouter API key not configured');
+    }
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openRouterApiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+        'X-Title': 'ArcherReview AI Tutor'
+      },
+      body: JSON.stringify({
+        model: openRouterModel,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response from OpenRouter API');
+    }
+
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error calling OpenRouter:', error);
+    throw error;
+  }
+}
+
 export async function generateTutorResponse(
   message: string,
   userId?: string,
   conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
 ): Promise<string> {
   try {
-    // Check if API key is available
-    if (!apiKey) {
-      console.error('Google Generative AI API key is not configured');
-      return getFallbackResponse(message);
+    // Try Google Gemini first
+    if (genAI && geminiApiKey) {
+      try {
+        // Get the model with concise generation config
+        const model = genAI.getGenerativeModel({
+          model: geminiModelName,
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.8,
+            topK: 40,
+            maxOutputTokens: 1024, // Limit response length for conciseness
+          }
+        });
+
+        // Enhanced prompt with concise instructions
+        const conciseInstructions = `
+IMPORTANT: Keep your response CONCISE and focused. Guidelines:
+- Limit to 2-3 key points maximum per explanation
+- Use bullet points or numbered lists when appropriate
+- Provide direct answers without lengthy introductions
+- If giving examples, limit to 1-2 relevant ones
+- Prioritize clarity and brevity over comprehensive coverage
+- End with a brief summary or key takeaway
+
+User Question: ${message}`;
+
+        const prompt = getNCLEXPrompt(userId) + "\n\n" + conciseInstructions;
+
+        // Generate content directly without chat history for simplicity
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+
+        return text;
+      } catch (geminiError) {
+        console.warn('Gemini API failed, falling back to OpenRouter:', geminiError);
+        // Fall through to OpenRouter
+      }
     }
 
-    // Get the model
-    const model = genAI.getGenerativeModel({ model: modelName });
+    // Fallback to OpenRouter
+    console.log('Using OpenRouter fallback for tutor response');
 
-    // Get the model
-    const prompt = getNCLEXPrompt(userId) + "\n\n" + message;
+    // Enhanced prompt with concise instructions for OpenRouter
+    const conciseInstructions = `
+IMPORTANT: Keep your response CONCISE and focused. Guidelines:
+- Limit to 2-3 key points maximum per explanation
+- Use bullet points or numbered lists when appropriate
+- Provide direct answers without lengthy introductions
+- If giving examples, limit to 1-2 relevant ones
+- Prioritize clarity and brevity over comprehensive coverage
+- End with a brief summary or key takeaway
 
-    // Generate content directly without chat history for simplicity
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+User Question: ${message}`;
 
-    return text;
+    const prompt = getNCLEXPrompt(userId) + "\n\n" + conciseInstructions;
+    return await callOpenRouter(prompt);
+
   } catch (error) {
     console.error('Error generating AI tutor response:', error);
     return getFallbackResponse(message);
@@ -105,49 +198,70 @@ export async function generateTopicTutorResponse(
   conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
 ): Promise<string> {
   try {
-    // Check if API key is available
-    if (!apiKey) {
-      console.error('Google Generative AI API key is not configured');
-      return getFallbackResponse(message);
+    // Try Google Gemini first
+    if (genAI && geminiApiKey) {
+      try {
+        // Get the model
+        const model = genAI.getGenerativeModel({ model: geminiModelName });
+
+        // Prepare the chat history
+        const history = conversationHistory.map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }],
+        }));
+
+        // Get the topic-specific prompt
+        const systemPrompt = getTopicSpecificPrompt(topicContext, userId);
+
+        // Start a chat session
+        const chat = model.startChat({
+          history,
+          safetySettings,
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.8,
+            topK: 40,
+            maxOutputTokens: 2048,
+          },
+          systemInstruction: systemPrompt,
+        });
+
+        // Generate a response
+        const result = await chat.sendMessage(message);
+        const response = result.response;
+        const text = response.text();
+
+        return text;
+      } catch (geminiError) {
+        console.warn('Gemini API failed for topic response, falling back to OpenRouter:', geminiError);
+        // Fall through to OpenRouter
+      }
     }
 
-    // Get the model
-    const model = genAI.getGenerativeModel({ model: modelName });
-
-    // Prepare the chat history
-    const history = conversationHistory.map(msg => ({
-      role: msg.role === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.content }],
-    }));
-
-    // Get the topic-specific prompt
+    // Fallback to OpenRouter
+    console.log('Using OpenRouter fallback for topic-specific tutor response');
     const systemPrompt = getTopicSpecificPrompt(topicContext, userId);
 
-    // Start a chat session
-    const chat = model.startChat({
-      history,
-      safetySettings,
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.8,
-        topK: 40,
-        maxOutputTokens: 2048,
-      },
-      systemInstruction: systemPrompt,
-    });
+    // Enhanced prompt with concise instructions for topic-specific responses
+    const conciseInstructions = `
+IMPORTANT: Keep your response CONCISE and focused. Guidelines:
+- Limit to 2-3 key points maximum per explanation
+- Use bullet points or numbered lists when appropriate
+- Provide direct answers without lengthy introductions
+- If giving examples, limit to 1 relevant clinical example
+- Prioritize clarity and brevity over comprehensive coverage
+- End with a brief summary or key takeaway
 
-    // Generate a response
-    const result = await chat.sendMessage(message);
-    const response = result.response;
-    const text = response.text();
+User Question: ${message}`;
 
-    return text;
+    const prompt = `${systemPrompt}\n\n${conciseInstructions}`;
+    return await callOpenRouter(prompt);
+
   } catch (error) {
     console.error('Error generating topic-specific AI tutor response:', error);
 
-    // Try fallback to simpler generation method
+    // Try OpenRouter fallback for simpler generation
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
       const prompt = `
         Topic: ${topicContext.topicName}
         Category: ${topicContext.topicCategory}
@@ -157,10 +271,9 @@ export async function generateTopicTutorResponse(
         Provide a helpful response about this nursing topic.
       `;
 
-      const result = await model.generateContent(prompt);
-      return result.response.text();
+      return await callOpenRouter(prompt);
     } catch (fallbackError) {
-      console.error('Error in fallback generation:', fallbackError);
+      console.error('Error in OpenRouter fallback generation:', fallbackError);
       return getFallbackResponse(message, topicContext.topicName);
     }
   }
@@ -175,71 +288,52 @@ export async function generateTopicTutorResponse(
 function getFallbackResponse(message: string, topicName?: string): string {
   // If we have a topic name, provide a topic-specific fallback
   if (topicName) {
-    return `Thank you for your question about ${topicName}. As your NCLEX AI Tutor, I'm here to help with this topic.
+    return `I'm having trouble connecting to my knowledge base for ${topicName}. Please try again.
 
-I'm currently experiencing some technical difficulties connecting to my knowledge base. Please try again in a few moments, or rephrase your question.
-
-In the meantime, here are some general tips for studying ${topicName}:
-1. Focus on understanding the core concepts rather than memorizing facts
-2. Try to relate the material to real clinical scenarios
-3. Practice with questions that test application of knowledge
-4. Consider creating concept maps to visualize relationships between ideas
-5. Teach the concept to someone else to reinforce your understanding`;
+Quick study tips:
+• Focus on core concepts over memorization
+• Apply knowledge to clinical scenarios
+• Practice with application questions
+• Create concept maps for relationships
+• Teach concepts to reinforce understanding`;
   }
 
-  // Simple keyword-based responses for fallback
+  // Simple keyword-based responses for fallback - kept concise
   if (message.toLowerCase().includes('nclex')) {
-    return `The NCLEX (National Council Licensure Examination) is a standardized test used to determine if a candidate is prepared for entry-level nursing practice. The NCLEX is designed to test the knowledge, skills, and abilities essential for safe and effective nursing practice.
+    return `NCLEX tests nursing knowledge for entry-level practice. Two types: NCLEX-RN and NCLEX-PN. Uses CAT (Computerized Adaptive Testing) with 75-145 questions for RN.
 
-There are two types:
-1. NCLEX-RN for registered nurses
-2. NCLEX-PN for practical/vocational nurses
+Key areas: Fundamentals, Pharmacology, Medical-Surgical, Pediatrics, Maternal-Newborn, Psychiatric, and Management.
 
-The exam uses computerized adaptive testing (CAT), which means the difficulty of questions adjusts based on your performance. The minimum number of questions is 75, and the maximum is 145 for RN (85-205 for PN).
-
-Would you like specific information about study strategies, content areas, or question types?`;
+Need help with specific content or study strategies?`;
   } else if (message.toLowerCase().includes('pharmacology') || message.toLowerCase().includes('medication')) {
-    return `Pharmacology is a critical area for the NCLEX, accounting for approximately 12-18% of the exam. Here are key points to focus on:
+    return `Pharmacology (12-18% of NCLEX) focuses on:
 
-1. **Medication Classifications**: Know major drug classes, their mechanisms of action, and prototype drugs for each class.
+• Drug classifications and mechanisms
+• Side effects and adverse reactions
+• Nursing considerations and monitoring
+• Dosage calculations
+• High-alert medications (anticoagulants, insulins, opioids)
 
-2. **Side Effects**: Understand common and serious adverse effects, especially those requiring immediate intervention.
-
-3. **Nursing Considerations**: Know specific monitoring requirements, contraindications, and patient education points.
-
-4. **Dosage Calculations**: Be prepared to calculate proper dosages, drip rates, and medication conversions.
-
-5. **High-Alert Medications**: Pay special attention to anticoagulants, insulins, opioids, and other high-risk medications.
-
-Would you like me to elaborate on a specific medication class or concept?`;
+Which aspect would you like to explore?`;
   } else if (message.toLowerCase().includes('priority') || message.toLowerCase().includes('prioritize')) {
-    return `Prioritization is a key concept on the NCLEX. The exam often asks which patient you should see first or which action to take first. Use these frameworks to help prioritize:
+    return `NCLEX prioritization uses these frameworks:
 
-1. **Maslow's Hierarchy**: Physiological needs come first (airway, breathing, circulation), followed by safety, then psychosocial needs.
+• **ABCs**: Airway, Breathing, Circulation first
+• **Maslow's**: Physiological needs before safety/psychosocial
+• **Acute vs Chronic**: Acute takes priority
+• **Stable vs Unstable**: Unstable patients first
 
-2. **ABCs**: Airway, Breathing, Circulation - always address these first.
-
-3. **Acute vs. Chronic**: Acute issues generally take priority over chronic conditions.
-
-4. **Unstable vs. Stable**: Unstable patients take priority over stable patients.
-
-5. **Life-Threatening vs. Non-Life-Threatening**: Always address life-threatening situations first.
-
-Example: If you have four patients - one with chest pain, one with a new medication question, one with anxiety, and one needing ambulation assistance - you would see the chest pain patient first (potential ABC issue).`;
+Example: Chest pain patient before medication question or anxiety.`;
   } else {
-    return `Thank you for your question. As your NCLEX AI Tutor, I'm here to help with any nursing concepts, practice questions, or study strategies.
+    return `I'm your NCLEX AI Tutor! I can help with:
 
-Could you provide more details about what specific NCLEX topic you'd like me to explain? I can help with areas like:
+• Nursing concepts and fundamentals
+• Pharmacology and medications
+• Medical-surgical scenarios
+• Pediatric and maternal care
+• Psychiatric nursing
+• Test-taking strategies
 
-- Pharmacology and medications
-- Medical-surgical nursing
-- Pediatric nursing
-- Maternal-newborn nursing
-- Psychiatric nursing
-- Fundamentals of nursing
-- Leadership and management
-- Test-taking strategies
-
-The more specific your question, the more tailored my response can be!`;
+What specific topic would you like to explore?`;
   }
 }

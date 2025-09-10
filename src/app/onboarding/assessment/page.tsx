@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import QuestionCard from '@/components/assessment/QuestionCard';
 import { useOnboarding, OnboardingStep } from '@/context/OnboardingContext';
+import OnboardingProgressBar from '@/components/onboarding/OnboardingProgressBar';
 
 export default function AssessmentPage() {
   const {
@@ -32,14 +33,22 @@ export default function AssessmentPage() {
 
   return (
     <OnboardingLayout>
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-archer-bright-teal mb-4">
+      <motion.div
+        className="text-center mb-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        <h1 className="text-5xl font-bold gradient-text mb-6">
           NCLEX Diagnostic Assessment
         </h1>
-        <p className="text-archer-light-text max-w-2xl mx-auto">
+        <p className="text-xl text-white/80 max-w-2xl mx-auto mb-8 glassmorphic p-4 rounded-xl backdrop-blur-xl">
           Answer the following questions to help us personalize your study plan.
         </p>
-      </div>
+
+        <OnboardingProgressBar currentStep="assessment" />
+
+      </motion.div>
 
       <AnimatePresence mode="wait">
         {currentQuestion && (

@@ -36,6 +36,12 @@ export default function ChatInterface({
   useEffect(() => {
     const loadConversations = async () => {
       try {
+        // Don't load if we already have conversations with messages (from initial prompt processing)
+        if (conversations.length > 0 && conversations.some(conv => conv.messages.length > 0)) {
+          console.log("Skipping conversation load - already have conversations with messages");
+          return;
+        }
+
         // First, try to load from localStorage
         const savedConversations = localStorage.getItem('tutorConversations');
 
@@ -145,76 +151,120 @@ export default function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversations, activeConversationId, isTyping]);
 
+  // Debug conversation state changes
+  useEffect(() => {
+    if (activeConversationId) {
+      const activeConv = conversations.find(conv => conv.id === activeConversationId);
+      if (activeConv) {
+        console.log("Active conversation state:", {
+          id: activeConv.id,
+          messageCount: activeConv.messages.length,
+          lastMessage: activeConv.lastMessage,
+          messages: activeConv.messages.map(msg => ({
+            role: msg.role,
+            contentLength: msg.content.length,
+            timestamp: msg.timestamp
+          }))
+        });
+      }
+    }
+  }, [conversations, activeConversationId]);
+
   // Handle initial prompt if provided - only once when component mounts
   useEffect(() => {
+    // Only process if we have an initial prompt and conversations have been loaded
+    if (!initialPrompt || initialPromptProcessed || conversations.length === 0) {
+      return;
+    }
+
     // Set a flag in sessionStorage to track if this prompt has been processed
-    const promptKey = `processed_prompt_${initialPrompt?.substring(0, 20)}`;
+    const promptKey = `processed_prompt_${initialPrompt.substring(0, 20)}_${conversationTitle || 'default'}`;
     const hasProcessedPrompt = sessionStorage.getItem(promptKey);
 
-    if (initialPrompt && !initialPromptProcessed && !hasProcessedPrompt && conversations !== undefined) {
-      // Immediately mark as processed to prevent multiple executions
+    if (hasProcessedPrompt) {
+      console.log("Initial prompt already processed, skipping");
       setInitialPromptProcessed(true);
-      sessionStorage.setItem(promptKey, 'true');
-
-      console.log("Processing initial prompt (once only):", initialPrompt);
-      console.log("With title:", conversationTitle || "New Topic Conversation");
-
-      // Create a new conversation with the topic title
-      const newConversationId = uuidv4();
-      const timestamp = new Date();
-      const newConversation: Conversation = {
-        id: newConversationId,
-        title: conversationTitle || "New Topic Conversation",
-        lastMessage: '',
-        timestamp,
-        messages: []
-      };
-
-      // Update state with the new conversation
-      const updatedConversations = [newConversation, ...conversations];
-      setConversations(updatedConversations);
-      setActiveConversationId(newConversationId);
-
-      // Save the conversation first
-      localStorage.setItem('tutorConversations', JSON.stringify(updatedConversations));
-
-      // Then send the message after a short delay
-      setTimeout(() => {
-        if (initialPrompt) {
-          console.log("Now sending initial prompt message");
-
-          // Create a user message
-          const newMessageId = uuidv4();
-          const userMessage: ChatMessageProps = {
-            id: newMessageId,
-            content: initialPrompt,
-            role: 'user',
-            timestamp: new Date()
-          };
-
-          // Add the message to the conversation
-          const convsWithUserMessage = updatedConversations.map(conv => {
-            if (conv.id === newConversationId) {
-              return {
-                ...conv,
-                lastMessage: initialPrompt,
-                messages: [...conv.messages, userMessage]
-              };
-            }
-            return conv;
-          });
-
-          // Update state and save
-          setConversations(convsWithUserMessage);
-          localStorage.setItem('tutorConversations', JSON.stringify(convsWithUserMessage));
-
-          // Now make the API call
-          handleSendMessage(initialPrompt);
-        }
-      }, 500);
+      return;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialPrompt, conversationTitle]);
+
+    console.log("Processing initial prompt:", initialPrompt);
+    console.log("With title:", conversationTitle || "New Topic Conversation");
+    console.log("Current conversations length:", conversations.length);
+    console.log("Active conversation ID:", activeConversationId);
+
+    // Mark as processed immediately
+    setInitialPromptProcessed(true);
+    sessionStorage.setItem(promptKey, 'true');
+
+    // Create a new conversation with the topic title
+    const newConversationId = uuidv4();
+    const timestamp = new Date();
+    const newConversation: Conversation = {
+      id: newConversationId,
+      title: conversationTitle || "New Topic Conversation",
+      lastMessage: '',
+      timestamp,
+      messages: []
+    };
+
+    // Update state with the new conversation
+    const updatedConversations = [newConversation, ...conversations];
+    setConversations(updatedConversations);
+    setActiveConversationId(newConversationId);
+
+    // Save the conversation to localStorage
+    localStorage.setItem('tutorConversations', JSON.stringify(updatedConversations));
+
+    // Save to API if user is logged in
+    if (userId) {
+      fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: newConversationId,
+          userId,
+          title: newConversation.title,
+          lastMessage: newConversation.lastMessage,
+          timestamp: newConversation.timestamp,
+          messages: newConversation.messages
+        }),
+      }).catch(error => {
+        console.error('Error saving conversation to API:', error);
+      });
+    }
+
+    // Create user message
+    const newMessageId = uuidv4();
+    const userMessage: ChatMessageProps = {
+      id: newMessageId,
+      content: initialPrompt,
+      role: 'user',
+      timestamp: new Date()
+    };
+
+    // Add the message to the conversation
+    const convsWithUserMessage = updatedConversations.map(conv => {
+      if (conv.id === newConversationId) {
+        return {
+          ...conv,
+          lastMessage: initialPrompt,
+          messages: [...conv.messages, userMessage]
+        };
+      }
+      return conv;
+    });
+
+    // Update state and save
+    setConversations(convsWithUserMessage);
+    localStorage.setItem('tutorConversations', JSON.stringify(convsWithUserMessage));
+
+    // Trigger the API call with a small delay to ensure state is updated
+    setTimeout(() => {
+      handleSendMessage(initialPrompt, true);
+    }, 100);
+  }, [initialPrompt, conversationTitle, conversations, initialPromptProcessed, userId]);
 
   // Save conversations to localStorage and API
   const saveConversations = async (updatedConversations: Conversation[]) => {
@@ -269,22 +319,28 @@ export default function ChatInterface({
     }
   };
 
-  const handleSendMessage = async (message: string) => {
-    // Check if this is a duplicate message (sent within the last 2 seconds)
-    const currentConv = conversations.find(conv => conv.id === activeConversationId);
-    const lastMessage = currentConv?.messages[currentConv.messages.length - 1];
-    const isDuplicate = lastMessage &&
-                        lastMessage.role === 'user' &&
-                        lastMessage.content === message &&
-                        (new Date().getTime() - new Date(lastMessage.timestamp).getTime()) < 2000;
+  const handleSendMessage = async (message: string, isInitialPrompt = false) => {
+    // Skip duplicate check for initial prompts
+    if (!isInitialPrompt) {
+      // Check if this is a duplicate message (sent within the last 2 seconds)
+      const currentConv = conversations.find(conv => conv.id === activeConversationId);
+      const lastMessage = currentConv?.messages[currentConv.messages.length - 1];
+      const isDuplicate = lastMessage &&
+                          lastMessage.role === 'user' &&
+                          lastMessage.content === message &&
+                          (new Date().getTime() - new Date(lastMessage.timestamp).getTime()) < 2000;
 
-    // If it's a duplicate message, don't process it again
-    if (isDuplicate) {
-      console.log("Preventing duplicate message:", message);
-      return;
+      // If it's a duplicate message, don't process it again
+      if (isDuplicate) {
+        console.log("Preventing duplicate message:", message);
+        return;
+      }
     }
 
     console.log("Sending message:", message);
+    console.log("Current conversations before sending:", conversations.length);
+    console.log("Active conversation ID:", activeConversationId);
+
     const newMessageId = uuidv4();
     const timestamp = new Date();
 
@@ -295,6 +351,8 @@ export default function ChatInterface({
       role: 'user',
       timestamp
     };
+
+    console.log("Created user message:", newMessage);
 
     // If no active conversation, create a new one
     let currentConversationId = activeConversationId;
@@ -371,8 +429,13 @@ export default function ChatInterface({
       const aiMessageId = uuidv4();
       const aiTimestamp = new Date();
 
-      const conversationsWithAiResponse = conversations.map(conv => {
+      console.log("Adding AI response to conversation:", currentConversationId);
+      console.log("Updated conversations before AI response:", updatedConversations.length);
+      console.log("AI response content length:", data.response.length);
+
+      const conversationsWithAiResponse = updatedConversations.map(conv => {
         if (conv.id === currentConversationId) {
+          console.log("Found target conversation, messages before:", conv.messages.length);
           const aiResponseMessage: ChatMessageProps = { // Explicitly type the new message
             id: aiMessageId,
             content: data.response,
@@ -385,11 +448,15 @@ export default function ChatInterface({
             timestamp: aiTimestamp,
             messages: [...conv.messages, aiResponseMessage]
           };
+          console.log("Updated conversation messages after AI response:", updatedConv.messages.length);
           return updatedConv;
         }
         return conv;
       });
 
+      console.log("Final conversations with AI response:", conversationsWithAiResponse.length);
+
+      // Update state immediately
       setConversations(conversationsWithAiResponse);
 
       // Save updated conversations with AI response
@@ -409,7 +476,7 @@ export default function ChatInterface({
         ? "I'm sorry, the AI service is currently experiencing high demand and has reached its quota limit. Your conversation is still saved, and you can continue when the service is available again. In the meantime, you can try asking a different question or reviewing previous conversations."
         : "I'm sorry, I encountered an error while processing your request. Please try again later.";
 
-      const conversationsWithError = conversations.map(conv => {
+      const conversationsWithError = updatedConversations.map(conv => {
         if (conv.id === currentConversationId) {
           const errorMessageObject: ChatMessageProps = { // Explicitly type the new message
             id: errorMessageId,
@@ -511,8 +578,9 @@ export default function ChatInterface({
 
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar - darker */}
+    <div className="flex h-full overflow-hidden relative">
+
+      {/* Sidebar */}
       <ChatSidebar
         key="chat-sidebar"
         conversations={conversations}
@@ -524,178 +592,122 @@ export default function ChatInterface({
         toggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
       />
 
-      {/* Main Chat Area - lighter */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden pb-20 md:pb-0 bg-gradient-to-r from-archer-darker-teal to-archer-medium-teal">
-        {/* Main header with user info and options */}
-        <div className="py-4 px-6 flex items-center justify-between sticky top-0 z-50 shadow-lg"
-             style={{ background: 'linear-gradient(to right, var(--card-background-darker) 0%, var(--archer-medium-teal) 100%)' }}>
-          <div className="flex items-center">
-            {/* Sidebar toggle buttons - positioned in the main header */}
-            <div className="mr-4">
-              {/* Desktop toggle */}
-              <button
-                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                className="hidden md:block p-2 rounded-full bg-archer-bright-teal/20 hover:bg-archer-bright-teal/30 transition-colors"
-                aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-archer-bright-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+      {/* Main Chat Area - Fixed height and layout */}
+      <div className="flex-1 flex flex-col min-h-0 relative">
+        {/* Chat Messages Container - Fixed height with proper scrolling */}
+        <div className="flex-1 min-h-0 relative">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+            <div className="min-h-full">
+              {activeConversation && activeConversation.messages.length > 0 ? (
+                <div className="max-w-4xl mx-auto py-6 px-4 pb-24">
+                  <div className="space-y-4">
+                    {activeConversation.messages.map((message) => (
+                      <ChatMessage
+                        key={message.id}
+                        id={message.id}
+                        content={message.content}
+                        role={message.role}
+                        timestamp={message.timestamp}
+                      />
+                    ))}
+                    {isTyping && <TypingIndicator />}
+                    <div ref={messagesEndRef} className="h-4" />
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 pb-24">
+                  <div className="max-w-4xl mx-auto">
+                    <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-8">
+                      Hello, {userId ? 'User' : 'Guest'}
+                    </h1>
+                    <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
+                      I'm your AI NCLEX Tutor. Ask me anything about nursing concepts, practice questions, or study strategies!
+                    </p>
 
-              {/* Mobile toggle */}
-              <button
-                onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="md:hidden p-2 rounded-full bg-archer-bright-teal/20 hover:bg-archer-bright-teal/30 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-archer-bright-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
+                    <div className="max-w-3xl mx-auto mb-12">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                        {[
+                          {
+                            title: "Explain fluid and electrolyte balance",
+                            icon: (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                              </svg>
+                            )
+                          },
+                          {
+                            title: "What are priority nursing interventions?",
+                            icon: (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            )
+                          },
+                          {
+                            title: "Help me understand medication calculations",
+                            icon: (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                              </svg>
+                            )
+                          }
+                        ].map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleSendMessage(suggestion.title)}
+                            className="glassmorphic-card rounded-xl p-6 text-center transition-all transform hover:-translate-y-2 hover:scale-105 hover:bg-white/15 group"
+                          >
+                            <div className="p-4 rounded-full mb-4 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto w-fit group-hover:from-purple-500 group-hover:to-pink-500 transition-all">
+                              <div className="text-white">{suggestion.icon}</div>
+                            </div>
+                            <span className="text-sm font-medium text-white leading-tight">{suggestion.title}</span>
+                          </button>
+                        ))}
+                      </div>
 
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-white">
-                {activeConversation ? activeConversation.title : 'New Conversation'}
-              </h1>
-              {activeConversation && (
-                <button
-                  className="ml-2 p-1 text-archer-bright-teal hover:text-archer-light-blue transition-colors"
-                  onClick={() => {
-                    // In a real implementation, this would open a modal or inline editor
-                    const newTitle = prompt('Edit conversation title:', activeConversation.title);
-                    if (newTitle && newTitle.trim() !== '') {
-                      const updatedConversations = conversations.map(conv => {
-                        if (conv.id === activeConversation.id) {
-                          return {
-                            ...conv,
-                            title: newTitle.trim()
-                          };
-                        }
-                        return conv;
-                      });
+                      <div className="glassmorphic-card rounded-xl p-8 transform hover:-translate-y-2 transition-all hover:bg-white/15">
+                        <div className="flex items-center mb-6">
+                          <div className="mr-4 p-4 rounded-full bg-gradient-to-r from-teal-500 to-blue-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold text-white">NCLEX Study Assistant</h3>
+                            <p className="text-gray-300 text-sm">Your AI-powered study companion</p>
+                          </div>
+                        </div>
 
-                      setConversations(updatedConversations);
-
-                      // Save updated conversations
-                      saveConversations(updatedConversations);
-                    }
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {[
+                            "Explain the nursing process",
+                            "What are the priority nursing interventions for a patient with heart failure?",
+                            "Help me understand delegation principles",
+                            "What's the difference between type 1 and type 2 diabetes?",
+                            "How do I calculate medication dosages?",
+                            "What are the signs and symptoms of electrolyte imbalances?"
+                          ].map((suggestion, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleSendMessage(suggestion)}
+                              className="glassmorphic rounded-lg p-4 text-left transition-all text-sm text-white hover:-translate-y-1 hover:bg-white/15 hover:scale-105"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Chat content area with proper scrolling - lighter background */}
-        <div className="flex-1 overflow-y-auto pb-4" style={{ background: 'linear-gradient(to right, var(--card-background-lighter) 0%, var(--card-background-dark) 100%)' }}>
-          {activeConversation && activeConversation.messages.length > 0 ? (
-            <div className="max-w-3xl mx-auto py-8 px-4">
-              <div className="space-y-6">
-                {activeConversation.messages.map((message) => (
-                  <ChatMessage
-                    key={message.id}
-                    id={message.id}
-                    content={message.content}
-                    role={message.role}
-                    timestamp={message.timestamp}
-                  />
-                ))}
-                {isTyping && <TypingIndicator />}
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
-          ) : (
-            <div className="min-h-full flex flex-col items-center justify-center text-center p-6 py-10">
-              <h1 className="text-4xl font-bold text-white mb-8">
-                Hello, {userId ? 'User' : 'Guest'}
-              </h1>
-
-              <div className="max-w-2xl mx-auto mb-12">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                  {[
-                    {
-                      title: "Design an interactive kaleidoscope",
-                      icon: (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      )
-                    },
-                    {
-                      title: "Write a screenplay for a Chemistry DIY video",
-                      icon: (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                        </svg>
-                      )
-                    },
-                    {
-                      title: "Write a python script to monitor system performance",
-                      icon: (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                      )
-                    }
-                  ].map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSendMessage(suggestion.title)}
-                      className="rounded-xl p-5 text-left transition-all shadow-card hover:shadow-card-hover transform hover:-translate-y-1 flex flex-col items-center bg-card-background-dark border-none"
-                    >
-                      <div className="p-3 rounded-full mb-3 bg-archer-bright-teal">
-                        <div className="text-archer-dark-teal">{suggestion.icon}</div>
-                      </div>
-                      <span className="text-sm font-medium text-white">{suggestion.title}</span>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="rounded-xl p-6 shadow-card hover:shadow-card-hover transform hover:-translate-y-1 transition-all bg-card-background-darker border-none">
-                  <div className="flex items-center mb-5">
-                    <div className="mr-4 p-3 rounded-full bg-archer-light-blue">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-archer-dark-teal" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white">NCLEX Preparation</h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      "Explain fluid and electrolyte balance",
-                      "What are the priority nursing interventions for a patient with heart failure?",
-                      "Help me understand delegation principles",
-                      "What's the difference between type 1 and type 2 diabetes?"
-                    ].map((suggestion, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleSendMessage(suggestion)}
-                        className="rounded-lg p-4 text-left transition-all text-sm text-white shadow-card hover:shadow-card-hover hover:-translate-y-1 bg-card-background-dark"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div
-          className={`py-4 px-6 fixed bottom-0 left-0 right-0 z-50 shadow-lg ${
-            isMobileSidebarOpen ? 'w-full' : (
-              isSidebarCollapsed ? 'md:w-[calc(100%-4rem)] md:left-16' : 'md:w-[calc(100%-18rem)] md:left-72'
-            )
-          }`}
-          style={{ background: 'linear-gradient(to right, var(--card-background-darker) 0%, var(--archer-medium-teal) 100%)' }}>
-          <div className="max-w-3xl mx-auto">
+        {/* Fixed Input Area at Bottom */}
+        <div className="flex-shrink-0 border-t border-white/10 bg-gray-900/80 backdrop-blur-md">
+          <div className="max-w-4xl mx-auto py-4 px-6">
             <ChatInput onSendMessage={handleSendMessage} isLoading={isTyping} />
           </div>
         </div>

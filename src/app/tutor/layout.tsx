@@ -10,11 +10,7 @@ export default function TutorLayout({
   children,
 }: {
   children: React.ReactNode;
-}) {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <MainNav />
-      <main className="flex-grow">{children}</main>
-    </div>
-  );
+}) 
+{
+  return <div className="min-h-screen bg-gray-900">{children}</div>;
 }
