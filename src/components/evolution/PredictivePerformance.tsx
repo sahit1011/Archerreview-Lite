@@ -120,14 +120,10 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
         { week: 6, date: new Date(today.getTime() + 42 * 24 * 60 * 60 * 1000).toISOString(), projected: 85 }
       ],
       categoryProjections: [
-        { category: 'MANAGEMENT_OF_CARE', current: 65, projected: 82 },
-        { category: 'SAFETY_AND_INFECTION_CONTROL', current: 70, projected: 85 },
-        { category: 'HEALTH_PROMOTION', current: 75, projected: 88 },
-        { category: 'PSYCHOSOCIAL_INTEGRITY', current: 60, projected: 78 },
-        { category: 'BASIC_CARE_AND_COMFORT', current: 72, projected: 86 },
-        { category: 'PHARMACOLOGICAL_THERAPIES', current: 62, projected: 80 },
-        { category: 'REDUCTION_OF_RISK_POTENTIAL', current: 68, projected: 84 },
-        { category: 'PHYSIOLOGICAL_ADAPTATION', current: 70, projected: 86 }
+        { category: 'PHYSICS', current: 65, projected: 82 },
+        { category: 'CHEMISTRY', current: 70, projected: 85 },
+        { category: 'BIOLOGY', current: 60, projected: 78 },
+        { category: 'MATHEMATICS', current: 62, projected: 80 }
       ],
       scenarios: [
         {
@@ -193,22 +189,22 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
 
   // Get readiness color
   const getReadinessColor = (score: number) => {
-    if (score >= 85) return 'text-green-400';
-    if (score >= 75) return 'text-lime-400';
-    if (score >= 65) return 'text-yellow-400';
-    if (score >= 55) return 'text-orange-400';
-    return 'text-red-400';
+    if (score >= 85) return 'text-success';
+    if (score >= 75) return 'text-success';
+    if (score >= 65) return 'text-warning';
+    if (score >= 55) return 'text-warning';
+    return 'text-destructive';
   };
 
   if (loading) {
     return (
-      <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
+      <div className="bg-card rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-semibold text-archer-white">Predictive Performance Modeling</h2>
+          <h2 className="text-xl font-semibold text-foreground">Predictive Performance Modeling</h2>
         </div>
         <div className="flex flex-col items-center justify-center h-64">
-          <div className="w-16 h-16 border-t-4 border-archer-bright-teal border-solid rounded-full animate-spin"></div>
-          <p className="mt-4 text-archer-light-text">Loading prediction data...</p>
+          <div className="w-16 h-16 border-t-4 border-primary border-solid rounded-full animate-spin"></div>
+          <p className="mt-4 text-muted-foreground">Loading prediction data...</p>
         </div>
       </div>
     );
@@ -216,13 +212,13 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
 
   if (error) {
     return (
-      <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
+      <div className="bg-card rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-semibold text-archer-white">Predictive Performance Modeling</h2>
+          <h2 className="text-xl font-semibold text-foreground">Predictive Performance Modeling</h2>
         </div>
-        <div className="p-4 bg-red-900/20 text-red-400 rounded-lg shadow-button border border-red-900/30">
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg shadow-button border border-destructive/30">
           <div className="flex items-center">
-            <svg className="h-5 w-5 text-red-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-destructive mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <p>Error: {error}</p>
@@ -234,13 +230,13 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
 
   if (!predictionData) {
     return (
-      <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
+      <div className="bg-card rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-semibold text-archer-white">Predictive Performance Modeling</h2>
+          <h2 className="text-xl font-semibold text-foreground">Predictive Performance Modeling</h2>
         </div>
-        <div className="p-4 bg-blue-900/20 text-blue-400 rounded-lg shadow-button border border-blue-900/30">
+        <div className="p-4 bg-primary/10 text-primary rounded-lg shadow-button border border-primary/30">
           <div className="flex items-center">
-            <svg className="h-5 w-5 text-blue-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 4a1 1 0 011 1v4a1 1 0 11-2 0v-4a1 1 0 011-1z" clipRule="evenodd" />
             </svg>
             <p>No prediction data available yet. Complete more tasks to enable predictive modeling.</p>
@@ -253,29 +249,29 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
   const activeScenarioData = predictionData.scenarios.find(s => s.name === activeScenario) || predictionData.scenarios[0];
 
   return (
-    <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
+    <div className="bg-card rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-xl font-semibold text-archer-white">Predictive Performance Modeling</h2>
-        <div className="text-sm text-archer-light-text/70 bg-archer-dark-teal/50 px-3 py-1 rounded-lg shadow-button">
+        <h2 className="text-xl font-semibold text-foreground">Predictive Performance Modeling</h2>
+        <div className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-lg shadow-button">
           {predictionData.daysUntilExam} days until exam
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Readiness Projection */}
-        <div className="bg-card-background-dark p-5 rounded-lg shadow-card">
-          <h3 className="text-lg font-medium text-archer-white mb-4">Readiness Projection</h3>
+        <div className="bg-secondary p-5 rounded-lg shadow-card">
+          <h3 className="text-lg font-medium text-foreground mb-4">Readiness Projection</h3>
           <div className="flex items-center justify-center mb-6">
             <div className="relative h-48 w-48">
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-sm text-archer-light-text/70 mb-1">Current</div>
-                  <div className="text-3xl font-bold text-archer-white">{predictionData.currentReadiness}%</div>
-                  <div className="text-sm text-archer-light-text/70 mt-2">Projected</div>
+                  <div className="text-sm text-muted-foreground mb-1">Current</div>
+                  <div className="text-3xl font-bold text-foreground">{predictionData.currentReadiness}%</div>
+                  <div className="text-sm text-muted-foreground mt-2">Projected</div>
                   <div className={`text-4xl font-bold ${getReadinessColor(activeScenarioData.projectedReadiness)}`}>
                     {activeScenarioData.projectedReadiness}%
                   </div>
-                  <div className="text-xs text-archer-light-text/70 mt-1">
+                  <div className="text-xs text-muted-foreground mt-1">
                     Range: {predictionData.confidenceInterval.lower}-{predictionData.confidenceInterval.upper}%
                   </div>
                 </div>
@@ -314,7 +310,7 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
             </div>
           </div>
           <div className="h-48 relative">
-            <h4 className="text-sm font-medium text-archer-white mb-2">Weekly Projection</h4>
+            <h4 className="text-sm font-medium text-foreground mb-2">Weekly Projection</h4>
             <div className="absolute inset-0 flex items-end pt-6">
               {predictionData.weeklyProjections.map((week, index) => {
                 // Calculate a height that will fit within the container
@@ -329,14 +325,14 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
 
                 return (
                   <div key={index} className="flex-1 flex flex-col items-center group">
-                    <div className="text-xs text-archer-light-text/70 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="text-xs text-muted-foreground mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       {week.projected}%
                     </div>
                     <div
-                      className="w-4/5 bg-gradient-to-t from-archer-bright-teal to-archer-light-blue rounded-t-md shadow-button chart-bar"
+                      className="w-4/5 bg-gradient-to-t from-primary to-accent-foreground rounded-t-md shadow-button chart-bar"
                       style={{ height: `${scaledHeight}px` }}
                     ></div>
-                    <div className="text-xs text-archer-light-text/70 mt-2 text-center">
+                    <div className="text-xs text-muted-foreground mt-2 text-center">
                       W{week.week}
                     </div>
                   </div>
@@ -347,21 +343,21 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
         </div>
 
         {/* Scenario Selection */}
-        <div className="bg-card-background-dark p-5 rounded-lg shadow-card">
-          <h3 className="text-lg font-medium text-archer-white mb-4">What-If Scenarios</h3>
+        <div className="bg-secondary p-5 rounded-lg shadow-card">
+          <h3 className="text-lg font-medium text-foreground mb-4">What-If Scenarios</h3>
           <div className="space-y-3 mb-4">
             {predictionData.scenarios.map((scenario) => (
               <div
                 key={scenario.name}
                 className={`p-3 rounded-lg cursor-pointer transition-all ${
                   scenario.name === activeScenario
-                    ? 'bg-archer-bright-teal/20 border border-archer-bright-teal/40'
-                    : 'bg-archer-dark-teal/30 hover:bg-archer-dark-teal/50'
+                    ? 'bg-primary/10 border border-primary/40'
+                    : 'bg-muted hover:bg-muted/70'
                 }`}
                 onClick={() => setActiveScenario(scenario.name)}
               >
                 <div className="flex justify-between items-center">
-                  <div className="font-medium text-archer-white">{scenario.description}</div>
+                  <div className="font-medium text-foreground">{scenario.description}</div>
                   <div className={`font-bold ${getReadinessColor(scenario.projectedReadiness)}`}>
                     {scenario.projectedReadiness}%
                   </div>
@@ -370,9 +366,9 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
             ))}
           </div>
 
-          <h4 className="text-sm font-medium text-archer-white mb-2">Required Actions</h4>
-          <div className="bg-archer-dark-teal/30 p-3 rounded-lg">
-            <ul className="list-disc list-inside space-y-1 text-sm text-archer-light-text/80">
+          <h4 className="text-sm font-medium text-foreground mb-2">Required Actions</h4>
+          <div className="bg-muted p-3 rounded-lg">
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
               {activeScenarioData.requiredActions.map((action, index) => (
                 <li key={index}>{action}</li>
               ))}
@@ -382,33 +378,33 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
       </div>
 
       {/* Category Projections */}
-      <div className="bg-card-background-dark p-5 rounded-lg shadow-card mb-6">
-        <h3 className="text-lg font-medium text-archer-white mb-4">Category Projections</h3>
+      <div className="bg-secondary p-5 rounded-lg shadow-card mb-6">
+        <h3 className="text-lg font-medium text-foreground mb-4">Category Projections</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {predictionData.categoryProjections.map((category, index) => (
-            <div key={index} className="bg-archer-dark-teal/30 p-3 rounded-lg">
+            <div key={index} className="bg-muted p-3 rounded-lg">
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-archer-light-text/80">{formatCategoryName(category.category)}</span>
+                <span className="text-muted-foreground">{formatCategoryName(category.category)}</span>
               </div>
               <div className="flex items-center space-x-2 mb-2">
-                <span className="text-xs text-archer-light-text/70 w-16">Current:</span>
-                <div className="flex-grow bg-archer-dark-teal/50 rounded-full h-2 overflow-hidden">
+                <span className="text-xs text-muted-foreground w-16">Current:</span>
+                <div className="flex-grow bg-secondary rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-archer-bright-teal h-2 rounded-full transition-all duration-500 ease-in-out"
+                    className="bg-primary h-2 rounded-full transition-all duration-500 ease-in-out"
                     style={{ width: `${category.current}%` }}
                   ></div>
                 </div>
-                <span className="text-xs font-medium text-archer-white w-8 text-right">{category.current}%</span>
+                <span className="text-xs font-medium text-foreground w-8 text-right">{category.current}%</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-xs text-archer-light-text/70 w-16">Projected:</span>
-                <div className="flex-grow bg-archer-dark-teal/50 rounded-full h-2 overflow-hidden">
+                <span className="text-xs text-muted-foreground w-16">Projected:</span>
+                <div className="flex-grow bg-secondary rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-archer-light-blue h-2 rounded-full transition-all duration-500 ease-in-out"
+                    className="bg-accent-foreground h-2 rounded-full transition-all duration-500 ease-in-out"
                     style={{ width: `${category.projected}%` }}
                   ></div>
                 </div>
-                <span className="text-xs font-medium text-archer-white w-8 text-right">{category.projected}%</span>
+                <span className="text-xs font-medium text-foreground w-8 text-right">{category.projected}%</span>
               </div>
             </div>
           ))}
@@ -416,19 +412,19 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
       </div>
 
       {/* Insights */}
-      <div className="bg-card-background-dark p-5 rounded-lg shadow-card">
-        <h3 className="text-lg font-medium text-archer-white mb-4">AI Insights</h3>
+      <div className="bg-secondary p-5 rounded-lg shadow-card">
+        <h3 className="text-lg font-medium text-foreground mb-4">AI Insights</h3>
         <div className="space-y-3">
           {predictionData.insights.map((insight, index) => (
-            <div key={index} className="flex items-start bg-blue-900/10 border border-blue-900/20 rounded-lg p-3">
-              <LightBulbIcon className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5 mr-2" />
-              <p className="text-sm text-blue-400">{insight}</p>
+            <div key={index} className="flex items-start bg-primary/10 border border-primary/20 rounded-lg p-3">
+              <LightBulbIcon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5 mr-2" />
+              <p className="text-sm text-primary">{insight}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-border-color-dark text-xs text-archer-light-text/60">
+      <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
         <p>The Evolution Agent uses predictive modeling to forecast your future performance based on current trends and different study scenarios.</p>
       </div>
     </div>

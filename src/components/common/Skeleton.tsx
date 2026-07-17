@@ -19,7 +19,7 @@ export default function Skeleton({
   animate = true,
 }: SkeletonProps) {
   // Base styles
-  const baseStyles = 'bg-gray-200 animate-pulse';
+  const baseStyles = 'bg-muted animate-pulse';
   
   // Shape styles
   const shapeStyles = circle ? 'rounded-full' : 'rounded';
@@ -97,7 +97,7 @@ export function SkeletonCard({
   animate = true,
 }: SkeletonCardProps) {
   return (
-    <div className={`bg-white rounded-lg shadow p-4 ${className}`}>
+    <div className={`rounded-xl border border-border bg-card backdrop-blur-sm p-4 ${className}`}>
       <Skeleton height={headerHeight} className="mb-4" animate={animate} />
       <SkeletonText lines={contentLines} animate={animate} />
     </div>

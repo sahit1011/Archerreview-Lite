@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Content, Topic } from '@/models';
+import { requireAuth, requireAdmin } from '@/lib/api-auth';
 
 /**
  * API endpoint for content management
@@ -10,9 +11,13 @@ import { Content, Topic } from '@/models';
 
 export async function GET(request: NextRequest) {
   try {
+    // Require an authenticated user (study content is shared, not per-user scoped)
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+
     // Connect to the database
     await dbConnect();
-    
+
     // Get query parameters
     const searchQuery = request.nextUrl.searchParams.get('search');
     const topicId = request.nextUrl.searchParams.get('topic');
@@ -88,12 +93,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Creating shared study content requires admin privileges
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Connect to the database
     await dbConnect();
-    
+
     // Parse request body
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.title || !body.description || !body.type || !body.topicId || !body.duration) {
       return NextResponse.json(

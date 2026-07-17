@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import { requireAdmin } from '@/lib/api-auth';
 import { User, StudyPlan } from '@/models';
-import { 
-  scheduleAgent, 
+import {
+  scheduleAgent,
   updateScheduleEntry, 
   deleteScheduleEntry, 
   processDueEntries, 
@@ -18,9 +19,12 @@ import {
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Connect to the database
     await dbConnect();
-    
+
     // Parse request body
     const body = await request.json();
     
@@ -64,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Schedule the agent
-    const scheduleId = scheduleAgent({
+    const scheduleId = await scheduleAgent({
       agentType: body.agentType,
       sequenceType: body.sequenceType,
       scheduleType: body.scheduleType,
@@ -102,6 +106,9 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -109,7 +116,7 @@ export async function GET(request: NextRequest) {
     
     // Return specific schedule if ID is provided
     if (scheduleId) {
-      const scheduleEntry = getAllScheduledEntries().find(entry => entry.id === scheduleId);
+      const scheduleEntry = (await getAllScheduledEntries()).find(entry => entry.id === scheduleId);
       
       if (!scheduleEntry) {
         return NextResponse.json(
@@ -129,16 +136,16 @@ export async function GET(request: NextRequest) {
     
     // Return schedules for a specific user if userId is provided
     if (userId) {
-      const scheduleEntries = getUserScheduledEntries(userId);
-      
+      const scheduleEntries = await getUserScheduledEntries(userId);
+
       return NextResponse.json({
         success: true,
         scheduleEntries
       });
     }
-    
+
     // Return all schedules
-    const scheduleEntries = getAllScheduledEntries();
+    const scheduleEntries = await getAllScheduledEntries();
     
     return NextResponse.json({
       success: true,
@@ -165,9 +172,12 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Parse request body
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.id || !body.updates) {
       return NextResponse.json(
@@ -180,7 +190,7 @@ export async function PUT(request: NextRequest) {
     }
     
     // Update the schedule entry
-    const updatedEntry = updateScheduleEntry(body.id, body.updates);
+    const updatedEntry = await updateScheduleEntry(body.id, body.updates);
     
     if (!updatedEntry) {
       return NextResponse.json(
@@ -219,9 +229,12 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Parse request body
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.id) {
       return NextResponse.json(
@@ -234,7 +247,7 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Delete the schedule entry
-    const deleted = deleteScheduleEntry(body.id);
+    const deleted = await deleteScheduleEntry(body.id);
     
     if (!deleted) {
       return NextResponse.json(

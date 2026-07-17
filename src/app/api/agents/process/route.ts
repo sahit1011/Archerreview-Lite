@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  processDueEntries, 
-  scheduleStandardMonitoringForAllUsers, 
-  getDueEntries 
+import { requireAdmin } from '@/lib/api-auth';
+import {
+  processDueEntries,
+  scheduleStandardMonitoringForAllUsers,
+  getDueEntries
 } from '@/services/agentScheduler';
 
 /**
@@ -12,22 +13,11 @@ import {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Parse request body
-    const body = await request.json();
-    
-    // Check for admin key (simple protection for demo)
-    if (!body.adminKey || body.adminKey !== process.env.ADMIN_KEY) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Unauthorized access' 
-        },
-        { status: 401 }
-      );
-    }
-    
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Get due entries before processing
-    const dueEntries = getDueEntries();
+    const dueEntries = await getDueEntries();
     
     // Process due entries
     const results = await processDueEntries();
@@ -67,20 +57,9 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Parse request body
-    const body = await request.json();
-    
-    // Check for admin key (simple protection for demo)
-    if (!body.adminKey || body.adminKey !== process.env.ADMIN_KEY) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Unauthorized access' 
-        },
-        { status: 401 }
-      );
-    }
-    
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Schedule standard monitoring for all users
     const scheduleIds = await scheduleStandardMonitoringForAllUsers();
     

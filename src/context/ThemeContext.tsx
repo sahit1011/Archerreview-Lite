@@ -17,11 +17,12 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>('dark');
+  // Aurora Light is the default experience.
+  const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
     // Check if user has a theme preference in localStorage
-    const savedTheme = (localStorage.getItem('theme') as Theme) || 'dark';
+    const savedTheme = (localStorage.getItem('theme') as Theme) || 'light';
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);

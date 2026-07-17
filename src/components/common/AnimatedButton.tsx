@@ -1,8 +1,21 @@
 'use client';
 
 import React, { ButtonHTMLAttributes, ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import { buttonHover } from '@/utils/animationUtils';
+import { motion, Variants } from 'framer-motion';
+
+// Variants for the button's rest/hover/tap states.
+const buttonHover: Variants = {
+  rest: { scale: 1, y: 0 },
+  hover: {
+    scale: 1.02,
+    y: -2,
+    transition: { duration: 0.2, ease: 'easeOut' },
+  },
+  tap: {
+    scale: 0.98,
+    transition: { duration: 0.1, ease: 'easeOut' },
+  },
+};
 
 interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
@@ -38,11 +51,11 @@ export default function AnimatedButton({
   
   // Variant styles
   const variantStyles = {
-    primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500',
-    secondary: 'bg-gray-100 text-gray-800 hover:bg-gray-200 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500',
-    outline: 'bg-transparent text-indigo-600 border border-indigo-600 hover:bg-indigo-50 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500',
-    success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-offset-2 focus:ring-green-500',
+    primary: 'bg-primary text-primary-foreground font-semibold hover:brightness-110 focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-primary',
+    secondary: 'bg-secondary text-secondary-foreground border border-border hover:bg-muted focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-border',
+    outline: 'bg-transparent text-primary border border-primary hover:bg-primary/10 focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-primary',
+    danger: 'bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25 focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-destructive',
+    success: 'bg-success/15 text-success border border-success/30 hover:bg-success/25 focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-success',
   };
   
   // Width style
@@ -62,7 +75,7 @@ export default function AnimatedButton({
       initial="rest"
       variants={buttonHover}
       disabled={loading || props.disabled}
-      {...props}
+      {...(props as any)}
     >
       {loading ? (
         <>

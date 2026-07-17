@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { User, Topic, StudyPlan, Task, Alert } from '@/models';
 import { addDays, addHours, startOfDay, endOfDay } from 'date-fns';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
  * API endpoint for scheduling a review session
@@ -9,6 +10,11 @@ import { addDays, addHours, startOfDay, endOfDay } from 'date-fns';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request; userId is token-derived and trusted.
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
@@ -16,18 +22,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate required fields
-    if (!body.userId || !body.topicId) {
+    if (!body.topicId) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Missing required fields: userId and topicId'
+          message: 'Missing required field: topicId'
         },
         { status: 400 }
       );
     }
 
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
         {
@@ -50,8 +56,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's study plan
-    const studyPlan = await StudyPlan.findOne({ user: body.userId });
+    // Get the authenticated user's study plan
+    const studyPlan = await StudyPlan.findOne({ user: userId });
     if (!studyPlan) {
       return NextResponse.json(
         {
@@ -63,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine the best time for the review session
-    const scheduledTime = await findOptimalReviewTime(body.userId, studyPlan._id);
+    const scheduledTime = await findOptimalReviewTime(userId, studyPlan._id as string);
 
     // Create the review task
     const task = new Task({
@@ -88,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     // Create an alert for the user
     const alert = new Alert({
-      user: body.userId,
+      user: userId,
       plan: studyPlan._id,
       type: 'REMEDIATION',
       severity: 'MEDIUM',

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { User, Performance, Topic, Content } from '@/models';
+import { User, Performance, Topic, Content, Note } from '@/models';
 import { generateTopicTutorResponse } from '@/services/generativeAI';
 import { formatAIResponse } from '@/utils/responseFormatter';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
  * API endpoint for the Topic-Specific AI Tutor
@@ -10,6 +11,11 @@ import { formatAIResponse } from '@/utils/responseFormatter';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
@@ -27,19 +33,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user exists if userId is provided
-    let user = null;
-    if (body.userId) {
-      user = await User.findById(body.userId);
-      if (!user) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: 'User not found'
-          },
-          { status: 404 }
-        );
-      }
+    // Load the authenticated user
+    const user = await User.findById(userId);
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'User not found'
+        },
+        { status: 404 }
+      );
     }
 
     // Check if topic exists
@@ -96,13 +99,32 @@ export async function POST(request: NextRequest) {
 
     // Get related content for this topic
     const relatedContent = await Content.find({ topic: topic._id }).limit(3);
-    
+
     // Extract content titles and types for context
     const contentContext = relatedContent.map(c => ({
       title: c.title,
       type: c.type,
       description: c.description.substring(0, 100) // Truncate for brevity
     }));
+
+    // Session memory: the student's saved revision notes for this topic, so the
+    // tutor builds on previous sessions instead of starting from scratch.
+    let savedNotes: string | undefined;
+    try {
+      const notes = await Note.find({ user: userId, topic: topic._id })
+        .sort({ updatedAt: -1 })
+        .limit(3)
+        .select('title content')
+        .lean();
+      if (notes.length > 0) {
+        savedNotes = notes
+          .map((n: any) => `### ${n.title}\n${n.content}`)
+          .join('\n\n')
+          .slice(0, 4000);
+      }
+    } catch (notesErr) {
+      console.error('Error loading notes for tutor memory:', notesErr);
+    }
 
     // Generate response using the Generative AI service with topic context
     const rawResponse = await generateTopicTutorResponse(
@@ -114,9 +136,10 @@ export async function POST(request: NextRequest) {
         topicCategory: topic.category,
         topicDifficulty: topic.difficulty,
         performance: performanceData,
-        relatedContent: contentContext
+        relatedContent: contentContext,
+        savedNotes
       },
-      body.userId,
+      userId,
       conversationHistory
     );
 
@@ -124,7 +147,7 @@ export async function POST(request: NextRequest) {
     const formattedResponse = formatAIResponse(rawResponse);
 
     // Log the interaction for analytics
-    await logTutorInteraction(body.userId, topic._id, body.message, formattedResponse);
+    await logTutorInteraction(userId, topic._id as string, body.message, formattedResponse);
 
     // Return success response
     return NextResponse.json({

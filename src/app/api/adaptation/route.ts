@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { User, StudyPlan } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
+import { User, StudyPlan, Adaptation } from '@/models';
 import { runAdaptationAgent } from '@/services/adaptationAgent';
 import { runMonitorAgent } from '@/services/monitorAgent';
 
@@ -11,25 +12,15 @@ import { runMonitorAgent } from '@/services/monitorAgent';
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to the database
     await dbConnect();
 
-    // Parse request body
-    const body = await request.json();
-
-    // Validate required fields
-    if (!body.userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required field: userId'
-        },
-        { status: 400 }
-      );
-    }
-
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
         {
@@ -41,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has a study plan
-    const studyPlan = await StudyPlan.findOne({ user: body.userId });
+    const studyPlan = await StudyPlan.findOne({ user: userId });
     if (!studyPlan) {
       return NextResponse.json(
         {
@@ -55,14 +46,14 @@ export async function POST(request: NextRequest) {
     // Get monitoring data first
     let monitoringData;
     try {
-      monitoringData = await runMonitorAgent(body.userId);
+      monitoringData = await runMonitorAgent(userId);
     } catch (monitorError) {
       console.warn('Error running monitor agent before adaptation:', monitorError);
       // Continue without monitoring data
     }
 
     // Run adaptation agent with monitoring data if available
-    const result = await runAdaptationAgent(body.userId, monitoringData);
+    const result = await runAdaptationAgent(userId, monitoringData);
 
     // Return success response
     return NextResponse.json({
@@ -91,23 +82,12 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to the database
     await dbConnect();
-
-    // Get userId from query parameters
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    // Validate required parameters
-    if (!userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required parameter: userId'
-        },
-        { status: 400 }
-      );
-    }
 
     // Check if user exists
     const user = await User.findById(userId);
@@ -121,41 +101,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // For now, we'll return a mock adaptation history
-    // In a real implementation, this would be stored in the database
+    // Real adaptation history from the Adaptation collection (written by the agent).
+    const adaptations = await Adaptation.find({ user: userId }).sort({ createdAt: -1 }).limit(50);
+    const countBy = (type: string) => adaptations.filter((a) => a.type === type).length;
     return NextResponse.json({
       success: true,
       adaptationHistory: {
-        recentAdaptations: [
-          {
-            date: new Date(Date.now() - 86400000 * 2), // 2 days ago
-            type: 'RESCHEDULE_MISSED_TASK',
-            description: 'Rescheduled missed task "Pharmacology Quiz" from Monday to Wednesday',
-            affectedTaskIds: ['mock-task-id-1']
-          },
-          {
-            date: new Date(Date.now() - 86400000 * 4), // 4 days ago
-            type: 'ADJUST_DIFFICULTY',
-            description: 'Adjusted difficulty of task "Cardiac Assessment" from HARD to MEDIUM due to struggling with difficult content',
-            affectedTaskIds: ['mock-task-id-2']
-          },
-          {
-            date: new Date(Date.now() - 86400000 * 7), // 7 days ago
-            type: 'ADD_REVIEW_SESSION',
-            description: 'Added review session for "Fluid and Electrolyte Balance" on Friday based on your performance',
-            affectedTaskIds: ['mock-task-id-3']
-          }
-        ],
+        recentAdaptations: adaptations.slice(0, 10).map((a) => ({
+          date: a.createdAt,
+          type: a.type,
+          description: a.description,
+          affectedTaskIds: (a.metadata as any)?.affectedTaskIds || (a.task ? [String(a.task)] : []),
+        })),
         stats: {
-          totalAdaptations: 12,
-          rescheduledTasks: 5,
-          difficultyAdjustments: 3,
-          reviewSessionsAdded: 2,
-          remedialContentAdded: 1,
-          workloadRebalanced: true,
-          patternAdjustments: 1
-        }
-      }
+          totalAdaptations: adaptations.length,
+          rescheduledTasks: countBy('RESCHEDULE'),
+          difficultyAdjustments: countBy('DIFFICULTY_ADJUSTMENT'),
+          reviewSessionsAdded: countBy('CONTENT_ADDITION'),
+          remedialContentAdded: countBy('REMEDIAL_CONTENT'),
+          workloadRebalanced: countBy('PLAN_REBALANCE') > 0,
+        },
+      },
     });
   } catch (error) {
     console.error('Error retrieving adaptation history:', error);

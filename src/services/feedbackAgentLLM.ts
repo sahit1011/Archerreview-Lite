@@ -73,7 +73,7 @@ export async function analyzeFeedbackWithLLM(
     const performanceData = performances.map(p => ({
       topic: p.topic ? p.topic.toString() : 'Unknown',
       score: p.score,
-      confidence: p.confidenceLevel,
+      confidence: p.confidence,
       date: p.createdAt
     }));
 
@@ -98,7 +98,7 @@ export async function analyzeFeedbackWithLLM(
 
     // Generate prompt for the LLM
     const prompt = `
-Analyze the following user feedback for a NCLEX study platform:
+Analyze the following user feedback for a NEET/JEE study platform:
 
 "${feedbackText}"
 

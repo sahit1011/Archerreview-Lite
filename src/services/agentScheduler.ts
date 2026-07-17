@@ -1,20 +1,26 @@
 import { AgentType, getEnabledAgents } from './agentRegistry';
 import { runAgent, OrchestrationOptions, runStandardSequence, runComprehensiveSequence } from './agentOrchestrator';
 import dbConnect from '@/lib/db';
-import { User, StudyPlan } from '@/models';
+import { User, StudyPlan, ScheduledJob } from '@/models';
+import type { IScheduledJob, JobStatus } from '@/models/ScheduledJob';
 
 /**
  * Agent Scheduler - Schedules agent runs based on priority and timing
- * 
+ *
  * This service:
  * 1. Schedules periodic agent runs
  * 2. Manages event-triggered agent executions
  * 3. Prioritizes agent runs based on user needs
  * 4. Tracks scheduled runs and their results
+ *
+ * Durability: schedule entries are persisted to MongoDB (the `ScheduledJob`
+ * model) rather than a module-level in-memory array, so they survive cold
+ * starts / serverless invocations and can be driven by a real cron via
+ * POST /api/cron/run-due.
  */
 
 // Schedule types
-export type ScheduleType = 
+export type ScheduleType =
   | 'daily'       // Run once per day
   | 'weekly'      // Run once per week
   | 'hourly'      // Run once per hour
@@ -22,7 +28,8 @@ export type ScheduleType =
   | 'event'       // Run in response to an event
   | 'manual';     // Run manually triggered
 
-// Schedule entry
+// Schedule entry — the stable public shape used by API routes. This is a plain
+// object projected from a persisted ScheduledJob document.
 export interface ScheduleEntry {
   id: string;
   agentType: AgentType | 'sequence';
@@ -38,63 +45,108 @@ export interface ScheduleEntry {
   options?: OrchestrationOptions;
 }
 
-// In-memory schedule storage (would be replaced with database in production)
-let scheduleEntries: ScheduleEntry[] = [];
-
 /**
- * Schedule an agent to run
- * @param entry Schedule entry
- * @returns Schedule entry ID
+ * Map a persisted ScheduledJob document to the public ScheduleEntry shape.
+ * `enabled` is derived from status === 'active'. `interval` (ms) is derived
+ * from the stored intervalMinutes.
  */
-export function scheduleAgent(entry: Omit<ScheduleEntry, 'id'>): string {
-  const id = `schedule_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  
-  const newEntry: ScheduleEntry = {
-    ...entry,
-    id,
-    nextRun: calculateNextRun(entry)
+function toEntry(doc: IScheduledJob): ScheduleEntry {
+  return {
+    id: String(doc._id),
+    agentType: doc.agentType,
+    sequenceType: doc.sequenceType,
+    scheduleType: doc.type,
+    userId: doc.userId,
+    lastRun: doc.lastRun,
+    nextRun: doc.nextRun,
+    interval: typeof doc.intervalMinutes === 'number' ? doc.intervalMinutes * 60 * 1000 : undefined,
+    priority: doc.priority,
+    enabled: doc.status === 'active',
+    params: doc.params,
+    options: doc.options as OrchestrationOptions | undefined
   };
-  
-  scheduleEntries.push(newEntry);
-  return id;
 }
 
 /**
- * Calculate the next run time for a schedule entry
+ * Schedule an agent to run. Persists a ScheduledJob and returns its id.
+ * @param entry Schedule entry
+ * @returns Schedule entry ID (the persisted document id)
+ */
+export async function scheduleAgent(entry: Omit<ScheduleEntry, 'id'>): Promise<string> {
+  await dbConnect();
+
+  const status: JobStatus = entry.enabled === false ? 'paused' : 'active';
+  const intervalMinutes =
+    typeof entry.interval === 'number' ? Math.round(entry.interval / 60000) : undefined;
+
+  const doc = await ScheduledJob.create({
+    agentType: entry.agentType,
+    sequenceType: entry.sequenceType,
+    type: entry.scheduleType,
+    userId: entry.userId,
+    nextRun: calculateNextRun(entry),
+    priority: entry.priority ?? 5,
+    status,
+    intervalMinutes,
+    params: entry.params,
+    options: entry.options
+  });
+
+  return String(doc._id);
+}
+
+/**
+ * Calculate the next run time for a schedule entry.
+ *
+ * Previously 'event' (and 'manual') returned undefined, so event-triggered
+ * entries got a nextRun of undefined and never executed. Event entries are
+ * meant to run immediately, so they now resolve to "now".
  * @param entry Schedule entry
  * @returns Next run time
  */
-function calculateNextRun(entry: Omit<ScheduleEntry, 'id' | 'nextRun'>): Date | undefined {
-  if (entry.scheduleType === 'manual' || entry.scheduleType === 'event') {
-    return undefined;
-  }
-  
+function calculateNextRun(entry: { scheduleType: ScheduleType; interval?: number }): Date | undefined {
   const now = new Date();
-  
+
   switch (entry.scheduleType) {
-    case 'daily':
+    case 'event':
+      // Event-based runs should fire immediately.
+      return now;
+
+    case 'manual':
+      // Manual runs are only triggered explicitly; no automatic nextRun.
+      return undefined;
+
+    case 'daily': {
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
       return tomorrow;
-    
-    case 'weekly':
+    }
+
+    case 'weekly': {
       const nextWeek = new Date(now);
       nextWeek.setDate(nextWeek.getDate() + 7);
       nextWeek.setHours(0, 0, 0, 0);
       return nextWeek;
-    
-    case 'hourly':
+    }
+
+    case 'hourly': {
       const nextHour = new Date(now);
       nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
       return nextHour;
-    
-    case 'priority':
+    }
+
+    case 'priority': {
       const fourHours = new Date(now);
       fourHours.setHours(fourHours.getHours() + 4);
       return fourHours;
-    
+    }
+
     default:
+      // Fall back to an interval-based schedule if one was supplied.
+      if (typeof entry.interval === 'number' && entry.interval > 0) {
+        return new Date(now.getTime() + entry.interval);
+      }
       return undefined;
   }
 }
@@ -103,8 +155,10 @@ function calculateNextRun(entry: Omit<ScheduleEntry, 'id' | 'nextRun'>): Date | 
  * Get all scheduled entries
  * @returns All schedule entries
  */
-export function getAllScheduledEntries(): ScheduleEntry[] {
-  return [...scheduleEntries];
+export async function getAllScheduledEntries(): Promise<ScheduleEntry[]> {
+  await dbConnect();
+  const docs = await ScheduledJob.find({}).lean<IScheduledJob[]>();
+  return docs.map(toEntry);
 }
 
 /**
@@ -112,8 +166,10 @@ export function getAllScheduledEntries(): ScheduleEntry[] {
  * @param userId User ID
  * @returns Schedule entries for the user
  */
-export function getUserScheduledEntries(userId: string): ScheduleEntry[] {
-  return scheduleEntries.filter(entry => entry.userId === userId);
+export async function getUserScheduledEntries(userId: string): Promise<ScheduleEntry[]> {
+  await dbConnect();
+  const docs = await ScheduledJob.find({ userId }).lean<IScheduledJob[]>();
+  return docs.map(toEntry);
 }
 
 /**
@@ -121,176 +177,243 @@ export function getUserScheduledEntries(userId: string): ScheduleEntry[] {
  * @param agentType Agent type
  * @returns Schedule entries for the agent
  */
-export function getAgentScheduledEntries(agentType: AgentType): ScheduleEntry[] {
-  return scheduleEntries.filter(entry => entry.agentType === agentType);
+export async function getAgentScheduledEntries(agentType: AgentType): Promise<ScheduleEntry[]> {
+  await dbConnect();
+  const docs = await ScheduledJob.find({ agentType }).lean<IScheduledJob[]>();
+  return docs.map(toEntry);
 }
 
 /**
- * Get scheduled entries due for execution
+ * Get scheduled entries due for execution (active + nextRun <= now).
  * @returns Schedule entries due for execution
  */
-export function getDueEntries(): ScheduleEntry[] {
+export async function getDueEntries(): Promise<ScheduleEntry[]> {
+  await dbConnect();
   const now = new Date();
-  return scheduleEntries.filter(entry => 
-    entry.enabled && 
-    entry.nextRun && 
-    entry.nextRun <= now
-  );
+  const docs = await ScheduledJob.find({
+    status: 'active',
+    nextRun: { $ne: null, $lte: now }
+  }).lean<IScheduledJob[]>();
+  return docs.map(toEntry);
 }
 
 /**
- * Update a schedule entry
+ * Update a schedule entry.
  * @param id Schedule entry ID
- * @param updates Updates to apply
+ * @param updates Updates to apply (public ScheduleEntry fields)
  * @returns Updated schedule entry
  */
-export function updateScheduleEntry(id: string, updates: Partial<ScheduleEntry>): ScheduleEntry | undefined {
-  const index = scheduleEntries.findIndex(entry => entry.id === id);
-  
-  if (index === -1) {
+export async function updateScheduleEntry(
+  id: string,
+  updates: Partial<ScheduleEntry>
+): Promise<ScheduleEntry | undefined> {
+  await dbConnect();
+
+  const existing = await ScheduledJob.findById(id);
+  if (!existing) {
     return undefined;
   }
-  
-  const updatedEntry = {
-    ...scheduleEntries[index],
-    ...updates
-  };
-  
-  // Recalculate next run if schedule type changed
-  if (updates.scheduleType && updates.scheduleType !== scheduleEntries[index].scheduleType) {
-    updatedEntry.nextRun = calculateNextRun(updatedEntry);
+
+  if (updates.agentType !== undefined) existing.agentType = updates.agentType;
+  if (updates.sequenceType !== undefined) existing.sequenceType = updates.sequenceType;
+  if (updates.userId !== undefined) existing.userId = updates.userId;
+  if (updates.lastRun !== undefined) existing.lastRun = updates.lastRun;
+  if (updates.nextRun !== undefined) existing.nextRun = updates.nextRun;
+  if (updates.priority !== undefined) existing.priority = updates.priority;
+  if (updates.params !== undefined) existing.params = updates.params;
+  if (updates.options !== undefined) existing.options = updates.options;
+  if (updates.interval !== undefined) {
+    existing.intervalMinutes = Math.round(updates.interval / 60000);
   }
-  
-  scheduleEntries[index] = updatedEntry;
-  return updatedEntry;
+  if (updates.enabled !== undefined) {
+    existing.status = updates.enabled ? 'active' : 'paused';
+  }
+
+  // Recalculate next run if the schedule type changed.
+  if (updates.scheduleType && updates.scheduleType !== existing.type) {
+    existing.type = updates.scheduleType;
+    existing.nextRun = calculateNextRun({
+      scheduleType: existing.type,
+      interval: updates.interval
+    });
+  }
+
+  await existing.save();
+  return toEntry(existing);
 }
 
 /**
- * Delete a schedule entry
+ * Delete a schedule entry.
  * @param id Schedule entry ID
  * @returns Whether the entry was deleted
  */
-export function deleteScheduleEntry(id: string): boolean {
-  const initialLength = scheduleEntries.length;
-  scheduleEntries = scheduleEntries.filter(entry => entry.id !== id);
-  return scheduleEntries.length < initialLength;
+export async function deleteScheduleEntry(id: string): Promise<boolean> {
+  await dbConnect();
+  const result = await ScheduledJob.findByIdAndDelete(id);
+  return result !== null;
 }
 
 /**
- * Process due schedule entries
+ * Execute a single schedule entry and update its lastRun/nextRun.
+ * Shared by processDueEntries and the cron route.
+ */
+export async function runScheduleEntry(entry: ScheduleEntry): Promise<any> {
+  let result;
+
+  if (entry.agentType === 'sequence') {
+    if (entry.sequenceType === 'comprehensive') {
+      result = await runComprehensiveSequence(entry.userId!, entry.options);
+    } else {
+      result = await runStandardSequence(entry.userId!, entry.options);
+    }
+  } else {
+    result = await runAgent(entry.agentType, entry.userId!, entry.params || {}, entry.options);
+  }
+
+  return result;
+}
+
+/**
+ * Process due schedule entries.
  * @returns Results of processed entries
  */
 export async function processDueEntries(): Promise<any[]> {
-  const dueEntries = getDueEntries();
-  const results = [];
-  
   // Connect to the database
   await dbConnect();
-  
+
+  const dueEntries = await getDueEntries();
+  const results = [];
+
   for (const entry of dueEntries) {
     try {
-      let result;
-      
-      // Execute the entry based on its type
-      if (entry.agentType === 'sequence') {
-        if (entry.sequenceType === 'comprehensive') {
-          result = await runComprehensiveSequence(entry.userId!, entry.options);
-        } else {
-          result = await runStandardSequence(entry.userId!, entry.options);
-        }
-      } else {
-        result = await runAgent(entry.agentType, entry.userId!, entry.params || {}, entry.options);
-      }
-      
+      const result = await runScheduleEntry(entry);
+
       // Update entry with last run time and calculate next run
-      updateScheduleEntry(entry.id, {
+      const nextRun = calculateNextRun({ scheduleType: entry.scheduleType, interval: entry.interval });
+      await updateScheduleEntry(entry.id, {
         lastRun: new Date(),
-        nextRun: calculateNextRun(entry)
+        // For one-shot (event/manual) entries nextRun becomes undefined and they
+        // won't be picked up again; we clear nextRun by writing null below.
+        ...(nextRun ? { nextRun } : {})
       });
-      
+      if (!nextRun) {
+        await ScheduledJob.findByIdAndUpdate(entry.id, { $set: { nextRun: null } });
+      }
+
       results.push({
         entryId: entry.id,
         success: true,
         result
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error processing schedule entry ${entry.id}:`, error);
-      
+
       // Update entry with last run time and calculate next run
-      updateScheduleEntry(entry.id, {
+      const nextRun = calculateNextRun({ scheduleType: entry.scheduleType, interval: entry.interval });
+      await updateScheduleEntry(entry.id, {
         lastRun: new Date(),
-        nextRun: calculateNextRun(entry)
+        ...(nextRun ? { nextRun } : {})
       });
-      
+      if (!nextRun) {
+        await ScheduledJob.findByIdAndUpdate(entry.id, { $set: { nextRun: null } });
+      }
+
       results.push({
         entryId: entry.id,
         success: false,
-        error: error.message
+        error: error?.message ?? String(error)
       });
     }
   }
-  
+
   return results;
 }
 
 /**
- * Schedule standard monitoring for all users
+ * Schedule standard monitoring for all users (idempotent-ish: only creates a
+ * daily entry for a user if one isn't already active).
  * @returns Schedule entry IDs
  */
 export async function scheduleStandardMonitoringForAllUsers(): Promise<string[]> {
   // Connect to the database
   await dbConnect();
-  
+
   // Get all users with study plans
   const studyPlans = await StudyPlan.find({});
   const entryIds: string[] = [];
-  
+
   for (const plan of studyPlans) {
     const userId = plan.user.toString();
-    
-    // Schedule daily monitoring
-    const dailyId = scheduleAgent({
-      agentType: 'sequence',
-      sequenceType: 'standard',
-      scheduleType: 'daily',
+
+    // Avoid piling up duplicate daily entries on every init by reusing an
+    // existing active daily sequence entry for this user if present.
+    const existingDaily = await ScheduledJob.findOne({
       userId,
-      priority: 5,
-      enabled: true,
-      options: {
-        runDependencies: true
-      }
-    });
-    
-    entryIds.push(dailyId);
-    
-    // Check if user is close to exam
-    const examDate = new Date(plan.examDate);
-    const now = new Date();
-    const daysUntilExam = Math.ceil((examDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // If user is within 14 days of exam, schedule priority monitoring
-    if (daysUntilExam <= 14) {
-      const priorityId = scheduleAgent({
+      agentType: 'sequence',
+      type: 'daily',
+      status: 'active'
+    }).lean<IScheduledJob | null>();
+
+    if (existingDaily) {
+      entryIds.push(String(existingDaily._id));
+    } else {
+      const dailyId = await scheduleAgent({
         agentType: 'sequence',
-        sequenceType: 'comprehensive',
-        scheduleType: 'priority',
+        sequenceType: 'standard',
+        scheduleType: 'daily',
         userId,
-        priority: 8,
+        priority: 5,
         enabled: true,
         options: {
           runDependencies: true
         }
       });
-      
-      entryIds.push(priorityId);
+      entryIds.push(dailyId);
+    }
+
+    // Check if user is close to exam
+    const examDate = new Date(plan.examDate);
+    const now = new Date();
+    const daysUntilExam = Math.ceil((examDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    // If user is within 14 days of exam, schedule priority monitoring
+    if (daysUntilExam <= 14) {
+      const existingPriority = await ScheduledJob.findOne({
+        userId,
+        agentType: 'sequence',
+        type: 'priority',
+        status: 'active'
+      }).lean<IScheduledJob | null>();
+
+      if (existingPriority) {
+        entryIds.push(String(existingPriority._id));
+      } else {
+        const priorityId = await scheduleAgent({
+          agentType: 'sequence',
+          sequenceType: 'comprehensive',
+          scheduleType: 'priority',
+          userId,
+          priority: 8,
+          enabled: true,
+          options: {
+            runDependencies: true
+          }
+        });
+        entryIds.push(priorityId);
+      }
     }
   }
-  
+
   return entryIds;
 }
 
 /**
- * Trigger an event-based agent run
+ * Trigger an event-based agent run.
+ *
+ * Creates a persisted 'event' entry. Event entries now get a valid nextRun
+ * ("now") via calculateNextRun, so processDueEntries actually executes them
+ * (previously they had nextRun = undefined and never ran). The temporary entry
+ * is deleted afterwards.
  * @param agentType Agent type
  * @param userId User ID
  * @param params Additional parameters
@@ -303,8 +426,8 @@ export async function triggerEventBasedRun(
   params: Record<string, any> = {},
   options: OrchestrationOptions = {}
 ): Promise<any> {
-  // Create a temporary schedule entry
-  const entryId = scheduleAgent({
+  // Create a temporary, persisted schedule entry (nextRun = now for 'event').
+  const entryId = await scheduleAgent({
     agentType,
     sequenceType: agentType === 'sequence' ? 'standard' : undefined,
     scheduleType: 'event',
@@ -314,13 +437,13 @@ export async function triggerEventBasedRun(
     params,
     options
   });
-  
-  // Process the entry immediately
+
+  // Process the entry immediately.
   const results = await processDueEntries();
   const result = results.find(r => r.entryId === entryId);
-  
-  // Delete the temporary entry
-  deleteScheduleEntry(entryId);
-  
+
+  // Delete the temporary entry.
+  await deleteScheduleEntry(entryId);
+
   return result;
 }

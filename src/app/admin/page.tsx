@@ -162,7 +162,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="font-medium">Add New Topic</p>
-              <p className="text-sm text-gray-500">Create a new NCLEX topic</p>
+              <p className="text-sm text-gray-500">Create a new NEET/JEE topic</p>
             </div>
           </Link>
           

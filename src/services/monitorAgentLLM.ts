@@ -81,10 +81,12 @@ export async function generateLLMInsights(
       .populate('topic');
 
     // Format performance data for the LLM
+    // `topic` is populated above, so it carries a `name`; `confidenceLevel` is read
+    // off the raw doc to preserve existing runtime behavior.
     const performanceData = performances.map(p => ({
-      topic: p.topic.name,
+      topic: (p.topic as any).name,
       score: p.score,
-      confidence: p.confidenceLevel,
+      confidence: (p as any).confidenceLevel,
       date: p.createdAt
     }));
 

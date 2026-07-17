@@ -14,6 +14,7 @@ import {
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import TypingIndicator from './TypingIndicator';
+import { toast } from 'sonner';
 
 interface TopicTutorSessionProps {
   userId: string;
@@ -63,6 +64,39 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // "Save key points to My Notes" — distills this topic session into revision bullets
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const handleSaveToNotes = async () => {
+    const chat = messages.filter((m) => m.role === 'user' || m.role === 'assistant');
+    if (chat.length < 2) return;
+    setIsSavingNote(true);
+    try {
+      const res = await fetch('/api/notes/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topicId,
+          conversationId: `topic-${topicId}`,
+          messages: chat.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Saved to My Notes', {
+          description: topic?.name ? `Revision points for ${topic.name} are in your notebook.` : 'Key points saved.',
+          action: { label: 'Open notes', onClick: () => router.push('/notes') },
+        });
+      } else {
+        toast.error(data.message || 'Could not save notes.');
+      }
+    } catch (err) {
+      console.error('Error saving notes:', err);
+      toast.error('Could not save notes right now.');
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
 
   // Fetch topic data and performance data
   useEffect(() => {
@@ -300,21 +334,21 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="flex items-center justify-center h-full bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error || !topic) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-4">
-        <div className="text-red-500 mb-4">
+      <div className="flex flex-col items-center justify-center h-full p-4 bg-background">
+        <div className="text-destructive mb-4">
           {error || 'Topic not found'}
         </div>
         <button
           onClick={() => router.push(userId ? `/dashboard?userId=${userId}` : '/dashboard')}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="px-4 py-2 brand-gradient text-white font-semibold rounded-lg shadow-button hover:brightness-110 transition-all"
         >
           Return to Dashboard
         </button>
@@ -323,34 +357,36 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full relative">
-      {/* Background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 -z-10"></div>
-      
+    <div className="flex flex-col h-full relative bg-background">
       {/* Header */}
-      <div className="glassmorphic-card border-b border-white/10 p-4 flex items-center justify-between">
+      <div className="bg-card/70 backdrop-blur-md border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center">
           <button
             onClick={onBack || (() => router.push(userId ? `/dashboard?userId=${userId}` : '/dashboard'))}
-            className="mr-4 text-gray-300 hover:text-white transition-colors"
+            className="mr-4 h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
-          <div>
-            <h1 className="text-xl font-semibold text-white">{topic.name}</h1>
-            <p className="text-sm text-gray-300">{topic.category}</p>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center">
+              <AcademicCapIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">{topic.name}</h1>
+              <p className="text-sm text-muted-foreground">{topic.category}</p>
+            </div>
           </div>
         </div>
         <div className="flex space-x-2">
           <button
             onClick={handleScheduleReview}
-            className="px-3 py-1.5 glassmorphic text-indigo-300 rounded-lg text-sm font-medium hover:bg-white/10 transition-all"
+            className="px-3 py-1.5 border border-border bg-card text-foreground rounded-lg text-sm font-medium hover:bg-accent transition-all"
           >
             Schedule Review
           </button>
           <button
             onClick={handleCompleteSession}
-            className="px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition-all"
+            className="px-3 py-1.5 brand-gradient text-white rounded-lg text-sm font-semibold shadow-button hover:brightness-110 transition-all"
           >
             Complete Session
           </button>
@@ -378,34 +414,49 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
           </div>
 
           {/* Input area */}
-          <div className="glassmorphic-card border-t border-white/10 p-4">
+          <div className="bg-card/70 backdrop-blur-md border-t border-border p-4">
             <div className="max-w-3xl mx-auto">
+              {messages.filter((m) => m.role !== 'system').length >= 2 && (
+                <div className="mb-2 flex justify-end">
+                  <button
+                    onClick={handleSaveToNotes}
+                    disabled={isSavingNote}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                  >
+                    <PlusIcon className="h-3.5 w-3.5" />
+                    {isSavingNote ? 'Saving…' : 'Save key points to My Notes'}
+                  </button>
+                </div>
+              )}
               <ChatInput onSendMessage={handleSendMessage} isLoading={isTyping} />
             </div>
           </div>
         </div>
 
         {/* Sidebar with topic info and resources */}
-        <div className="w-80 glassmorphic border-l border-white/10 overflow-y-auto hidden md:block">
+        <div className="w-80 bg-card/40 backdrop-blur-sm border-l border-border overflow-y-auto hidden md:block">
           <div className="p-4">
-            <h2 className="text-lg font-semibold text-white mb-4">Topic Information</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <ChartBarIcon className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Topic Information</h2>
+            </div>
 
             {/* Performance stats */}
             {performance && (
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-300 mb-2">Your Performance</h3>
-                <div className="glassmorphic rounded-lg border border-white/10 p-3 space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Your Performance</h3>
+                <div className="rounded-xl border border-border bg-card p-3 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Average Score</span>
-                    <span className="font-medium text-white">{performance.averageScore ? `${performance.averageScore}%` : 'N/A'}</span>
+                    <span className="text-sm text-muted-foreground">Average Score</span>
+                    <span className="font-medium text-foreground">{performance.averageScore ? `${performance.averageScore}%` : 'N/A'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Confidence</span>
-                    <span className="font-medium text-white">{performance.confidenceLevel ? `${performance.confidenceLevel}/5` : 'N/A'}</span>
+                    <span className="text-sm text-muted-foreground">Confidence</span>
+                    <span className="font-medium text-foreground">{performance.confidenceLevel ? `${performance.confidenceLevel}/5` : 'N/A'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Completed Tasks</span>
-                    <span className="font-medium text-white">{performance.completedTasks}</span>
+                    <span className="text-sm text-muted-foreground">Completed Tasks</span>
+                    <span className="font-medium text-foreground">{performance.completedTasks}</span>
                   </div>
                 </div>
               </div>
@@ -414,22 +465,22 @@ const TopicTutorSession: React.FC<TopicTutorSessionProps> = ({
             {/* Related content */}
             {relatedContent.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-gray-300 mb-2">Related Resources</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Related Resources</h3>
                 <div className="space-y-2">
                   {relatedContent.map((content) => (
-                    <div key={content._id} className="glassmorphic rounded-lg border border-white/10 p-3">
+                    <div key={content._id} className="rounded-xl border border-border bg-card p-3 card-hover transition-all">
                       <div className="flex items-start">
                         <div className="flex-shrink-0 mt-1">
-                          {content.type === 'READING' && <BookOpenIcon className="h-4 w-4 text-blue-500" />}
-                          {content.type === 'QUIZ' && <AcademicCapIcon className="h-4 w-4 text-green-500" />}
-                          {content.type === 'VIDEO' && <ClockIcon className="h-4 w-4 text-red-500" />}
+                          {content.type === 'READING' && <BookOpenIcon className="h-4 w-4 text-primary" />}
+                          {content.type === 'QUIZ' && <AcademicCapIcon className="h-4 w-4 text-success" />}
+                          {content.type === 'VIDEO' && <ClockIcon className="h-4 w-4 text-warning" />}
                         </div>
                         <div className="ml-2">
-                          <h4 className="text-sm font-medium text-white">{content.title}</h4>
-                          <p className="text-xs text-gray-400">{content.duration} min • {content.difficulty}</p>
+                          <h4 className="text-sm font-medium text-foreground">{content.title}</h4>
+                          <p className="text-xs text-muted-foreground">{content.duration} min • {content.difficulty}</p>
                           <button
                             onClick={() => router.push(`/content/${content._id}`)}
-                            className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 transition-colors"
+                            className="text-xs text-primary hover:brightness-110 mt-1 transition-colors"
                           >
                             View Resource
                           </button>

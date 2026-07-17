@@ -131,7 +131,7 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-200">
+      <div className="rounded-xl border border-border bg-card backdrop-blur-sm p-6 mb-6">
         <SkeletonCard headerHeight={24} contentLines={4} />
       </div>
     );
@@ -139,8 +139,8 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-200">
-        <div className="p-4 bg-red-100 text-red-600 rounded-lg">
+      <div className="rounded-xl border border-border bg-card backdrop-blur-sm p-6 mb-6">
+        <div className="p-4 bg-red-500/15 text-red-400 rounded-lg border border-red-500/30">
           <p>Error: {error}</p>
         </div>
       </div>
@@ -152,10 +152,10 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
   }
 
   const getReadinessColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 65) return 'text-amber-600';
-    if (score >= 50) return 'text-orange-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-green-400';
+    if (score >= 65) return 'text-amber-400';
+    if (score >= 50) return 'text-orange-400';
+    return 'text-red-400';
   };
 
   return (
@@ -170,15 +170,15 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
           className="flex items-center justify-between mb-6"
           variants={fadeIn}
         >
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-            <svg className="w-6 h-6 mr-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <h2 className="text-2xl font-bold text-foreground flex items-center">
+            <svg className="w-6 h-6 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             Study Progress
           </h2>
           <Link
             href={`/progress?userId=${userId}`}
-            className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+            className="inline-flex items-center px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all"
           >
             View detailed progress →
           </Link>
@@ -191,64 +191,64 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
         >
           {/* @ts-ignore - Framer Motion type issue with className */}
           <motion.div
-            className="bg-white/90 backdrop-blur-sm border border-white/50 rounded-xl p-5 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition-all"
+            className="rounded-xl border border-border bg-secondary backdrop-blur-sm p-5 flex flex-col items-center justify-center transition-all hover:bg-muted"
             variants={fadeInUp}
             transition={{ delay: 0.1 }}
             whileHover={{ scale: 1.03, y: -2, transition: { duration: 0.2 } }}
           >
-            <div className="text-sm font-semibold text-gray-700 mb-2">Current Readiness</div>
+            <div className="text-sm font-semibold text-muted-foreground mb-2">Current Readiness</div>
             <div className={`text-4xl font-bold ${getReadinessColor(stats.readinessScore)}`}>
               {Math.round(stats.readinessScore)}%
             </div>
-            <div className="text-xs font-medium text-gray-600 mt-2">
+            <div className="text-xs font-medium text-muted-foreground mt-2">
               {stats.readinessScore >= 65 ? 'On track' : 'Needs improvement'}
             </div>
           </motion.div>
 
           {/* @ts-ignore - Framer Motion type issue with className */}
           <motion.div
-            className="bg-white/90 backdrop-blur-sm border border-white/50 rounded-xl p-5 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition-all"
+            className="rounded-xl border border-border bg-secondary backdrop-blur-sm p-5 flex flex-col items-center justify-center transition-all hover:bg-muted"
             variants={fadeInUp}
             transition={{ delay: 0.2 }}
             whileHover={{ scale: 1.03, y: -2, transition: { duration: 0.2 } }}
           >
-            <div className="text-sm font-semibold text-gray-700 mb-2">Projected Score</div>
+            <div className="text-sm font-semibold text-muted-foreground mb-2">Projected Score</div>
             <div className={`text-4xl font-bold ${getReadinessColor(stats.projectedScore)}`}>
               {Math.round(stats.projectedScore)}%
             </div>
-            <div className="text-xs font-medium text-gray-600 mt-2">
+            <div className="text-xs font-medium text-muted-foreground mt-2">
               By exam date
             </div>
           </motion.div>
 
           {/* @ts-ignore - Framer Motion type issue with className */}
           <motion.div
-            className="bg-white/90 backdrop-blur-sm border border-white/50 rounded-xl p-5 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition-all"
+            className="rounded-xl border border-border bg-secondary backdrop-blur-sm p-5 flex flex-col items-center justify-center transition-all hover:bg-muted"
             variants={fadeInUp}
             transition={{ delay: 0.3 }}
             whileHover={{ scale: 1.03, y: -2, transition: { duration: 0.2 } }}
           >
-            <div className="text-sm font-semibold text-gray-700 mb-2">Task Completion</div>
-            <div className="text-4xl font-bold text-indigo-600">
+            <div className="text-sm font-semibold text-muted-foreground mb-2">Task Completion</div>
+            <div className="text-4xl font-bold text-primary">
               {Math.round(stats.completionRate)}%
             </div>
-            <div className="text-xs font-medium text-gray-600 mt-2">
+            <div className="text-xs font-medium text-muted-foreground mt-2">
               {stats.completedTasks}/{stats.totalTasks} tasks completed
             </div>
           </motion.div>
 
           {/* @ts-ignore - Framer Motion type issue with className */}
           <motion.div
-            className="bg-white/90 backdrop-blur-sm border border-white/50 rounded-xl p-5 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition-all"
+            className="rounded-xl border border-border bg-secondary backdrop-blur-sm p-5 flex flex-col items-center justify-center transition-all hover:bg-muted"
             variants={fadeInUp}
             transition={{ delay: 0.4 }}
             whileHover={{ scale: 1.03, y: -2, transition: { duration: 0.2 } }}
           >
-            <div className="text-sm font-semibold text-gray-700 mb-2">Exam Countdown</div>
-            <div className="text-4xl font-bold text-indigo-600">
+            <div className="text-sm font-semibold text-muted-foreground mb-2">Exam Countdown</div>
+            <div className="text-4xl font-bold text-primary">
               {stats.daysUntilExam}
             </div>
-            <div className="text-xs font-medium text-gray-600 mt-2">
+            <div className="text-xs font-medium text-muted-foreground mt-2">
               days remaining
             </div>
           </motion.div>
@@ -256,16 +256,16 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
 
         {/* @ts-ignore - Framer Motion type issue with className */}
         <motion.div
-          className="bg-white/90 backdrop-blur-sm border border-white/50 rounded-xl p-6 flex items-start shadow-lg"
+          className="rounded-xl border border-border bg-secondary backdrop-blur-sm p-6 flex items-start"
           variants={fadeInUp}
           transition={{ delay: 0.5 }}
         >
-          <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mr-4 shadow-sm">
-            <ArrowTrendingUpIcon className="h-6 w-6 text-indigo-600" />
+          <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center mr-4">
+            <ArrowTrendingUpIcon className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1">
-            <p className="text-base font-bold text-indigo-600">Monitor Agent Insight</p>
-            <p className="text-sm text-gray-700 mt-3 bg-indigo-50/80 p-4 rounded-xl border border-indigo-100">
+            <p className="text-base font-bold text-primary">Monitor Agent Insight</p>
+            <p className="text-sm text-muted-foreground mt-3 bg-card p-4 rounded-xl border border-border">
               {stats.readinessScore < 65
                 ? `Your current readiness score is ${Math.round(stats.readinessScore)}%, which is below the target of 65%. With continued study, you're projected to reach ${Math.round(stats.projectedScore)}% by your exam date. Focus on completing more tasks to improve your score.`
                 : `You're on track with a readiness score of ${Math.round(stats.readinessScore)}% and are projected to reach ${Math.round(stats.projectedScore)}% by your exam date. Keep up the good work!`}
@@ -276,30 +276,30 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
         {stats.missedTasks > 0 && (
           // @ts-ignore - Framer Motion type issue with className
           <motion.div
-            className="mt-6 bg-white/90 backdrop-blur-sm border border-white/50 rounded-xl p-6 shadow-lg"
+            className="mt-6 rounded-xl border border-border bg-secondary backdrop-blur-sm p-6"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.3 }}
           >
             <div className="flex items-start">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4 shadow-sm">
-                <ExclamationCircleIcon className="h-6 w-6 text-red-600" />
+              <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mr-4">
+                <ExclamationCircleIcon className="h-6 w-6 text-red-400" />
               </div>
               <div className="flex-grow">
-                <p className="text-base font-bold text-red-600">Attention Needed</p>
-                <p className="text-sm text-gray-700 mt-3 bg-red-50/80 p-4 rounded-xl border border-red-100">
+                <p className="text-base font-bold text-red-400">Attention Needed</p>
+                <p className="text-sm text-muted-foreground mt-3 bg-red-500/10 p-4 rounded-xl border border-red-500/30">
                   You have {stats.missedTasks} missed {stats.missedTasks === 1 ? 'task' : 'tasks'}. Consider rescheduling or completing them soon.
                 </p>
 
                 {rescheduleMessage && (
-                  <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${rescheduleMessage.type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                  <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${rescheduleMessage.type === 'success' ? 'bg-green-500/15 text-green-400 border border-green-500/30' : 'bg-red-500/15 text-red-400 border border-red-500/30'}`}>
                     {rescheduleMessage.text}
                   </div>
                 )}
 
                 <div className="mt-5">
                   <button
-                    className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 disabled:opacity-50"
+                    className="inline-flex items-center px-5 py-2.5 bg-red-500 text-white rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50"
                     onClick={handleRescheduleMissedTasks}
                     disabled={isRescheduling}
                   >

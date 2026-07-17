@@ -1,63 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { Performance, Topic, User } from '@/models';
+import { Performance, Topic } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
  * API endpoint for getting performance data for a specific topic
- * GET /api/performance/topic/[id]?userId=123
+ * GET /api/performance/topic/[id]
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
-    // Get the topic ID from the URL - use a different approach to avoid the warning
-    const { id } = params;
-    if (!id) {
+    // Get the topic ID from the URL
+    const { id: topicId } = await params;
+    if (!topicId) {
       return NextResponse.json(
         {
           success: false,
           message: 'Topic ID is required'
         },
         { status: 400 }
-      );
-    }
-
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
-    if (!userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'User ID is required'
-        },
-        { status: 400 }
-      );
-    }
-
-    // Ensure userId is valid
-    if (userId === 'undefined') {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Invalid User ID'
-        },
-        { status: 400 }
-      );
-    }
-
-    // Check if user exists
-    const user = await User.findById(userId);
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'User not found'
-        },
-        { status: 404 }
       );
     }
 
@@ -128,7 +99,7 @@ export async function GET(
 
     // If there are quiz performances with low scores, analyze question types
     const quizPerformances = performances.filter(p =>
-      p.type === 'QUIZ' &&
+      (p as any).type === 'QUIZ' &&
       p.answers &&
       p.answers.length > 0
     );
@@ -158,7 +129,7 @@ export async function GET(
       totalPerformances: performances.length,
       recentPerformances: performances.slice(0, 5).map(p => ({
         id: p._id,
-        type: p.type || 'UNKNOWN',
+        type: (p as any).type || 'UNKNOWN',
         score: p.score,
         confidence: p.confidence,
         timeSpent: p.timeSpent,

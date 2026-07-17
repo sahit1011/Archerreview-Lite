@@ -1,11 +1,15 @@
-import mongoose from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import dbConnect from '../lib/db'; // Changed to relative
 import {
   User,
-  Feedback,
+  Feedback as FeedbackModel,
   StudyPlan
 } from '../models/index'; // Changed to relative
+import type { IFeedback } from '../models/index';
 import { analyzeFeedbackWithLLM, generateFeedbackResponseWithLLM } from './feedbackAgentLLM';
+
+// Typed model reference (the default export resolves to a loose union type)
+const Feedback = FeedbackModel as Model<IFeedback>;
 
 /**
  * FeedbackAgent - Responsible for processing user feedback

@@ -28,7 +28,7 @@ export default function TopicForm() {
     _id: '',
     name: '',
     description: '',
-    category: 'MANAGEMENT_OF_CARE',
+    category: 'PHYSICS',
     subcategory: '',
     difficulty: 'MEDIUM',
     importance: 5,
@@ -43,14 +43,7 @@ export default function TopicForm() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const categories = [
-    'MANAGEMENT_OF_CARE',
-    'SAFETY_AND_INFECTION_CONTROL',
-    'HEALTH_PROMOTION',
-    'PSYCHOSOCIAL_INTEGRITY',
-    'BASIC_CARE_AND_COMFORT',
-    'PHARMACOLOGICAL_THERAPIES',
-    'REDUCTION_OF_RISK_POTENTIAL',
-    'PHYSIOLOGICAL_ADAPTATION'
+    'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS'
   ];
 
   const difficulties = ['EASY', 'MEDIUM', 'HARD'];
@@ -163,7 +156,7 @@ export default function TopicForm() {
             _id: '',
             name: '',
             description: '',
-            category: 'MANAGEMENT_OF_CARE',
+            category: 'PHYSICS',
             subcategory: '',
             difficulty: 'MEDIUM',
             importance: 5,
@@ -195,7 +188,7 @@ export default function TopicForm() {
             {isNew ? 'Create New Topic' : 'Edit Topic'}
           </h1>
           <p className="text-gray-600">
-            {isNew ? 'Add a new NCLEX topic to the system' : 'Update an existing NCLEX topic'}
+            {isNew ? 'Add a new NEET/JEE topic to the system' : 'Update an existing NEET/JEE topic'}
           </p>
         </div>
         <Link

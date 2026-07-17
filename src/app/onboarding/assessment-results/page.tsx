@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import { useOnboarding, OnboardingStep } from '@/context/OnboardingContext';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, ArrowRight, Sparkles, Target } from 'lucide-react';
 
 // Helper function to get category display name
 const getCategoryDisplayName = (category: string) => {
@@ -11,17 +13,17 @@ const getCategoryDisplayName = (category: string) => {
   return words.map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ');
 };
 
-// Helper function to get color based on score
+// Helper function to get color based on score (semantic, theme-aware)
 const getScoreColor = (score: number) => {
-  if (score >= 80) return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200' };
-  if (score >= 60) return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200' };
-  return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200' };
+  if (score >= 80) return { bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', bar: 'bg-success' };
+  if (score >= 60) return { bg: 'bg-amber-500/10', text: 'text-amber-600', border: 'border-amber-500/30', bar: 'bg-amber-500' };
+  return { bg: 'bg-destructive/10', text: 'text-destructive', border: 'border-destructive/30', bar: 'bg-destructive' };
 };
 
 export default function AssessmentResultsPage() {
-  const { 
-    categoryScores, 
-    overallScore, 
+  const {
+    categoryScores,
+    overallScore,
     diagnosticCompleted,
     diagnosticAnswers,
     saveDiagnosticResults,
@@ -47,68 +49,71 @@ export default function AssessmentResultsPage() {
 
   return (
     <OnboardingLayout>
-      <motion.div 
-        className="text-center mb-8"
+      <motion.div
+        className="text-center mb-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h1 className="text-3xl font-bold text-indigo-600 mb-4">
-          Assessment Results
+        <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-4">
+          Your assessment results
         </h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Based on your answers, we've identified your strengths and areas for improvement.
+        <p className="text-base text-muted-foreground max-w-2xl mx-auto">
+          Based on your answers, we&apos;ve mapped out your strengths and the topics worth a little more focus across Physics, Chemistry, Biology and Mathematics.
         </p>
       </motion.div>
 
       <motion.div
-        className="mb-8"
+        className="max-w-3xl mx-auto mb-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
         {/* Overall score */}
-        <div className="bg-indigo-50 p-6 rounded-lg border border-indigo-100 mb-6">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-indigo-700 mb-2">Overall Readiness</h2>
-              <p className="text-indigo-600 mb-4 md:mb-0">
-                Your baseline knowledge assessment shows your current readiness level.
+        <div className="rounded-2xl border border-border bg-card p-6 md:p-8 mb-10 shadow-sm">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left">
+              <h2 className="font-display text-2xl font-semibold text-foreground mb-2">Overall readiness</h2>
+              <p className="text-muted-foreground max-w-md">
+                Your baseline knowledge assessment shows where you stand today — your plan starts from here.
               </p>
             </div>
-            <div className="flex items-center justify-center bg-white rounded-full h-32 w-32 border-4 border-indigo-200">
+            <div className="flex items-center justify-center rounded-full h-32 w-32 border-4 border-primary/30 bg-primary/10 shrink-0 shadow-sm">
               <div className="text-center">
-                <div className="text-4xl font-bold text-indigo-600">{Math.round(overallScore)}%</div>
-                <div className="text-sm text-indigo-500">Readiness</div>
+                <div className="text-4xl font-bold text-primary">{Math.round(overallScore)}%</div>
+                <div className="text-xs font-medium text-muted-foreground">Readiness</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Category scores */}
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Performance by Category</h2>
+        <div className="flex items-center gap-2 mb-5">
+          <Target className="h-5 w-5 text-primary" />
+          <h2 className="font-display text-xl font-semibold text-foreground">Performance by subject</h2>
+        </div>
         <div className="space-y-4">
           {categoryScores.map((categoryScore, index) => {
-            const { bg, text, border } = getScoreColor(categoryScore.score);
+            const { bg, text, border, bar } = getScoreColor(categoryScore.score);
             return (
               <motion.div
                 key={categoryScore.category}
-                className={`p-4 rounded-lg ${bg} ${border} border`}
+                className={`p-5 rounded-2xl border transition-colors ${bg} ${border}`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 + (index * 0.1) }}
               >
-                <div className="flex justify-between items-center mb-1">
-                  <h3 className={`font-medium ${text}`}>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-medium text-foreground">
                     {getCategoryDisplayName(categoryScore.category)}
                   </h3>
-                  <span className={`font-medium ${text}`}>
+                  <span className={`font-semibold ${text}`}>
                     {Math.round(categoryScore.score)}%
                   </span>
                 </div>
-                <div className="w-full bg-white rounded-full h-2">
-                  <div 
-                    className="h-2 rounded-full bg-indigo-600" 
+                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-2 rounded-full ${bar} transition-all duration-500`}
                     style={{ width: `${categoryScore.score}%` }}
                   ></div>
                 </div>
@@ -119,42 +124,48 @@ export default function AssessmentResultsPage() {
       </motion.div>
 
       <motion.div
-        className="bg-blue-50 p-6 rounded-lg border border-blue-100 mb-8"
+        className="max-w-3xl mx-auto rounded-2xl border border-primary/20 bg-primary/5 p-6 mb-10 shadow-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
       >
-        <div className="flex items-start">
-          <svg className="h-6 w-6 text-blue-500 mr-3 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-          </svg>
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <Sparkles className="h-5 w-5" />
+          </div>
           <div>
-            <h3 className="font-medium text-blue-800 mb-2">What's Next?</h3>
-            <p className="text-blue-700">
-              Based on these results, we'll create a personalized study plan that focuses on your areas for improvement while reinforcing your strengths. The plan will adapt as you progress through your studies.
+            <h3 className="font-display font-semibold text-foreground mb-1.5">What happens next?</h3>
+            <p className="text-muted-foreground">
+              We&apos;ll build a personalized study plan that targets your weaker topics while reinforcing your strengths. The plan adapts as you progress, so it always stays in step with your prep.
             </p>
           </div>
         </div>
       </motion.div>
 
       <motion.div
-        className="flex justify-between"
+        className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 max-w-3xl mx-auto"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
       >
-        <button
+        <Button
+          variant="outline"
+          size="lg"
           onClick={() => goToStep(OnboardingStep.ASSESSMENT)}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg text-center transition-colors"
+          className="w-full sm:w-auto"
         >
-          Back to Assessment
-        </button>
-        <button
+          <ArrowLeft className="h-4 w-4" />
+          Back to assessment
+        </Button>
+        <Button
+          variant="brand"
+          size="lg"
           onClick={handleContinue}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-center transition-colors"
+          className="shine w-full sm:w-auto"
         >
-          Continue to Schedule
-        </button>
+          Continue to schedule
+          <ArrowRight className="h-4 w-4" />
+        </Button>
       </motion.div>
     </OnboardingLayout>
   );

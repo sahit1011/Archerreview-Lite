@@ -3,7 +3,9 @@ import {
   Topic,
   StudyPlan,
   Task,
-  DiagnosticResult
+  Content,
+  DiagnosticResult,
+  Performance
 } from '../models/index'; // Changed to relative
 import {
   daysUntilExam,
@@ -21,6 +23,11 @@ import {
 import {
   validateStudyPlan
 } from '../utils/planValidation'; // Changed to relative
+import {
+  computeNextReviewFromPerformance,
+  defaultSpacedRepetitionState,
+  type SpacedRepetitionState
+} from './spacedRepetition'; // Deterministic SM-2 review scheduling
 
 /**
  * SchedulerAgent - Responsible for generating initial study plans
@@ -55,6 +62,145 @@ interface TopicNode {
 }
 
 /**
+ * Deterministic per-topic performance summary derived from Performance data.
+ * Used to drive review-topic selection and SM-2 review scheduling without any
+ * randomness.
+ */
+interface TopicPerformance {
+  topicId: string;
+  /** Mastery on a 0-100 scale (higher = stronger). 0 when no data. */
+  mastery: number;
+  /** Average quiz score (0-100) across attempts, if any. */
+  avgScore?: number;
+  /** Average self-reported confidence (1-5), if any. */
+  avgConfidence?: number;
+  /** Number of recorded attempts (used as a deterministic tie-breaker / rotation seed). */
+  attempts: number;
+  /** Rolling SM-2 state for this topic. */
+  srState: SpacedRepetitionState;
+  /** Date this topic should next be reviewed, per SM-2. */
+  nextReviewDate: Date;
+}
+
+/**
+ * Build a deterministic map of topicId -> TopicPerformance from raw Performance
+ * documents. No randomness: the same inputs always yield the same map.
+ *
+ * Mastery blends quiz score (0-100) and confidence (1-5 -> 0-100). Topics with
+ * no performance data get mastery 0 so they are treated as the weakest (most in
+ * need of review), which is the safe default for a fresh learner.
+ *
+ * @param topics All topics (so every topic has an entry).
+ * @param performances Raw Performance docs for the user.
+ * @param now Anchor timestamp for SM-2 next-review computation.
+ */
+function buildTopicPerformanceMap(
+  topics: any[],
+  performances: any[],
+  now: Date = new Date()
+): Map<string, TopicPerformance> {
+  // Group performances by topic id.
+  const byTopic = new Map<string, any[]>();
+  for (const perf of performances || []) {
+    if (!perf || !perf.topic) continue;
+    const id = perf.topic.toString();
+    const list = byTopic.get(id) || [];
+    list.push(perf);
+    byTopic.set(id, list);
+  }
+
+  const result = new Map<string, TopicPerformance>();
+
+  for (const topic of topics) {
+    const topicId = topic._id.toString();
+    const attemptsList = byTopic.get(topicId) || [];
+
+    let avgScore: number | undefined;
+    let avgConfidence: number | undefined;
+
+    const scored = attemptsList.filter(
+      (p: any) => typeof p.score === 'number' && !Number.isNaN(p.score)
+    );
+    if (scored.length > 0) {
+      avgScore =
+        scored.reduce((sum: number, p: any) => sum + (p.score || 0), 0) /
+        scored.length;
+    }
+
+    const confd = attemptsList.filter(
+      (p: any) => typeof p.confidence === 'number' && !Number.isNaN(p.confidence)
+    );
+    if (confd.length > 0) {
+      avgConfidence =
+        confd.reduce((sum: number, p: any) => sum + (p.confidence || 0), 0) /
+        confd.length;
+    }
+
+    // Mastery: prefer score; otherwise map confidence (1-5) onto 0-100.
+    let mastery = 0;
+    if (typeof avgScore === 'number') {
+      mastery = avgScore;
+      if (typeof avgConfidence === 'number') {
+        // Blend, weighting the objective score more heavily.
+        const confPct = ((avgConfidence - 1) / 4) * 100;
+        mastery = avgScore * 0.7 + confPct * 0.3;
+      }
+    } else if (typeof avgConfidence === 'number') {
+      mastery = ((avgConfidence - 1) / 4) * 100;
+    }
+    mastery = Math.min(100, Math.max(0, mastery));
+
+    // Compute an SM-2 next-review date from the (deterministic) aggregates.
+    const srState: SpacedRepetitionState = defaultSpacedRepetitionState();
+    const srResult = computeNextReviewFromPerformance(
+      srState,
+      avgScore,
+      avgConfidence,
+      now
+    );
+
+    result.set(topicId, {
+      topicId,
+      mastery,
+      avgScore,
+      avgConfidence,
+      attempts: attemptsList.length,
+      srState: {
+        repetitions: srResult.repetitions,
+        easeFactor: srResult.easeFactor,
+        intervalDays: srResult.intervalDays,
+        lastReviewedAt: srResult.lastReviewedAt,
+      },
+      nextReviewDate: srResult.nextReviewDate,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Deterministically order topics from weakest (lowest mastery) to strongest for
+ * review prioritization. Ties are broken by fewer attempts (less-practiced
+ * first), then by topic id for a fully stable ordering.
+ */
+function orderTopicsByWeakness(
+  topics: any[],
+  topicPerformance: Map<string, TopicPerformance>
+): any[] {
+  return [...topics].sort((a, b) => {
+    const pa = topicPerformance.get(a._id.toString());
+    const pb = topicPerformance.get(b._id.toString());
+    const ma = pa ? pa.mastery : 0;
+    const mb = pb ? pb.mastery : 0;
+    if (ma !== mb) return ma - mb; // lower mastery first
+    const aa = pa ? pa.attempts : 0;
+    const ab = pb ? pb.attempts : 0;
+    if (aa !== ab) return aa - ab; // fewer attempts first
+    return a._id.toString().localeCompare(b._id.toString());
+  });
+}
+
+/**
  * Generate a study plan for a user
  * @param userId User ID
  * @param planId Study plan ID
@@ -71,11 +217,20 @@ export async function generateStudyPlan(userId: string, planId: string) {
       throw new Error('User or study plan not found');
     }
 
-    // Get all topics
-    const topics = await Topic.find({}).sort({ importance: -1 });
+    // Get the topics for the user's exam (NEET: Phy/Chem/Bio, JEE: Phy/Chem/Maths).
+    // Topics without examTypes (legacy) are treated as belonging to both exams.
+    const examType = user.examType === 'JEE' ? 'JEE' : 'NEET';
+    const topics = await Topic.find({
+      $or: [{ examTypes: examType }, { examTypes: { $exists: false } }, { examTypes: { $size: 0 } }],
+    }).sort({ importance: -1 });
     if (topics.length === 0) {
       throw new Error('No topics found in the database');
     }
+
+    // Load the user's performance history so review scheduling is driven by
+    // actual (deterministic) mastery rather than randomness.
+    const performances = await Performance.find({ user: userId });
+    const topicPerformance = buildTopicPerformanceMap(topics, performances);
 
     // Generate schedule based on whether the user has completed a diagnostic assessment
     let schedule;
@@ -95,7 +250,7 @@ export async function generateStudyPlan(userId: string, planId: string) {
     }
 
     // Create tasks from the schedule
-    const tasks = await createTasksFromSchedule(schedule, studyPlan._id);
+    const tasks = await createTasksFromSchedule(schedule, studyPlan._id as mongoose.Types.ObjectId);
 
     // Validate the generated plan
     const validation = validateStudyPlan(tasks, topics, schedule);
@@ -241,9 +396,15 @@ function sortTopicsByPrerequisitesAndPriority(topicGraph: Map<string, TopicNode>
  * @param sortedTopics Array of sorted topics
  * @param user User document
  * @param studyPlan Study plan document
+ * @param topicPerformance Deterministic per-topic performance/mastery map
  * @returns Array of schedule days
  */
-function generateSchedule(sortedTopics: any[], user: any, studyPlan: any) {
+function generateSchedule(
+  sortedTopics: any[],
+  user: any,
+  studyPlan: any,
+  topicPerformance: Map<string, TopicPerformance> = new Map()
+) {
   // Calculate date range from start date to exam date
   const startDate = studyPlan.startDate;
   const examDate = studyPlan.examDate;
@@ -269,7 +430,7 @@ function generateSchedule(sortedTopics: any[], user: any, studyPlan: any) {
   }));
 
   // Distribute topics across available days
-  distributeTopics(sortedTopics, schedule);
+  distributeTopics(sortedTopics, schedule, topicPerformance);
 
   return schedule;
 }
@@ -278,8 +439,13 @@ function generateSchedule(sortedTopics: any[], user: any, studyPlan: any) {
  * Distribute topics across available days in the schedule
  * @param sortedTopics Array of sorted topics
  * @param schedule Array of schedule days
+ * @param topicPerformance Deterministic per-topic performance/mastery map
  */
-function distributeTopics(sortedTopics: any[], schedule: ScheduleDay[]) {
+function distributeTopics(
+  sortedTopics: any[],
+  schedule: ScheduleDay[],
+  topicPerformance: Map<string, TopicPerformance> = new Map()
+) {
   // Calculate total available study time
   const totalAvailableMinutes = schedule.reduce((sum, day) => sum + day.availableMinutes, 0);
 
@@ -297,7 +463,7 @@ function distributeTopics(sortedTopics: any[], schedule: ScheduleDay[]) {
 
   // Schedule review sessions first (20% of time)
   const reviewTime = Math.floor(totalAvailableMinutes * 0.2);
-  scheduleReviewSessions(schedule, reviewTime, sortedTopics);
+  scheduleReviewSessions(schedule, reviewTime, sortedTopics, topicPerformance);
 
   // Schedule topics
   let currentDayIndex = 0;
@@ -321,7 +487,7 @@ function distributeTopics(sortedTopics: any[], schedule: ScheduleDay[]) {
         day.tasks.push({
           topic: topic._id,
           duration: adjustedDuration,
-          type: determineTaskType(topic),
+          type: determineTaskType(topic, topicPerformance),
           difficulty: topic.difficulty
         });
 
@@ -354,12 +520,25 @@ function distributeTopics(sortedTopics: any[], schedule: ScheduleDay[]) {
 }
 
 /**
- * Schedule review sessions across the schedule
+ * Schedule review sessions across the schedule.
+ *
+ * Review topics are chosen DETERMINISTICALLY (no randomness): topics are ordered
+ * weakest-first by mastery (derived from Performance data), so the topics most
+ * in need of review are reviewed most often. We rotate through that weakness
+ * ordering across review days, and we prefer placing a topic's review on or after
+ * its SM-2 next-review date when the schedule date allows it.
+ *
  * @param schedule Array of schedule days
  * @param totalReviewTime Total time to allocate for reviews
  * @param topics Array of topics to use for review sessions
+ * @param topicPerformance Deterministic per-topic performance/mastery + SM-2 map
  */
-function scheduleReviewSessions(schedule: ScheduleDay[], totalReviewTime: number, topics: any[]) {
+function scheduleReviewSessions(
+  schedule: ScheduleDay[],
+  totalReviewTime: number,
+  topics: any[],
+  topicPerformance: Map<string, TopicPerformance> = new Map()
+) {
   // Skip the first few days as there's nothing to review yet
   const reviewableSchedule = schedule.slice(3);
 
@@ -369,21 +548,51 @@ function scheduleReviewSessions(schedule: ScheduleDay[], totalReviewTime: number
   // Calculate review time per session
   const reviewTimePerSession = Math.min(60, Math.floor(totalReviewTime / reviewableSchedule.length));
 
+  // Deterministically order topics weakest-first (lowest mastery reviewed first).
+  const weakestFirst = orderTopicsByWeakness(topics, topicPerformance);
+
   // Schedule review sessions
   reviewableSchedule.forEach((day, index) => {
     // Only schedule if there's enough time
     if (day.availableMinutes >= reviewTimePerSession) {
-      // Use a random topic for the review session
-      const randomTopicIndex = Math.floor(Math.random() * topics.length);
-      const randomTopic = topics[randomTopicIndex];
+      // Deterministically rotate through the weakness-ordered topics. Using the
+      // day index as the rotation offset means the weakest topics recur first
+      // and every run produces the same assignment.
+      let chosenIndex = index % weakestFirst.length;
+
+      // Prefer a topic that is actually "due" by its SM-2 next-review date on or
+      // before this scheduled day; fall back to the rotation pick otherwise. The
+      // scan order is the (deterministic) weakness order, so selection is stable.
+      for (let offset = 0; offset < weakestFirst.length; offset++) {
+        const candidateIndex = (index + offset) % weakestFirst.length;
+        const candidate = weakestFirst[candidateIndex];
+        if (!candidate || !candidate._id) continue;
+        const perf = topicPerformance.get(candidate._id.toString());
+        if (perf && perf.nextReviewDate && perf.nextReviewDate <= day.date) {
+          chosenIndex = candidateIndex;
+          break;
+        }
+      }
+
+      const chosenTopic = weakestFirst[chosenIndex];
 
       // Make sure we have a valid topic
-      if (randomTopic && randomTopic._id) {
+      if (chosenTopic && chosenTopic._id) {
+        const perf = topicPerformance.get(chosenTopic._id.toString());
+        // Difficulty reflects mastery: weaker mastery -> harder review focus.
+        const reviewDifficulty = perf
+          ? perf.mastery < 50
+            ? Difficulty.HARD
+            : perf.mastery < 80
+            ? Difficulty.MEDIUM
+            : Difficulty.EASY
+          : Difficulty.MEDIUM;
+
         day.tasks.push({
-          topic: randomTopic._id, // Use an actual topic ID
+          topic: chosenTopic._id, // Use an actual topic ID
           duration: reviewTimePerSession,
           type: TaskType.REVIEW,
-          difficulty: Difficulty.MEDIUM
+          difficulty: reviewDifficulty
         });
 
         day.availableMinutes -= reviewTimePerSession;
@@ -437,18 +646,51 @@ function balanceSchedule(schedule: ScheduleDay[]) {
 }
 
 /**
- * Determine the task type based on the topic
+ * Determine the task type based on the topic, DETERMINISTICALLY (no randomness).
+ *
+ * The rule is performance-driven and reproducible:
+ *  - No/low mastery  -> front-load learning content (READING, then VIDEO).
+ *  - Mid mastery      -> reinforce with QUIZ.
+ *  - High mastery     -> stretch with PRACTICE.
+ * Within a mastery band, a stable rotation (seeded by the topic id + attempt
+ * count) varies the task type so the same topic doesn't always get the exact
+ * same modality, while staying fully reproducible run-to-run.
+ *
  * @param topic Topic document
+ * @param topicPerformance Deterministic per-topic performance/mastery map
  * @returns Task type
  */
-function determineTaskType(topic: any): string {
-  // Simple logic to vary task types
-  const rand = Math.random();
+function determineTaskType(
+  topic: any,
+  topicPerformance: Map<string, TopicPerformance> = new Map()
+): string {
+  const topicId = topic && topic._id ? topic._id.toString() : '';
+  const perf = topicId ? topicPerformance.get(topicId) : undefined;
+  const mastery = perf ? perf.mastery : 0;
+  const attempts = perf ? perf.attempts : 0;
 
-  if (rand < 0.3) return TaskType.READING;
-  if (rand < 0.6) return TaskType.VIDEO;
-  if (rand < 0.9) return TaskType.QUIZ;
-  return TaskType.PRACTICE;
+  // Stable rotation value derived from the topic id (sum of char codes) plus the
+  // attempt count. Purely deterministic for a given topic/state.
+  let seed = attempts;
+  for (let i = 0; i < topicId.length; i++) {
+    seed += topicId.charCodeAt(i);
+  }
+  const rotation = seed % 2;
+
+  if (mastery < 40) {
+    // Weakest topics: prioritize foundational learning content.
+    return rotation === 0 ? TaskType.READING : TaskType.VIDEO;
+  }
+  if (mastery < 70) {
+    // Developing mastery: alternate active learning and assessment.
+    return rotation === 0 ? TaskType.QUIZ : TaskType.READING;
+  }
+  if (mastery < 90) {
+    // Solid mastery: emphasize testing recall.
+    return rotation === 0 ? TaskType.QUIZ : TaskType.VIDEO;
+  }
+  // Strong mastery: stretch with application/practice.
+  return rotation === 0 ? TaskType.PRACTICE : TaskType.QUIZ;
 }
 
 /**
@@ -466,6 +708,39 @@ async function createTasksFromSchedule(schedule: ScheduleDay[], planId: mongoose
   if (!defaultTopic) {
     throw new Error('No topics found in the database');
   }
+
+  // Preload topic names + content so every task is titled by its chapter and
+  // linked to real, startable content (quiz/reading/video) for its topic+type.
+  const [allTopics, allContent] = await Promise.all([
+    Topic.find({}).select('name').lean(),
+    Content.find({}).select('topic type').lean(),
+  ]);
+  const topicNameById = new Map<string, string>(
+    (allTopics as any[]).map((t) => [String(t._id), t.name])
+  );
+  const contentByTopicType = new Map<string, mongoose.Types.ObjectId>();
+  for (const c of allContent as any[]) {
+    const key = `${String(c.topic)}:${c.type}`;
+    if (!contentByTopicType.has(key)) contentByTopicType.set(key, c._id);
+  }
+  const TASK_LABELS: Record<string, string> = {
+    QUIZ: 'Quiz',
+    PRACTICE: 'Practice set',
+    READING: 'Read',
+    VIDEO: 'Watch',
+    REVIEW: 'Review',
+  };
+  // REVIEW tasks quiz the student again on the topic; fall back to PRACTICE content.
+  const contentTypeForTask = (taskType: string): string[] => {
+    switch (taskType) {
+      case 'REVIEW':
+        return ['QUIZ', 'PRACTICE'];
+      case 'PRACTICE':
+        return ['PRACTICE', 'QUIZ'];
+      default:
+        return [taskType];
+    }
+  };
 
   // Convert schedule to tasks
   schedule.forEach(day => {
@@ -556,16 +831,26 @@ async function createTasksFromSchedule(schedule: ScheduleDay[], planId: mongoose
       currentTime = new Date(endTime);
       currentTime.setMinutes(currentTime.getMinutes() + 5);
 
+      const topicId = String(taskData.topic || defaultTopic._id);
+      const topicName = topicNameById.get(topicId) || 'General';
+      const label = TASK_LABELS[taskData.type] || taskData.type;
+      let contentId: mongoose.Types.ObjectId | undefined;
+      for (const ct of contentTypeForTask(taskData.type)) {
+        contentId = contentByTopicType.get(`${topicId}:${ct}`);
+        if (contentId) break;
+      }
+
       tasks.push({
         plan: planId,
-        title: `${taskData.type} Session`,
-        description: `${taskData.type} session for topic`,
+        title: `${label}: ${topicName}`,
+        description: `${label} session on ${topicName}`,
         type: taskData.type,
         status: 'PENDING',
         startTime,
         endTime,
         duration: taskData.duration,
         topic: taskData.topic || defaultTopic._id, // Use default topic if missing
+        content: contentId,
         difficulty: taskData.difficulty || 'MEDIUM'
       });
     });

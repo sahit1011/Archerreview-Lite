@@ -25,14 +25,7 @@ export default function TopicsManagement() {
   const [difficultyFilter, setDifficultyFilter] = useState('');
 
   const categories = [
-    'MANAGEMENT_OF_CARE',
-    'SAFETY_AND_INFECTION_CONTROL',
-    'HEALTH_PROMOTION',
-    'PSYCHOSOCIAL_INTEGRITY',
-    'BASIC_CARE_AND_COMFORT',
-    'PHARMACOLOGICAL_THERAPIES',
-    'REDUCTION_OF_RISK_POTENTIAL',
-    'PHYSIOLOGICAL_ADAPTATION'
+    'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS'
   ];
 
   const difficulties = ['EASY', 'MEDIUM', 'HARD'];
@@ -104,7 +97,7 @@ export default function TopicsManagement() {
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Topics Management</h1>
-          <p className="text-gray-600">Manage NCLEX topics and their metadata</p>
+          <p className="text-gray-600">Manage NEET/JEE topics and their metadata</p>
         </div>
         <Link 
           href="/admin/topics/new" 

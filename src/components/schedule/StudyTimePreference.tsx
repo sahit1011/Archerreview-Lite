@@ -3,8 +3,8 @@
 import { motion } from 'framer-motion';
 
 interface StudyTimePreferenceProps {
-  value: 'morning' | 'afternoon' | 'evening';
-  onChange: (preference: 'morning' | 'afternoon' | 'evening') => void;
+  value: 'morning' | 'afternoon' | 'evening' | 'night';
+  onChange: (preference: 'morning' | 'afternoon' | 'evening' | 'night') => void;
 }
 
 const timeOptions = [
@@ -36,13 +36,25 @@ const timeOptions = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
       </svg>
     ),
-    description: '6:00 PM - 12:00 AM'
+    description: '6:00 PM - 9:00 PM'
+  },
+  {
+    id: 'night',
+    label: 'Night',
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor" stroke="none" />
+        <circle cx="20" cy="10" r="0.5" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+    description: '9:00 PM - 2:00 AM'
   }
 ] as const;
 
 export default function StudyTimePreference({ value, onChange }: StudyTimePreferenceProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {timeOptions.map((option) => {
         const isSelected = value === option.id;
         return (
@@ -50,22 +62,22 @@ export default function StudyTimePreference({ value, onChange }: StudyTimePrefer
             key={option.id}
             whileHover={{ y: -5, transition: { type: 'spring', stiffness: 300 } }}
             whileTap={{ scale: 0.95 }}
-            className={`rounded-xl p-4 cursor-pointer transition-all duration-300 shadow-lg ${
+            className={`rounded-xl p-4 cursor-pointer transition-all duration-300 shadow-lg border ${
               isSelected
-                ? 'bg-gradient-to-br from-teal-500 to-green-600 text-white'
-                : 'bg-white/5 hover:bg-white/10'
+                ? 'bg-primary border-primary text-primary-foreground'
+                : 'bg-card border-border hover:bg-secondary'
             }`}
             onClick={() => onChange(option.id)}
           >
             <div className="flex items-center">
-              <div className={`mr-4 transition-colors ${isSelected ? 'text-white' : 'text-white/50'}`}>
+              <div className={`mr-4 transition-colors ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
                 {option.icon}
               </div>
               <div>
-                <div className={`font-semibold text-lg transition-colors ${isSelected ? 'text-white' : 'text-white/90'}`}>
+                <div className={`font-semibold text-lg transition-colors ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>
                   {option.label}
                 </div>
-                <div className={`text-sm transition-colors ${isSelected ? 'text-white/90' : 'text-white/70'}`}>
+                <div className={`text-sm transition-colors ${isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
                   {option.description}
                 </div>
               </div>

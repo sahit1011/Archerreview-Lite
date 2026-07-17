@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
 import { Topic, Content } from '@/models';
+import { requireAuth, requireAdmin } from '@/lib/api-auth';
 
 /**
  * API endpoint for managing a specific topic
@@ -12,14 +13,18 @@ import { Topic, Content } from '@/models';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require an authenticated user (topics are shared content, not per-user scoped)
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+
     // Connect to the database
     await dbConnect();
 
     // Get the topic ID from params - use a different approach to avoid the warning
-    const { id } = params;
+    const { id } = await params;
 
     // Find topic by ID
     const topic = await Topic.findById(id).populate('prerequisites');
@@ -61,9 +66,14 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Updating shared topics requires admin privileges
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+    const { id } = await params;
+
     // Connect to the database
     await dbConnect();
 
@@ -71,7 +81,7 @@ export async function PUT(
     const body = await request.json();
 
     // Check if topic exists
-    const existingTopic = await Topic.findById(params.id);
+    const existingTopic = await Topic.findById(id);
     if (!existingTopic) {
       return NextResponse.json(
         {
@@ -96,7 +106,7 @@ export async function PUT(
     // Check for duplicate topic name
     const duplicateTopic = await Topic.findOne({
       name: body.name,
-      _id: { $ne: params.id }
+      _id: { $ne: id }
     });
 
     if (duplicateTopic) {
@@ -112,7 +122,7 @@ export async function PUT(
     // Handle prerequisites
     if (body.prerequisites && Array.isArray(body.prerequisites)) {
       // Check for circular dependencies
-      if (body.prerequisites.includes(params.id)) {
+      if (body.prerequisites.includes(id)) {
         return NextResponse.json(
           {
             success: false,
@@ -141,7 +151,7 @@ export async function PUT(
       for (const prereqId of body.prerequisites) {
         const prereq = await Topic.findById(prereqId);
         if (prereq && prereq.prerequisites && prereq.prerequisites.length > 0) {
-          if (prereq.prerequisites.includes(new mongoose.Types.ObjectId(params.id))) {
+          if (prereq.prerequisites.includes(new mongoose.Types.ObjectId(id))) {
             return NextResponse.json(
               {
                 success: false,
@@ -160,7 +170,7 @@ export async function PUT(
             if (visited.has(currentId.toString())) continue;
             visited.add(currentId.toString());
 
-            if (currentId.toString() === params.id) {
+            if (currentId.toString() === id) {
               return NextResponse.json(
                 {
                   success: false,
@@ -181,7 +191,7 @@ export async function PUT(
 
     // Update topic
     const updatedTopic = await Topic.findByIdAndUpdate(
-      params.id,
+      id,
       {
         name: body.name,
         description: body.description,
@@ -214,15 +224,20 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Deleting shared topics requires admin privileges
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+    const { id } = await params;
+
     // Connect to the database
     await dbConnect();
 
     // Check if topic is used as a prerequisite
     const topicsUsingAsPrereq = await Topic.countDocuments({
-      prerequisites: params.id
+      prerequisites: id
     });
 
     if (topicsUsingAsPrereq > 0) {
@@ -237,7 +252,7 @@ export async function DELETE(
 
     // Check if topic is used in content
     const contentUsingTopic = await Content.countDocuments({
-      topic: params.id
+      topic: id
     });
 
     if (contentUsingTopic > 0) {
@@ -251,7 +266,7 @@ export async function DELETE(
     }
 
     // Find and delete topic
-    const deletedTopic = await Topic.findByIdAndDelete(params.id);
+    const deletedTopic = await Topic.findByIdAndDelete(id);
 
     // Check if topic exists
     if (!deletedTopic) {

@@ -49,4 +49,4 @@ const ConversationSchema: Schema = new Schema(
 );
 
 // Create and export the Conversation model
-export default mongoose.models.Conversation || mongoose.model<IConversation>('Conversation', ConversationSchema);
+export default (mongoose.models.Conversation as mongoose.Model<IConversation>) || mongoose.model<IConversation>('Conversation', ConversationSchema);

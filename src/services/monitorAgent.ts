@@ -144,18 +144,21 @@ export async function runMonitorAgent(userId: string): Promise<MonitoringResult>
       result.stats.readinessScore = readinessScore.overallScore;
     }
 
+    // Mongoose types studyPlan._id as `unknown`; it is an ObjectId at runtime.
+    const planId = studyPlan._id as mongoose.Types.ObjectId;
+
     // Run rule-based monitoring checks
     await Promise.all([
-      checkMissedTasks(userId, studyPlan._id, tasks, result),
-      checkPerformance(userId, studyPlan._id, performances, result),
-      checkScheduleDeviations(userId, studyPlan._id, tasks, performances, result),
-      checkTopicDifficulties(userId, studyPlan._id, performances, result),
-      checkStudyPatterns(userId, studyPlan._id, tasks, performances, result),
-      checkReadinessScore(userId, studyPlan._id, readinessScore, result)
+      checkMissedTasks(userId, planId, tasks, result),
+      checkPerformance(userId, planId, performances, result),
+      checkScheduleDeviations(userId, planId, tasks, performances, result),
+      checkTopicDifficulties(userId, planId, performances, result),
+      checkStudyPatterns(userId, planId, tasks, performances, result),
+      checkReadinessScore(userId, planId, readinessScore, result)
     ]);
 
     // Save rule-based alerts to database
-    await saveAlerts(userId, studyPlan._id, result.alerts);
+    await saveAlerts(userId, planId, result.alerts);
 
     // Check if we should use LLM enhancements
     const useLLM = process.env.USE_LLM_MONITOR === 'true';
@@ -171,7 +174,7 @@ export async function runMonitorAgent(userId: string): Promise<MonitoringResult>
         result.llmInsights = llmInsights;
 
         // Generate additional alerts from LLM insights
-        const llmAlerts = await generateAlertsFromInsights(userId, studyPlan._id, llmInsights.insights);
+        const llmAlerts = await generateAlertsFromInsights(userId, planId, llmInsights.insights);
 
         console.log(`[MonitorAgent] Generated ${llmAlerts.length} LLM-based alerts for user ${userId}`);
       } catch (llmError) {
@@ -740,8 +743,9 @@ export async function getMonitoringStats(userId: string): Promise<any> {
     // Get all performances for the user
     const performances = await Performance.find({ user: userId });
 
-    // Get readiness score
+    // Get readiness score (latest) and full readiness history (for projection)
     const readinessScore = await ReadinessScore.findOne({ user: userId }).sort({ createdAt: -1 });
+    const readinessHistory = await ReadinessScore.find({ user: userId }).sort({ createdAt: 1 });
 
     // Calculate statistics
     const totalTasks = tasks.length;
@@ -771,68 +775,248 @@ export async function getMonitoringStats(userId: string): Promise<any> {
     // Calculate days until exam
     const daysUntilExam = Math.ceil((new Date(studyPlan.examDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
-    // Calculate mock data for visualization (in a real implementation, this would come from actual data)
-    // This is just for demonstration purposes until real data is available
-    const mockPerformanceTrend = [65, 68, 72, 70, 75, 73, 78];
-    const mockStudyPatterns = [
-      { timeOfDay: 'Morning', percentage: 15 },
-      { timeOfDay: 'Afternoon', percentage: 45 },
-      { timeOfDay: 'Evening', percentage: 30 },
-      { timeOfDay: 'Night', percentage: 10 }
-    ];
-    const mockStudyConsistency = [
-      { day: 'Mon', hours: 2.5 },
-      { day: 'Tue', hours: 1.8 },
-      { day: 'Wed', hours: 3.2 },
-      { day: 'Thu', hours: 2.0 },
-      { day: 'Fri', hours: 1.5 },
-      { day: 'Sat', hours: 4.5 },
-      { day: 'Sun', hours: 3.8 }
-    ];
-    const mockScheduleAdherence = {
-      onTime: 68,
-      late: 22,
-      missed: 10
-    };
-    const mockSessionDurations = [
-      { duration: '< 30 min', percentage: 15 },
-      { duration: '30-60 min', percentage: 45 },
-      { duration: '1-2 hours', percentage: 30 },
-      { duration: '> 2 hours', percentage: 10 }
-    ];
-    const mockTopicPerformance = [
-      { topicName: 'Management of Care', score: 65 },
-      { topicName: 'Safety & Infection Control', score: 78 },
-      { topicName: 'Health Promotion', score: 82 },
-      { topicName: 'Psychosocial Integrity', score: 58 },
-      { topicName: 'Basic Care & Comfort', score: 72 }
-    ];
-    const mockTopicTimeInvestment = [
-      { topic: 'Management of Care', timeSpent: 12.5, performance: 65 },
-      { topic: 'Safety & Infection Control', timeSpent: 8.2, performance: 78 },
-      { topic: 'Health Promotion', timeSpent: 10.1, performance: 82 },
-      { topic: 'Psychosocial Integrity', timeSpent: 5.5, performance: 58 },
-      { topic: 'Basic Care & Comfort', timeSpent: 7.8, performance: 72 }
-    ];
-    const mockReadinessProjection = [
-      { week: 1, actual: 45 },
-      { week: 2, actual: 52 },
-      { week: 3, actual: 58 },
-      { week: 4, actual: 65 },
-      { week: 5, actual: 72 },
-      { week: 6, actual: 78 },
-      { week: 7, projected: 82 },
-      { week: 8, projected: 85 },
-      { week: 9, projected: 88 }
-    ];
-    const mockReadinessBreakdown = {
-      Knowledge: (readinessScore ? readinessScore.overallScore : 0) * 1.05,
-      TestStrategy: (readinessScore ? readinessScore.overallScore : 0) * 0.92,
-      TimeManagement: (readinessScore ? readinessScore.overallScore : 0) * 1.1,
-      Confidence: (readinessScore ? readinessScore.overallScore : 0) * 0.85
-    };
+    // ----------------------------------------------------------------------
+    // Real analytics computed from the database for this user.
+    // When there is no data yet, we return empty arrays / zeros (honest),
+    // never fabricated values.
+    // ----------------------------------------------------------------------
 
-    // Return statistics with mock data for visualization
+    // Performances that carry a numeric score (i.e. graded quizzes), sorted oldest -> newest.
+    const scoredPerformances = performances
+      .filter((p: any) => typeof p.score === 'number')
+      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    // All performances sorted oldest -> newest (used for time-based aggregations).
+    const sortedPerformances = [...performances]
+      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    // --- performanceTrend: average score over the last ~8 daily buckets ---
+    // Group scored performances by calendar day, average per day, take the most recent 8 days.
+    const performanceTrend: number[] = (() => {
+      if (scoredPerformances.length === 0) return [];
+      const byDay = new Map<string, { sum: number; count: number }>();
+      for (const p of scoredPerformances) {
+        const dayKey = new Date(p.createdAt).toISOString().split('T')[0];
+        const bucket = byDay.get(dayKey) || { sum: 0, count: 0 };
+        bucket.sum += p.score as number;
+        bucket.count += 1;
+        byDay.set(dayKey, bucket);
+      }
+      const orderedDays = Array.from(byDay.keys()).sort();
+      const last8 = orderedDays.slice(-8);
+      return last8.map(day => {
+        const b = byDay.get(day)!;
+        return Math.round(b.sum / b.count);
+      });
+    })();
+
+    // --- studyPatterns: distribution of study activity by time of day ---
+    const studyPatterns = (() => {
+      if (performances.length === 0) {
+        return [] as { timeOfDay: string; percentage: number }[];
+      }
+      const buckets = { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 };
+      for (const p of performances) {
+        const hour = new Date(p.createdAt).getHours();
+        if (hour >= 5 && hour < 12) buckets.Morning++;
+        else if (hour >= 12 && hour < 17) buckets.Afternoon++;
+        else if (hour >= 17 && hour < 22) buckets.Evening++;
+        else buckets.Night++;
+      }
+      const total = performances.length;
+      return (['Morning', 'Afternoon', 'Evening', 'Night'] as const).map(timeOfDay => ({
+        timeOfDay,
+        percentage: Math.round((buckets[timeOfDay] / total) * 100)
+      }));
+    })();
+
+    // --- studyConsistency: total hours studied per day of week ---
+    const studyConsistency = (() => {
+      if (performances.length === 0) {
+        return [] as { day: string; hours: number }[];
+      }
+      const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const minutesByDow = [0, 0, 0, 0, 0, 0, 0];
+      for (const p of performances) {
+        const dow = new Date(p.createdAt).getDay();
+        minutesByDow[dow] += p.timeSpent || 0;
+      }
+      // Output Mon -> Sun ordering (matches the previous shape's intent).
+      const order = [1, 2, 3, 4, 5, 6, 0];
+      return order.map(dow => ({
+        day: dayLabels[dow],
+        hours: Math.round((minutesByDow[dow] / 60) * 10) / 10
+      }));
+    })();
+
+    // --- scheduleAdherence: how completed tasks lined up with their due dates ---
+    // onTime + late + missed are expressed as percentages of (completed + missed) tasks.
+    const scheduleAdherence = (() => {
+      // Map task completion times from performance records.
+      const completionByTask = new Map<string, Date>();
+      for (const p of performances) {
+        if (p.completed && p.task) {
+          completionByTask.set(p.task.toString(), new Date(p.createdAt));
+        }
+      }
+
+      let onTimeCount = 0;
+      let lateCount = 0;
+      const now = new Date();
+      const missedCount = tasks.filter((t: any) =>
+        t.status === 'PENDING' && new Date(t.endTime) < now
+      ).length;
+
+      for (const t of tasks) {
+        if (t.status !== 'COMPLETED') continue;
+        const completedAt = completionByTask.get(t._id.toString());
+        const dueDate = t.endTime ? new Date(t.endTime) : null;
+        if (completedAt && dueDate) {
+          if (completedAt.getTime() <= dueDate.getTime()) onTimeCount++;
+          else lateCount++;
+        } else {
+          // Completed but no timestamp/due reference: count as on time.
+          onTimeCount++;
+        }
+      }
+
+      const denom = onTimeCount + lateCount + missedCount;
+      if (denom === 0) {
+        return { onTime: 0, late: 0, missed: 0 };
+      }
+      return {
+        onTime: Math.round((onTimeCount / denom) * 100),
+        late: Math.round((lateCount / denom) * 100),
+        missed: Math.round((missedCount / denom) * 100)
+      };
+    })();
+
+    // --- sessionDurations: distribution of study session lengths ---
+    const sessionDurations = (() => {
+      if (performances.length === 0) {
+        return [] as { duration: string; percentage: number }[];
+      }
+      const buckets = { '< 30 min': 0, '30-60 min': 0, '1-2 hours': 0, '> 2 hours': 0 };
+      for (const p of performances) {
+        const mins = p.timeSpent || 0;
+        if (mins < 30) buckets['< 30 min']++;
+        else if (mins < 60) buckets['30-60 min']++;
+        else if (mins < 120) buckets['1-2 hours']++;
+        else buckets['> 2 hours']++;
+      }
+      const total = performances.length;
+      return (['< 30 min', '30-60 min', '1-2 hours', '> 2 hours'] as const).map(duration => ({
+        duration,
+        percentage: Math.round((buckets[duration] / total) * 100)
+      }));
+    })();
+
+    // --- topicPerformance & topicTimeInvestment: per-topic aggregations ---
+    // Group performances by topic, average score and sum time spent, join Topic for names.
+    const topicAgg = new Map<string, { scoreSum: number; scoreCount: number; minutes: number }>();
+    for (const p of performances) {
+      if (!p.topic) continue;
+      const topicId = p.topic.toString();
+      const agg = topicAgg.get(topicId) || { scoreSum: 0, scoreCount: 0, minutes: 0 };
+      if (typeof p.score === 'number') {
+        agg.scoreSum += p.score;
+        agg.scoreCount += 1;
+      }
+      agg.minutes += p.timeSpent || 0;
+      topicAgg.set(topicId, agg);
+    }
+
+    // Resolve topic names in one query.
+    const topicIds = Array.from(topicAgg.keys());
+    const topicDocs = topicIds.length > 0
+      ? await Topic.find({ _id: { $in: topicIds } })
+      : [];
+    const topicNameById = new Map<string, string>();
+    for (const t of topicDocs) {
+      topicNameById.set(t._id.toString(), t.name);
+    }
+
+    const topicPerformance = topicIds
+      .filter(id => (topicAgg.get(id) as any).scoreCount > 0)
+      .map(id => {
+        const agg = topicAgg.get(id)!;
+        return {
+          topicName: topicNameById.get(id) || 'Unknown Topic',
+          score: Math.round(agg.scoreSum / agg.scoreCount)
+        };
+      })
+      .sort((a, b) => a.score - b.score);
+
+    const topicTimeInvestment = topicIds
+      .map(id => {
+        const agg = topicAgg.get(id)!;
+        return {
+          topic: topicNameById.get(id) || 'Unknown Topic',
+          timeSpent: Math.round((agg.minutes / 60) * 10) / 10, // hours
+          performance: agg.scoreCount > 0 ? Math.round(agg.scoreSum / agg.scoreCount) : 0
+        };
+      })
+      .sort((a, b) => b.timeSpent - a.timeSpent);
+
+    // --- readinessProjection: actual readiness scores over time (weekly buckets) ---
+    // Built from the user's recorded ReadinessScore history; no fabricated projection.
+    const readinessProjection = (() => {
+      if (readinessHistory.length === 0) {
+        return [] as { week: number; actual?: number; projected?: number }[];
+      }
+      const byWeek = new Map<string, { sum: number; count: number; ts: number }>();
+      for (const r of readinessHistory) {
+        const d = new Date(r.createdAt);
+        // ISO-ish year-week key.
+        const year = d.getUTCFullYear();
+        const firstDay = new Date(Date.UTC(year, 0, 1));
+        const weekNum = Math.floor(
+          ((d.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24) + firstDay.getUTCDay()) / 7
+        );
+        const key = `${year}-${weekNum}`;
+        const bucket = byWeek.get(key) || { sum: 0, count: 0, ts: d.getTime() };
+        bucket.sum += r.overallScore;
+        bucket.count += 1;
+        bucket.ts = Math.min(bucket.ts, d.getTime());
+        byWeek.set(key, bucket);
+      }
+      const orderedKeys = Array.from(byWeek.entries())
+        .sort((a, b) => a[1].ts - b[1].ts)
+        .map(([key]) => key)
+        .slice(-8);
+      return orderedKeys.map((key, index) => {
+        const b = byWeek.get(key)!;
+        return { week: index + 1, actual: Math.round(b.sum / b.count) };
+      });
+    })();
+
+    // --- readinessBreakdown: honest breakdown from real metrics ---
+    // Knowledge = average quiz score; Confidence = avg confidence scaled to 0-100;
+    // TimeManagement = task completion rate; TestStrategy = answer-level accuracy
+    // across recorded quiz answers (falls back to 0 when no answers exist).
+    const readinessBreakdown = (() => {
+      let answerCorrect = 0;
+      let answerTotal = 0;
+      for (const p of performances) {
+        if (Array.isArray(p.answers)) {
+          for (const a of p.answers) {
+            answerTotal += 1;
+            if (a.isCorrect) answerCorrect += 1;
+          }
+        }
+      }
+      const testStrategy = answerTotal > 0
+        ? Math.round((answerCorrect / answerTotal) * 100)
+        : 0;
+      return {
+        Knowledge: Math.round(averagePerformance),
+        TestStrategy: testStrategy,
+        TimeManagement: Math.round(completionRate),
+        Confidence: Math.round(averageConfidence * 20) // 1-5 scale -> 0-100
+      };
+    })();
+
+    // Return statistics with real, database-derived analytics.
     return {
       totalTasks,
       completedTasks,
@@ -844,16 +1028,16 @@ export async function getMonitoringStats(userId: string): Promise<any> {
       readinessScore: readinessScore ? readinessScore.overallScore : 0,
       daysUntilExam,
       examDate: studyPlan.examDate,
-      // Include mock data for visualization
-      performanceTrend: mockPerformanceTrend,
-      studyPatterns: mockStudyPatterns,
-      studyConsistency: mockStudyConsistency,
-      scheduleAdherence: mockScheduleAdherence,
-      sessionDurations: mockSessionDurations,
-      topicPerformance: mockTopicPerformance,
-      topicTimeInvestment: mockTopicTimeInvestment,
-      readinessProjection: mockReadinessProjection,
-      readinessBreakdown: mockReadinessBreakdown
+      // Real analytics for visualization (empty arrays / zeros when no data yet)
+      performanceTrend,
+      studyPatterns,
+      studyConsistency,
+      scheduleAdherence,
+      sessionDurations,
+      topicPerformance,
+      topicTimeInvestment,
+      readinessProjection,
+      readinessBreakdown
     };
   } catch (error) {
     console.error('Error getting monitoring stats:', error);

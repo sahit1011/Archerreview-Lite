@@ -70,7 +70,7 @@ function getMonitorAgentPrompt(context: Record<string, any>): string {
     ? `\nExisting Alerts:\n${alerts.map((a: any) => `- ${a.type}: ${a.message} (Severity: ${a.severity})`).join('\n')}`
     : '';
 
-  return `You are the Monitor Agent in an AI-powered NCLEX study system. Your role is to analyze student performance data, identify patterns, and generate insights to help improve their study effectiveness.
+  return `You are the Monitor Agent in an AI-powered NEET/JEE study system. Your role is to analyze student performance data, identify patterns, and generate insights to help improve their study effectiveness.
 
 Student: ${userName}
 Days Until Exam: ${daysUntilExam || 'Unknown'}
@@ -126,7 +126,7 @@ function getAdaptationAgentPrompt(context: Record<string, any>): string {
     ? `\nTopic Performance:\n${topicPerformance.map((t: any) => `- ${t.name}: ${t.score}% (${t.status})`).join('\n')}`
     : '';
 
-  return `You are the Adaptation Agent in an AI-powered NCLEX study system. Your role is to analyze alerts and performance data, then recommend specific adaptations to the student's study plan to improve their effectiveness.
+  return `You are the Adaptation Agent in an AI-powered NEET/JEE study system. Your role is to analyze alerts and performance data, then recommend specific adaptations to the student's study plan to improve their effectiveness.
 
 Student: ${userName}
 Days Until Exam: ${daysUntilExam || 'Unknown'}
@@ -165,7 +165,7 @@ function getFeedbackAgentPrompt(context: Record<string, any>): string {
     ? `\nPrevious Feedback:\n${feedbackHistory.map((f: any) => `- ${f.date}: "${f.feedback}" (Sentiment: ${f.sentiment})`).join('\n')}`
     : '';
 
-  return `You are the Feedback Agent in an AI-powered NCLEX study system. Your role is to analyze user feedback, identify patterns and sentiments, and generate recommendations for improving the system.
+  return `You are the Feedback Agent in an AI-powered NEET/JEE study system. Your role is to analyze user feedback, identify patterns and sentiments, and generate recommendations for improving the system.
 
 Student: ${userName}
 Current Feedback: "${userFeedback}"
@@ -203,7 +203,7 @@ function getRemediationAgentPrompt(context: Record<string, any>): string {
     ? `\nPrevious Remediation Attempts:\n${previousRemediation.map((r: any) => `- ${r.date}: ${r.type} (Effectiveness: ${r.effectiveness})`).join('\n')}`
     : '';
 
-  return `You are the Remediation Agent in an AI-powered NCLEX study system. Your role is to recommend specific remediation strategies for topics where the student is struggling.
+  return `You are the Remediation Agent in an AI-powered NEET/JEE study system. Your role is to recommend specific remediation strategies for topics where the student is struggling.
 
 Student: ${userName}
 Days Until Exam: ${daysUntilExam || 'Unknown'}
@@ -249,7 +249,7 @@ function getSchedulerAgentPrompt(context: Record<string, any>): string {
     ? `\nTopic Performance:\n${topicPerformance.map((t: any) => `- ${t.name}: ${t.score}% (Priority: ${t.priority})`).join('\n')}`
     : '';
 
-  return `You are the Scheduler Agent in an AI-powered NCLEX study system. Your role is to create optimal study schedules based on student availability, preferences, and performance data.
+  return `You are the Scheduler Agent in an AI-powered NEET/JEE study system. Your role is to create optimal study schedules based on student availability, preferences, and performance data.
 
 Student: ${userName}
 Days Until Exam: ${daysUntilExam || 'Unknown'}
@@ -274,14 +274,14 @@ Provide your scheduling recommendations in a clear, structured format with speci
  * @returns Default system prompt
  */
 function getDefaultAgentPrompt(): string {
-  return `You are an AI assistant in an NCLEX study system. Your role is to provide helpful, accurate information to nursing students preparing for their NCLEX exam.
+  return `You are an AI assistant in a NEET/JEE study system. Your role is to provide helpful, accurate information to Indian medical (NEET) and engineering (JEE) aspirants preparing for their entrance exam.
 
 Your task is to:
-1. Provide clear, accurate information about NCLEX topics
+1. Provide clear, accurate information about NEET/JEE topics
 2. Answer questions in a helpful, supportive manner
 3. Tailor your responses to the student's needs
-4. Use clinical examples when appropriate
-5. Provide evidence-based information
+4. Use worked examples when appropriate
+5. Provide conceptually accurate information
 6. Be encouraging and supportive
 
 Provide your responses in a clear, structured format. Focus on being helpful and accurate.`;

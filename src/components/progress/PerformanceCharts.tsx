@@ -1,16 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import ParticleBackground from '@/components/common/ParticleBackground';
-import {
-  fadeIn,
-  hoverScale,
-  hoverGlow,
-  floatingAnimation,
-  shimmerAnimation,
-  staggerContainer
-} from '@/utils/animationUtils';
+import { LineChart, BarChart3, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PerformanceData {
   date: string;
@@ -110,74 +101,10 @@ export default function PerformanceCharts({
 
   // Process performance data based on time filter
   const processPerformanceData = (performances: any[], filter: 'days' | 'weeks' | 'months') => {
-    // If we don't have real performance data, generate some realistic mock data
-    if (!performances || performances.length < 3) {
-      // Generate 14 days of realistic data
-      const mockData: PerformanceData[] = [];
-      const today = new Date();
-      const twoWeeksAgo = new Date(today);
-      twoWeeksAgo.setDate(today.getDate() - 14);
-
-      // Start with a base score
-      let currentScore = 55 + Math.floor(Math.random() * 10);
-
-      // Generate data for each day with realistic variations
-      for (let i = 0; i < 14; i++) {
-        const currentDate = new Date(twoWeeksAgo);
-        currentDate.setDate(twoWeeksAgo.getDate() + i);
-
-        // Add some random variation to the score (-3 to +5)
-        const variation = Math.floor(Math.random() * 9) - 3;
-        currentScore = Math.min(100, Math.max(0, currentScore + variation));
-
-        mockData.push({
-          date: currentDate.toISOString().split('T')[0],
-          score: currentScore
-        });
-      }
-
-      // Filter and format based on the selected time filter
-      if (filter === 'weeks') {
-        // Group by week
-        const weekData: Record<string, number[]> = {};
-        mockData.forEach(item => {
-          const date = new Date(item.date);
-          const weekNum = Math.ceil((date.getDate() - 1 + new Date(date.getFullYear(), date.getMonth(), 1).getDay()) / 7);
-          const key = `${date.getFullYear()}-W${weekNum}`;
-
-          if (!weekData[key]) {
-            weekData[key] = [];
-          }
-
-          weekData[key].push(item.score);
-        });
-
-        return Object.entries(weekData).map(([key, scores]) => ({
-          date: key,
-          score: Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
-        }));
-      } else if (filter === 'months') {
-        // Group by month
-        const monthData: Record<string, number[]> = {};
-        mockData.forEach(item => {
-          const date = new Date(item.date);
-          const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
-
-          if (!monthData[key]) {
-            monthData[key] = [];
-          }
-
-          monthData[key].push(item.score);
-        });
-
-        return Object.entries(monthData).map(([key, scores]) => ({
-          date: key,
-          score: Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
-        }));
-      } else {
-        // Return daily data
-        return mockData;
-      }
+    // No fabrication: with too little real data we return an empty series and the
+    // chart shows an honest "not enough data yet" state instead of a fake trend.
+    if (!performances || performances.length < 2) {
+      return [];
     }
 
     // Process real performance data
@@ -321,527 +248,219 @@ export default function PerformanceCharts({
     return result;
   };
 
+  const tabBtn = (active: boolean) =>
+    `inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+      active
+        ? 'bg-primary text-primary-foreground shadow-sm'
+        : 'border border-border text-muted-foreground hover:bg-accent hover:text-foreground'
+    }`;
+
+  const smallTabBtn = (active: boolean) =>
+    `rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+      active
+        ? 'bg-primary text-primary-foreground shadow-sm'
+        : 'border border-border text-muted-foreground hover:bg-accent hover:text-foreground'
+    }`;
+
   return (
-    <motion.div
-      className="glassmorphic-card rounded-xl shadow-lg border border-border-color-dark p-6 mb-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.9, duration: 0.6 }}
-      whileHover={{
-        scale: 1.01,
-        boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(20, 184, 166, 0.2)",
-        transition: { duration: 0.4 }
-      }}
-    >
-      <motion.div
-        className="flex justify-between items-center mb-6"
-        whileHover={{ scale: 1.01 }}
-        transition={{ duration: 0.2 }}
-      >
-        <motion.div
-          className="flex items-center"
-          whileHover={{ scale: 1.05 }}
-          transition={{ duration: 0.2 }}
-        >
-          <motion.svg
-            className="w-8 h-8 mr-3 text-archer-bright-teal"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            animate={{
-              scale: [1, 1.1, 1],
-              color: ["rgba(20, 184, 166, 1)", "rgba(34, 197, 94, 1)", "rgba(20, 184, 166, 1)"]
-            }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </motion.svg>
-          <h2 className="text-xl font-semibold text-archer-white">Performance Analytics</h2>
-        </motion.div>
-        <div className="flex space-x-3">
-          <motion.button
-            className={`px-4 py-2 rounded-lg text-sm font-medium shadow-button transition-all duration-300 ${
-              activeView === 'trend'
-                ? 'bg-archer-bright-teal text-white shadow-lg transform scale-105'
-                : 'bg-archer-dark-teal/30 text-archer-light-text/70 hover:bg-archer-dark-teal/50 hover:shadow-md'
-            }`}
-            onClick={() => setActiveView('trend')}
-            whileHover={{ scale: activeView === 'trend' ? 1.05 : 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.2 }}
-          >
-            Score Trend
-          </motion.button>
-          <motion.button
-            className={`px-4 py-2 rounded-lg text-sm font-medium shadow-button transition-all duration-300 ${
-              activeView === 'categories'
-                ? 'bg-archer-bright-teal text-white shadow-lg transform scale-105'
-                : 'bg-archer-dark-teal/30 text-archer-light-text/70 hover:bg-archer-dark-teal/50 hover:shadow-md'
-            }`}
-            onClick={() => setActiveView('categories')}
-            whileHover={{ scale: activeView === 'categories' ? 1.05 : 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.2 }}
-          >
-            Categories
-          </motion.button>
+    <div className="mb-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <h2 className="text-lg font-semibold text-foreground">Performance Analytics</h2>
         </div>
-      </motion.div>
+        <div className="flex gap-2">
+          <button className={tabBtn(activeView === 'trend')} onClick={() => setActiveView('trend')}>
+            <LineChart className="h-4 w-4" /> Score Trend
+          </button>
+          <button className={tabBtn(activeView === 'categories')} onClick={() => setActiveView('categories')}>
+            <BarChart3 className="h-4 w-4" /> Categories
+          </button>
+        </div>
+      </div>
 
       {activeView === 'trend' ? (
         <div className="flex flex-col items-center">
-          <motion.div
-            className="relative glassmorphic-card p-6 rounded-xl shadow-lg mb-6 border border-border-color-dark overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            whileHover={{
-              scale: 1.02,
-              boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(20, 184, 166, 0.2)",
-              transition: { duration: 0.4 }
-            }}
-          >
-            {/* Particle Background for overall score */}
-            <ParticleBackground
-              particleCount={20}
-              colors={['#14B8A6', '#10B981', '#22D3EE']}
-              className="opacity-20"
-            />
-
-            <motion.div
-              className="relative h-48 w-48 mx-auto"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center relative z-10">
-                  <motion.div
-                    className="text-5xl font-bold text-archer-bright-teal"
-                    animate={{
-                      scale: [1, 1.1, 1],
-                      color: ["rgba(20, 184, 166, 1)", "rgba(34, 197, 94, 1)", "rgba(20, 184, 166, 1)"]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    style={{
-                      background: 'linear-gradient(90deg, #14B8A6 0%, #10B981 50%, #14B8A6 100%)',
-                      backgroundSize: '200% 100%',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text'
-                    }}
-                  >
-                    {overallScore}%
-                  </motion.div>
-                  <motion.div
-                    className="text-archer-light-text/70 mt-1"
-                    initial={{ opacity: 0.8 }}
-                    whileHover={{ opacity: 1, scale: 1.05 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    Ready
-                  </motion.div>
-                </div>
+          <div className="w-full rounded-2xl border border-border bg-secondary/30 p-6">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                <h3 className="text-base font-semibold text-foreground">Performance History</h3>
               </div>
-              <svg className="h-full w-full" viewBox="0 0 36 36">
-                <path
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="var(--border-color-dark)"
-                  strokeWidth="3"
-                  strokeDasharray="100, 100"
-                />
-                <motion.path
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="var(--archer-bright-teal)"
-                  strokeWidth="3"
-                  strokeDasharray={`${overallScore}, 100`}
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: overallScore / 100 }}
-                  transition={{ duration: 2, ease: "easeOut" }}
-                  whileHover={{
-                    stroke: "rgba(34, 197, 94, 1)",
-                    filter: "drop-shadow(0 0 8px rgba(34, 197, 94, 0.5))"
-                  }}
-                />
-              </svg>
-            </motion.div>
-          </motion.div>
-
-          <motion.div
-            className="relative w-full glassmorphic-card p-6 rounded-xl shadow-lg border border-border-color-dark overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            whileHover={{
-              scale: 1.01,
-              boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(59, 130, 246, 0.2)",
-              transition: { duration: 0.4 }
-            }}
-          >
-            {/* Particle Background for chart section */}
-            <ParticleBackground
-              particleCount={25}
-              colors={['#3B82F6', '#60A5FA', '#22D3EE']}
-              className="opacity-25"
-            />
-
-            <motion.div
-              className="flex justify-between items-center mb-5 relative z-10"
-              whileHover={{ scale: 1.01 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.div
-                className="flex items-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-              >
-                <motion.svg
-                  className="w-6 h-6 mr-3 text-blue-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  animate={{
-                    y: [0, -5, 0],
-                    transition: {
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }
-                  }}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </motion.svg>
-                <motion.h3
-                  className="text-lg font-medium text-archer-white"
-                  animate={{
-                    backgroundPosition: ["200% 0", "-200% 0"],
-                    transition: {
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "linear"
-                    }
-                  }}
-                  style={{
-                    background: 'linear-gradient(90deg, #ffffff 0%, #3B82F6 50%, #ffffff 100%)',
-                    backgroundSize: '200% 100%',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
-                  }}
-                >
-                  Performance History
-                </motion.h3>
-              </motion.div>
 
               {/* Time filter buttons */}
-              <div className="flex space-x-2">
-                <motion.button
-                  className={`px-3 py-1 text-xs rounded-lg transition-all duration-300 ${
-                    timeFilter === 'days'
-                      ? 'bg-archer-bright-teal text-white shadow-lg transform scale-105'
-                      : 'bg-archer-dark-teal/30 text-archer-light-text/70 hover:bg-archer-dark-teal/50 hover:shadow-md'
-                  }`}
-                  onClick={() => setTimeFilter('days')}
-                  whileHover={{ scale: timeFilter === 'days' ? 1.05 : 1.02, y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.2 }}
-                >
+              <div className="flex gap-2">
+                <button className={smallTabBtn(timeFilter === 'days')} onClick={() => setTimeFilter('days')}>
                   Days
-                </motion.button>
-                <motion.button
-                  className={`px-3 py-1 text-xs rounded-lg transition-all duration-300 ${
-                    timeFilter === 'weeks'
-                      ? 'bg-archer-bright-teal text-white shadow-lg transform scale-105'
-                      : 'bg-archer-dark-teal/30 text-archer-light-text/70 hover:bg-archer-dark-teal/50 hover:shadow-md'
-                  }`}
-                  onClick={() => setTimeFilter('weeks')}
-                  whileHover={{ scale: timeFilter === 'weeks' ? 1.05 : 1.02, y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.2 }}
-                >
+                </button>
+                <button className={smallTabBtn(timeFilter === 'weeks')} onClick={() => setTimeFilter('weeks')}>
                   Weeks
-                </motion.button>
-                <motion.button
-                  className={`px-3 py-1 text-xs rounded-lg transition-all duration-300 ${
-                    timeFilter === 'months'
-                      ? 'bg-archer-bright-teal text-white shadow-lg transform scale-105'
-                      : 'bg-archer-dark-teal/30 text-archer-light-text/70 hover:bg-archer-dark-teal/50 hover:shadow-md'
-                  }`}
-                  onClick={() => setTimeFilter('months')}
-                  whileHover={{ scale: timeFilter === 'months' ? 1.05 : 1.02, y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.2 }}
-                >
+                </button>
+                <button className={smallTabBtn(timeFilter === 'months')} onClick={() => setTimeFilter('months')}>
                   Months
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
+            </div>
 
             {loading ? (
-              <div className="h-64 flex items-center justify-center">
-                <div className="w-8 h-8 border-t-2 border-archer-bright-teal border-solid rounded-full animate-spin"></div>
+              <div className="flex h-64 items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary"></div>
               </div>
             ) : (
               <>
                 {/* Navigation controls */}
-                <div className="flex justify-between items-center mb-3">
+                <div className="mb-3 flex items-center justify-between">
                   <button
-                    className="text-gray-500 hover:text-gray-700 disabled:opacity-30"
+                    className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
                     onClick={() => setVisibleRange(prev => ({
                       start: Math.max(0, prev.start - 7),
                       end: Math.max(7, prev.end - 7)
                     }))}
                     disabled={visibleRange.start === 0}
                   >
-                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     {performanceHistory.length > 0 ?
                       `Showing ${visibleRange.start + 1}-${Math.min(visibleRange.end, performanceHistory.length)} of ${performanceHistory.length}` :
                       'No data available'}
                   </span>
                   <button
-                    className="text-gray-500 hover:text-gray-700 disabled:opacity-30"
+                    className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
                     onClick={() => setVisibleRange(prev => ({
                       start: prev.start + 7,
                       end: prev.end + 7
                     }))}
                     disabled={visibleRange.end >= performanceHistory.length}
                   >
-                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
+                    <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
 
-                {/* Line graph */}
-                <div className="h-64 relative">
-                  <div className="absolute inset-0 pt-2 pb-12 px-4">
-                    {performanceHistory.length > 0 ? (
-                      <svg className="w-full h-full" viewBox="0 0 700 100" preserveAspectRatio="none">
-                        {/* Line */}
-                        <polyline
-                          points={performanceHistory
-                            .slice(visibleRange.start, visibleRange.end)
-                            .map((entry, index) => `${index * 100 + 50},${100 - entry.score}`)
-                            .join(' ')}
-                          fill="none"
-                          stroke="var(--archer-bright-teal)"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-
-                        {/* Data points */}
-                        {performanceHistory
-                          .slice(visibleRange.start, visibleRange.end)
-                          .map((entry, index) => (
-                          <g key={index}>
-                            {/* Data point */}
-                            <circle
-                              cx={index * 100 + 50}
-                              cy={100 - entry.score}
-                              r="4"
-                              fill="var(--archer-bright-teal)"
-                              stroke="#FFFFFF"
-                              strokeWidth="1.5"
-                            />
-
-                            {/* Date label */}
-                            <text
-                              x={index * 100 + 50}
-                              y="100"
-                              textAnchor="middle"
-                              fill="var(--archer-dark-text)"
-                              fontSize="10"
-                              opacity="0.7"
-                            >
-                              {formatDateLabel(entry.date, timeFilter)}
-                            </text>
-                          </g>
-                        ))}
-                      </svg>
-                    ) : (
-                      <div className="h-full flex items-center justify-center">
-                        <p className="text-gray-500">No performance data available</p>
+                {/* Area chart */}
+                {(() => {
+                  const visible = performanceHistory.slice(visibleRange.start, visibleRange.end);
+                  if (visible.length === 0) {
+                    return (
+                      <div className="flex h-56 items-center justify-center">
+                        <p className="text-muted-foreground">No performance data available</p>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Hover tooltips */}
-                  {performanceHistory.length > 0 && (
-                    <div className="absolute inset-0 flex items-center justify-around">
-                      {performanceHistory
-                        .slice(visibleRange.start, visibleRange.end)
-                        .map((entry, index) => (
-                        <div key={index} className="h-full flex flex-col items-center justify-center relative group cursor-pointer">
-                          <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-full bg-light-bg-secondary text-archer-dark-text px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-md border border-border-color-light">
-                            {entry.score}%
-                          </div>
-                          <div className="w-8 h-full opacity-0"></div>
+                    );
+                  }
+                  const W = 700;
+                  const H = 200;
+                  const x = (i: number) => (visible.length === 1 ? W / 2 : (i / (visible.length - 1)) * (W - 20) + 10);
+                  const y = (score: number) => H - (score / 100) * H;
+                  const linePoints = visible.map((e, i) => `${x(i)},${y(e.score)}`).join(' ');
+                  const areaPath = `M ${x(0)},${y(visible[0].score)} ${visible
+                    .slice(1)
+                    .map((e, i) => `L ${x(i + 1)},${y(e.score)}`)
+                    .join(' ')} L ${x(visible.length - 1)},${H} L ${x(0)},${H} Z`;
+                  return (
+                    <div>
+                      <div className="relative">
+                        {/* y-axis reference labels */}
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex flex-col justify-between py-0.5 text-[10px] text-muted-foreground/70">
+                          <span>100%</span>
+                          <span>50%</span>
+                          <span>0%</span>
                         </div>
-                      ))}
+                        <div className="relative ml-9 h-56">
+                          <svg className="h-full w-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="perf-area" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
+                                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.02" />
+                              </linearGradient>
+                            </defs>
+                            {[0, 50, 100].map((v) => (
+                              <line
+                                key={v}
+                                x1="0"
+                                x2={W}
+                                y1={y(v)}
+                                y2={y(v)}
+                                stroke="var(--border)"
+                                strokeWidth="1"
+                                vectorEffect="non-scaling-stroke"
+                                strokeDasharray={v === 0 ? undefined : '4 6'}
+                              />
+                            ))}
+                            <path d={areaPath} fill="url(#perf-area)" />
+                            <polyline
+                              points={linePoints}
+                              fill="none"
+                              stroke="var(--primary)"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          </svg>
+                          {/* dots + hover tooltips (HTML so they never distort) */}
+                          {visible.map((entry, index) => (
+                            <div
+                              key={index}
+                              className="group absolute -translate-x-1/2 -translate-y-1/2"
+                              style={{ left: `${(x(index) / W) * 100}%`, top: `${(y(entry.score) / H) * 100}%` }}
+                            >
+                              <div className="h-2.5 w-2.5 rounded-full border-2 border-card bg-primary shadow-sm transition-transform group-hover:scale-125" />
+                              <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-popover px-2 py-1 text-xs font-semibold text-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                                {entry.score}%
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="ml-9 mt-2 flex justify-between text-[11px] text-muted-foreground">
+                        {visible.map((entry, index) => (
+                          <span key={index} className={visible.length > 9 && index % 2 === 1 ? 'hidden sm:inline' : undefined}>
+                            {formatDateLabel(entry.date, timeFilter)}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
               </>
             )}
-          </motion.div>
+          </div>
         </div>
       ) : (
-        <motion.div
-          className="relative glassmorphic-card p-6 rounded-xl shadow-lg space-y-5 border border-border-color-dark overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          whileHover={{
-            scale: 1.01,
-            boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(34, 197, 94, 0.2)",
-            transition: { duration: 0.4 }
-          }}
-        >
-          {/* Particle Background */}
-          <ParticleBackground
-            particleCount={30}
-            colors={['#10B981', '#14B8A6', '#22D3EE', '#6366F1']}
-            className="opacity-30"
-          />
+        <div className="space-y-5 rounded-2xl border border-border bg-secondary/30 p-6">
+          <div className="mb-2 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-success" />
+            <h3 className="text-base font-semibold text-foreground">Topic Performance Breakdown</h3>
+          </div>
 
-          <motion.div
-            className="flex items-center mb-6 relative z-10"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            whileHover={{ scale: 1.05 }}
-          >
-            <motion.svg
-              className="w-6 h-6 mr-3 text-green-400"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              animate={{
-                y: [0, -5, 0],
-                transition: {
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }
-              }}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </motion.svg>
-            <motion.h3
-              className="text-lg font-medium text-archer-white"
-              animate={{
-                backgroundPosition: ["200% 0", "-200% 0"],
-                transition: {
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "linear"
-                }
-              }}
-              style={{
-                background: 'linear-gradient(90deg, #ffffff 0%, #14B8A6 50%, #ffffff 100%)',
-                backgroundSize: '200% 100%',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}
-            >
-              Topic Performance Breakdown
-            </motion.h3>
-          </motion.div>
-
-          <div className="space-y-4 relative z-10">
-            {categoryScores.map((category, index) => (
-              <motion.div
+          <div className="space-y-4">
+            {categoryScores.map((category) => (
+              <div
                 key={category.category}
-                className="glassmorphic p-5 rounded-lg shadow-lg border border-border-color-dark relative overflow-hidden"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-                whileHover={{
-                  scale: 1.02,
-                  boxShadow: "0 8px 20px rgba(0, 0, 0, 0.15), 0 0 5px rgba(34, 197, 94, 0.3)",
-                  borderColor: "rgba(34, 197, 94, 0.5)",
-                  transition: { duration: 0.3 }
-                }}
-                whileTap={{ scale: 0.98 }}
+                className="rounded-xl border border-border bg-card/60 p-5"
               >
-                {/* Subtle particle effect for each card */}
-                <ParticleBackground
-                  particleCount={8}
-                  colors={['#10B981', '#14B8A6']}
-                  className="opacity-20"
-                />
-
-                <div className="flex justify-between items-center text-sm mb-3 relative z-10">
-                  <motion.span
-                    className="text-archer-light-text/80 font-medium"
-                    whileHover={{ scale: 1.02, color: '#14B8A6' }}
-                    transition={{ duration: 0.2 }}
-                  >
+                <div className="mb-3 flex items-center justify-between text-sm">
+                  <span className="font-medium text-foreground">
                     {formatCategoryName(category.category)}
-                  </motion.span>
-                  <motion.span
-                    className="font-semibold text-archer-bright-teal px-3 py-1 bg-archer-bright-teal/20 rounded-lg shadow-button"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.2 }}
-                    animate={{
-                      backgroundPosition: ["200% 0", "-200% 0"],
-                      transition: {
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "linear"
-                      }
-                    }}
-                    style={{
-                      background: 'linear-gradient(90deg, rgba(20, 184, 166, 0.2) 0%, rgba(20, 184, 166, 0.4) 50%, rgba(20, 184, 166, 0.2) 100%)',
-                      backgroundSize: '200% 100%'
-                    }}
-                  >
+                  </span>
+                  <span className="rounded-lg bg-primary/15 px-3 py-1 font-semibold text-primary">
                     {category.score}%
-                  </motion.span>
+                  </span>
                 </div>
 
-                <div className="w-full bg-archer-dark-teal/30 rounded-full h-4 shadow-inner overflow-hidden relative z-10">
-                  <motion.div
-                    className={`${getCategoryScoreColor(category.score)} h-4 rounded-full shadow-lg relative`}
+                <div className="h-4 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`${getCategoryScoreColor(category.score)} h-4 rounded-full`}
                     style={{ width: `${category.score}%` }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${category.score}%` }}
-                    transition={{ duration: 1.5, ease: 'easeOut', delay: index * 0.1 }}
-                    whileHover={{
-                      boxShadow: `0 0 10px ${getCategoryScoreColor(category.score).includes('green') ? 'rgba(34, 197, 94, 0.5)' : getCategoryScoreColor(category.score).includes('yellow') ? 'rgba(234, 179, 8, 0.5)' : 'rgba(239, 68, 68, 0.5)'}`,
-                      transition: { duration: 0.3 }
-                    }}
-                  >
-                    {/* Animated shine effect */}
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                      initial={{ x: '-100%' }}
-                      animate={{ x: '100%' }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        repeatDelay: 3,
-                        ease: 'easeInOut',
-                        delay: index * 0.2
-                      }}
-                    />
-                  </motion.div>
+                  />
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 }

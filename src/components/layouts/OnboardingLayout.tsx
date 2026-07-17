@@ -1,34 +1,44 @@
 "use client";
 
-import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import ThemeToggle from '@/components/ThemeToggle';
+import { ReactNode } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { GraduationCap } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface OnboardingLayoutProps {
   children: ReactNode;
 }
 
-export default function OnboardingLayout({
-  children
-}: OnboardingLayoutProps) {
+export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
   return (
-    <div style={{background: 'var(--bg-main)'}} className="flex flex-col items-center justify-center min-h-screen p-8 transition-colors duration-300">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(0,169,157,0.1),transparent_50%)]"></div>
-      <div className="absolute top-4 right-4 z-20">
-        <ThemeToggle />
-      </div>
-      <motion.main
-        className="relative z-10 max-w-4xl w-full p-8 my-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+    <div className="relative flex min-h-screen flex-col aurora-bg">
+      {/* subtle animated backdrop, consistent with the landing */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 grid-pattern opacity-60" />
 
+      {/* Brand bar */}
+      <header className="relative z-10 flex items-center justify-between px-5 py-4 sm:px-8">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl brand-gradient text-white shadow-button">
+            <GraduationCap className="h-5 w-5" />
+          </div>
+          <span className="font-display text-lg font-bold tracking-tight">StudyArc</span>
+        </Link>
+        <ThemeToggle />
+      </header>
+
+      {/* Centered content */}
+      <motion.main
+        className="relative z-10 mx-auto w-full max-w-4xl flex-1 px-5 py-8 sm:px-8"
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
+      >
         {children}
       </motion.main>
 
-      <footer className="text-center text-white/60 text-sm mb-8">
-        <p>© 2024 ArcherReview. This is a prototype for demonstration purposes.</p>
+      <footer className="relative z-10 px-5 py-6 text-center text-sm text-muted-foreground">
+        <p>© 2026 StudyArc — AI-adaptive NEET &amp; JEE preparation.</p>
       </footer>
     </div>
   );

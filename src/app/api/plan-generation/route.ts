@@ -1,7 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
-import { User, StudyPlan, DiagnosticResult } from '@/models';
+import { User, StudyPlan, DiagnosticResult, ScheduledJob } from '@/models';
 import { generateStudyPlan } from '@/services/schedulerAgent';
+import { scheduleAgent } from '@/services/agentScheduler';
+import { requireAuth } from '@/lib/api-auth';
+
+/**
+ * Bootstrap the user's recurring monitoring job the moment their plan exists.
+ * Daily standard sequence (monitor -> adaptation) keeps the plan healthy even
+ * when the student is inactive (catches missed tasks). Idempotent: skips if the
+ * user already has an active daily sequence job. Never blocks plan generation.
+ */
+async function ensureDailyMonitoringJob(userId: string) {
+  try {
+    const existing = await ScheduledJob.findOne({
+      userId,
+      agentType: 'sequence',
+      type: 'daily',
+      status: 'active',
+    });
+    if (existing) return;
+    await scheduleAgent({
+      agentType: 'sequence',
+      sequenceType: 'standard',
+      userId,
+      scheduleType: 'daily',
+      priority: 5,
+      enabled: true,
+    });
+    console.log(`[plan-generation] Scheduled daily monitoring for user ${userId}`);
+  } catch (err) {
+    console.error('[plan-generation] Failed to schedule daily monitoring:', err);
+  }
+}
 
 /**
  * API endpoint for generating a study plan
@@ -9,25 +40,16 @@ import { generateStudyPlan } from '@/services/schedulerAgent';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await connectToDatabase();
 
-    // Parse request body
-    const body = await request.json();
-
-    // Validate required fields
-    if (!body.userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required field: userId'
-        },
-        { status: 400 }
-      );
-    }
-
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
         {
@@ -39,12 +61,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has a study plan
-    let studyPlan = await StudyPlan.findOne({ user: body.userId });
+    let studyPlan = await StudyPlan.findOne({ user: userId });
 
     // If no study plan exists, create one
     if (!studyPlan) {
       studyPlan = new StudyPlan({
-        user: body.userId,
+        user: userId,
         examDate: user.examDate,
         isPersonalized: false,
         startDate: new Date(),
@@ -55,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if diagnostic result exists
-    const diagnosticResult = await DiagnosticResult.findOne({ user: body.userId })
+    const diagnosticResult = await DiagnosticResult.findOne({ user: userId })
       .sort({ createdAt: -1 });
 
     // Set personalization flag based on diagnostic result
@@ -65,7 +87,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate study plan with tasks
-    const generatedPlan = await generateStudyPlan(body.userId, studyPlan._id);
+    const generatedPlan = await generateStudyPlan(userId, studyPlan._id as string);
+
+    // Keep the plan self-maintaining: schedule the user's daily monitor->adaptation job
+    await ensureDailyMonitoringJob(userId);
 
     // Prepare response message based on validation results
     let message = 'Study plan generated successfully';
@@ -111,22 +136,13 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await connectToDatabase(); // Use the correct function name
-
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
-
-    // Validate required fields
-    if (!userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required query parameter: userId'
-        },
-        { status: 400 }
-      );
-    }
 
     // Check if user exists
     const user = await User.findById(userId);

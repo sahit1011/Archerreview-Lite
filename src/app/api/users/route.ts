@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { User } from '@/models';
+import { requireAdmin } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // Admin-only: creating users
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Connect to the database
     await dbConnect();
     
@@ -73,11 +78,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Admin-only: listing all users
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Connect to the database
     await dbConnect();
-    
+
     // Get all users (limit to 10 for safety)
     const users = await User.find().limit(10).select('-password');
     

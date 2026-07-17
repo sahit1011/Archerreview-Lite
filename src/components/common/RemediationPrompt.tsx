@@ -105,13 +105,13 @@ const RemediationPrompt: React.FC<RemediationPromptProps> = ({
   const getSeverityColor = () => {
     switch (suggestion.severity) {
       case 'HIGH':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/15 text-destructive border-destructive/30';
       case 'MEDIUM':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
+        return 'bg-warning/15 text-warning border-warning/30';
       case 'LOW':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-500/15 text-blue-500 border-blue-500/30';
       default:
-        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+        return 'bg-primary/15 text-primary border-primary/30';
     }
   };
 
@@ -121,7 +121,7 @@ const RemediationPrompt: React.FC<RemediationPromptProps> = ({
         return (
           <button
             onClick={handleStartTutorSession}
-            className="mt-2 flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800"
+            className="mt-2 flex items-center text-sm font-medium text-primary hover:brightness-110"
           >
             Chat with AI Tutor <ArrowRightIcon className="ml-1 h-4 w-4" />
           </button>
@@ -133,7 +133,7 @@ const RemediationPrompt: React.FC<RemediationPromptProps> = ({
           return (
             <button
               onClick={handleResourceClick}
-              className="mt-2 flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800"
+              className="mt-2 flex items-center text-sm font-medium text-primary hover:brightness-110"
             >
               View Resource <ArrowRightIcon className="ml-1 h-4 w-4" />
             </button>
@@ -144,7 +144,7 @@ const RemediationPrompt: React.FC<RemediationPromptProps> = ({
         return (
           <button
             onClick={handleStartTutorSession}
-            className="mt-2 flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800"
+            className="mt-2 flex items-center text-sm font-medium text-primary hover:brightness-110"
           >
             Learn More <ArrowRightIcon className="ml-1 h-4 w-4" />
           </button>
@@ -160,7 +160,7 @@ const RemediationPrompt: React.FC<RemediationPromptProps> = ({
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className={`fixed bottom-4 right-4 max-w-sm rounded-lg shadow-lg border ${getSeverityColor()} overflow-hidden z-50`}
+          className={`fixed bottom-4 right-4 max-w-sm rounded-xl shadow-lg border backdrop-blur-sm ${getSeverityColor()} overflow-hidden z-50`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
@@ -213,7 +213,7 @@ const RemediationPrompt: React.FC<RemediationPromptProps> = ({
                     setIsVisible(false);
                     setTimeout(() => onClose(), 300);
                   }}
-                  className="inline-flex text-gray-400 hover:text-gray-500"
+                  className="inline-flex text-current opacity-60 hover:opacity-100"
                 >
                   <XMarkIcon className="h-5 w-5" />
                 </button>

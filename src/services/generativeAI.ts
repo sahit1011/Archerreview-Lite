@@ -1,9 +1,27 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { getNCLEXPrompt, getTopicSpecificPrompt } from '../utils/prompts'; // Changed to relative
+import { getTutorPrompt, getTopicSpecificPrompt } from '../utils/prompts'; // Changed to relative
+import dbConnect from '../lib/db';
+import { User } from '../models';
+
+/**
+ * Resolve the student's exam (NEET | JEE) so the tutor persona matches their track.
+ * Any failure degrades to the generic NEET/JEE persona — never blocks a response.
+ */
+async function getUserExamType(userId?: string): Promise<'NEET' | 'JEE' | null> {
+  if (!userId) return null;
+  try {
+    await dbConnect();
+    const user = await User.findById(userId).select('examType').lean();
+    const examType = (user as { examType?: string } | null)?.examType;
+    return examType === 'JEE' ? 'JEE' : examType === 'NEET' ? 'NEET' : null;
+  } catch {
+    return null;
+  }
+}
 
 // Initialize the Google Generative AI client
-const geminiApiKey = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_KEY || '';
-const geminiModelName = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pro';
+const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_KEY || '';
+const geminiModelName = process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pro';
 
 // Initialize OpenRouter configuration
 const openRouterApiKey = process.env.OPENROUTER_API_KEY || '';
@@ -59,7 +77,7 @@ async function callOpenRouter(prompt: string): Promise<string> {
         'Authorization': `Bearer ${openRouterApiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-        'X-Title': 'ArcherReview AI Tutor'
+        'X-Title': 'StudyArc AI Tutor'
       },
       body: JSON.stringify({
         model: openRouterModel,
@@ -97,6 +115,9 @@ export async function generateTutorResponse(
   conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
 ): Promise<string> {
   try {
+    // Match the coaching persona to the student's exam (NEET vs JEE).
+    const examType = await getUserExamType(userId);
+
     // Try Google Gemini first
     if (genAI && geminiApiKey) {
       try {
@@ -123,7 +144,7 @@ IMPORTANT: Keep your response CONCISE and focused. Guidelines:
 
 User Question: ${message}`;
 
-        const prompt = getNCLEXPrompt(userId) + "\n\n" + conciseInstructions;
+        const prompt = getTutorPrompt(examType, userId) + "\n\n" + conciseInstructions;
 
         // Generate content directly without chat history for simplicity
         const result = await model.generateContent(prompt);
@@ -151,7 +172,7 @@ IMPORTANT: Keep your response CONCISE and focused. Guidelines:
 
 User Question: ${message}`;
 
-    const prompt = getNCLEXPrompt(userId) + "\n\n" + conciseInstructions;
+    const prompt = getTutorPrompt(examType, userId) + "\n\n" + conciseInstructions;
     return await callOpenRouter(prompt);
 
   } catch (error) {
@@ -181,6 +202,8 @@ interface TopicContext {
     type: string;
     description: string;
   }[];
+  examType?: 'NEET' | 'JEE' | null;
+  savedNotes?: string;
 }
 
 /**
@@ -198,6 +221,11 @@ export async function generateTopicTutorResponse(
   conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
 ): Promise<string> {
   try {
+    // Match the coaching persona to the student's exam (NEET vs JEE).
+    if (!topicContext.examType) {
+      topicContext.examType = await getUserExamType(userId);
+    }
+
     // Try Google Gemini first
     if (genAI && geminiApiKey) {
       try {
@@ -248,7 +276,7 @@ IMPORTANT: Keep your response CONCISE and focused. Guidelines:
 - Limit to 2-3 key points maximum per explanation
 - Use bullet points or numbered lists when appropriate
 - Provide direct answers without lengthy introductions
-- If giving examples, limit to 1 relevant clinical example
+- If giving examples, limit to 1 relevant worked example
 - Prioritize clarity and brevity over comprehensive coverage
 - End with a brief summary or key takeaway
 
@@ -268,7 +296,7 @@ User Question: ${message}`;
 
         User question: ${message}
 
-        Provide a helpful response about this nursing topic.
+        Provide a helpful response about this NEET/JEE topic.
       `;
 
       return await callOpenRouter(prompt);
@@ -292,48 +320,123 @@ function getFallbackResponse(message: string, topicName?: string): string {
 
 Quick study tips:
 • Focus on core concepts over memorization
-• Apply knowledge to clinical scenarios
+• Apply knowledge to numerical and reasoning problems
 • Practice with application questions
 • Create concept maps for relationships
 • Teach concepts to reinforce understanding`;
   }
 
   // Simple keyword-based responses for fallback - kept concise
-  if (message.toLowerCase().includes('nclex')) {
-    return `NCLEX tests nursing knowledge for entry-level practice. Two types: NCLEX-RN and NCLEX-PN. Uses CAT (Computerized Adaptive Testing) with 75-145 questions for RN.
+  if (message.toLowerCase().includes('neet') || message.toLowerCase().includes('jee')) {
+    return `NEET and JEE are India's major entrance exams. NEET is for medical (MBBS/BDS) admissions; JEE is for engineering admissions. Both are highly competitive, syllabus-driven exams based largely on the NCERT curriculum.
 
-Key areas: Fundamentals, Pharmacology, Medical-Surgical, Pediatrics, Maternal-Newborn, Psychiatric, and Management.
+Key subjects: NEET covers Physics, Chemistry, and Biology. JEE covers Physics, Chemistry, and Mathematics.
 
 Need help with specific content or study strategies?`;
-  } else if (message.toLowerCase().includes('pharmacology') || message.toLowerCase().includes('medication')) {
-    return `Pharmacology (12-18% of NCLEX) focuses on:
+  } else if (message.toLowerCase().includes('organic') || message.toLowerCase().includes('chemistry')) {
+    return `Chemistry is a high-yield subject for both NEET and JEE. Focus on:
 
-• Drug classifications and mechanisms
-• Side effects and adverse reactions
-• Nursing considerations and monitoring
-• Dosage calculations
-• High-alert medications (anticoagulants, insulins, opioids)
+• Physical Chemistry: Thermodynamics, Equilibrium, Electrochemistry
+• Organic Chemistry: reaction mechanisms, named reactions, isomerism
+• Inorganic Chemistry: periodic trends, coordination compounds, p-block
+• Numerical problem practice (mole concept, kinetics)
+• NCERT thoroughness for direct questions
 
 Which aspect would you like to explore?`;
   } else if (message.toLowerCase().includes('priority') || message.toLowerCase().includes('prioritize')) {
-    return `NCLEX prioritization uses these frameworks:
+    return `NEET/JEE prioritization uses these frameworks:
 
-• **ABCs**: Airway, Breathing, Circulation first
-• **Maslow's**: Physiological needs before safety/psychosocial
-• **Acute vs Chronic**: Acute takes priority
-• **Stable vs Unstable**: Unstable patients first
+• **High-weightage chapters first**: e.g. Mechanics, Organic Chemistry, Calculus
+• **Strength-vs-gap**: secure your strong subjects, then attack weak chapters
+• **Concept before speed**: master fundamentals before timed practice
+• **Accuracy vs attempts**: negative marking rewards careful selection
 
-Example: Chest pain patient before medication question or anxiety.`;
+Example: Revise Electrostatics and Thermodynamics before lower-weightage topics.`;
   } else {
-    return `I'm your NCLEX AI Tutor! I can help with:
+    return `I'm your NEET/JEE AI Tutor! I can help with:
 
-• Nursing concepts and fundamentals
-• Pharmacology and medications
-• Medical-surgical scenarios
-• Pediatric and maternal care
-• Psychiatric nursing
-• Test-taking strategies
+• Physics concepts (Mechanics, Electrostatics, Optics)
+• Chemistry (Physical, Organic, Inorganic)
+• Biology for NEET (Human Physiology, Genetics)
+• Mathematics for JEE (Calculus, Algebra)
+• Problem-solving and test-taking strategies
 
 What specific topic would you like to explore?`;
   }
+}
+
+/**
+ * Distill a tutor conversation into concise revision notes (markdown bullets).
+ *
+ * Used by "Save key points to My Notes": the student's brainstorm with the AI
+ * tutor becomes a permanent, revisable note attached to the topic. Tries Gemini,
+ * then OpenRouter; if no LLM is available it falls back to an extractive summary
+ * (the student's questions + first lines of each answer) so the feature always works.
+ */
+export async function distillConversationToNote(
+  messages: { role: 'user' | 'assistant'; content: string }[],
+  topicName?: string
+): Promise<{ content: string; llmGenerated: boolean }> {
+  const transcript = messages
+    .map((m) => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.content}`)
+    .join('\n\n')
+    .slice(0, 24000); // keep the prompt bounded
+
+  const prompt = `You are helping an Indian NEET/JEE aspirant build their personal revision notes.
+Below is a tutoring conversation${topicName ? ` about "${topicName}"` : ''}. Distill it into concise revision notes the student can use later.
+
+Rules:
+- Output ONLY markdown bullet points (use "-"), no preamble, no headings.
+- 4-10 bullets. Each bullet is one self-contained fact, formula, method, or misconception fixed during the session.
+- Include formulas/values exactly as discussed.
+- If the student made a specific mistake that got corrected, capture it as "Watch out: ...".
+- Skip greetings, meta-chat, and anything not useful for revision.
+
+Conversation:
+${transcript}`;
+
+  // Try Gemini
+  if (genAI && geminiApiKey) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: geminiModelName,
+        generationConfig: { temperature: 0.3, maxOutputTokens: 700 },
+      });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim();
+      if (text) return { content: text, llmGenerated: true };
+    } catch (err) {
+      console.warn('[notes] Gemini distillation failed, trying OpenRouter:', err);
+    }
+  }
+
+  // Try OpenRouter
+  try {
+    const text = (await callOpenRouter(prompt)).trim();
+    if (text) return { content: text, llmGenerated: true };
+  } catch (err) {
+    console.warn('[notes] OpenRouter distillation failed, using extractive fallback:', err);
+  }
+
+  // Extractive fallback — no LLM available. Pair each student question with the
+  // first meaningful line of the tutor's answer.
+  const bullets: string[] = [];
+  for (let i = 0; i < messages.length && bullets.length < 10; i++) {
+    const m = messages[i];
+    if (m.role !== 'user') continue;
+    const question = m.content.trim().replace(/\s+/g, ' ').slice(0, 140);
+    const answer = messages
+      .slice(i + 1)
+      .find((x) => x.role === 'assistant')
+      ?.content.trim()
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 20)[0]
+      ?.slice(0, 220);
+    if (question) bullets.push(`- **Q:** ${question}${answer ? `\n  - ${answer}` : ''}`);
+  }
+  return {
+    content: bullets.length > 0 ? bullets.join('\n') : '- (No revision points could be extracted from this conversation.)',
+    llmGenerated: false,
+  };
 }

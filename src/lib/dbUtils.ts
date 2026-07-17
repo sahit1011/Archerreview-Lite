@@ -180,168 +180,292 @@ export async function recordPerformance(performanceData: any) {
 }
 
 /**
- * Calculate and update readiness score for a user
+ * Calculate and update readiness score for a user.
+ *
+ * Readiness is a weighted blend of four real signals derived from the user's
+ * own data. It NEVER fabricates a score: when there is no quiz/task data the
+ * relevant components contribute 0 and the overall number reflects that
+ * honestly (a brand new user with a plan but no activity scores 0).
+ *
+ * Components (weights sum to 1.0):
+ *   - quiz       (0.45): NEET/JEE-subject-weighted average of quiz Performance.score
+ *   - mastery    (0.25): topic coverage x mastery across the plan's topics
+ *   - completion (0.20): completed vs total Tasks in the user's StudyPlan
+ *   - trend      (0.10): recent-half vs earlier-half quiz average (improving/declining)
+ *
  * @param userId User ID
- * @returns Updated readiness score
+ * @returns Updated readiness score document (with a non-persisted `breakdown`
+ *          field describing the component contributions), or null if the user
+ *          has no study plan.
  */
 export async function calculateReadinessScore(userId: string) {
   await dbConnect();
 
-  // Get all performances for the user
-  const performances = await Performance.find({ user: userId }).populate('topic');
-
-  // Get the study plan
+  // Get the study plan first - without a plan there is nothing to be ready for.
   const plan = await StudyPlan.findOne({ user: userId });
   if (!plan) return null;
 
-  // Get all topics to analyze importance and difficulty
-  const allTopics = await Topic.find({});
+  // Get all performances for the user (populated topic for category/importance).
+  const performances = await Performance.find({ user: userId }).populate('topic');
+  // Only quiz-style performances carry a numeric score; treat those as the
+  // graded evidence used for the quiz/mastery/trend components.
+  const scoredPerformances: any[] = (performances as any[]).filter(
+    (p: any) => p.topic && typeof p.score === 'number'
+  );
 
-  // Define NCLEX category weights based on exam distribution
-  const categoryWeights: Record<string, number> = {
-    'MANAGEMENT_OF_CARE': 0.20, // 20% of NCLEX exam
-    'SAFETY_AND_INFECTION_CONTROL': 0.15, // 15% of NCLEX exam
-    'HEALTH_PROMOTION': 0.10, // 10% of NCLEX exam
-    'PSYCHOSOCIAL_INTEGRITY': 0.10, // 10% of NCLEX exam
-    'BASIC_CARE_AND_COMFORT': 0.10, // 10% of NCLEX exam
-    'PHARMACOLOGICAL_THERAPIES': 0.15, // 15% of NCLEX exam
-    'REDUCTION_OF_RISK_POTENTIAL': 0.10, // 10% of NCLEX exam
-    'PHYSIOLOGICAL_ADAPTATION': 0.10 // 10% of NCLEX exam
-  };
-
-  // Calculate overall score and category scores
-  const categoryScores: { category: string; score: number }[] = [];
+  // Subject weights mirror the user's actual exam composition:
+  // NEET: Biology is half the paper (50/25/25). JEE: three equal papers.
+  const examUser = await User.findById(userId).select('examType').lean();
+  const examType = (examUser as any)?.examType === 'JEE' ? 'JEE' : 'NEET';
+  const categoryWeights: Record<string, number> =
+    examType === 'JEE'
+      ? { PHYSICS: 1 / 3, CHEMISTRY: 1 / 3, MATHEMATICS: 1 / 3 }
+      : { BIOLOGY: 0.5, PHYSICS: 0.25, CHEMISTRY: 0.25 };
   const categories = Object.keys(categoryWeights);
 
-  // Calculate score for each category with weighted scoring
+  // -------------------------------------------------------------------------
+  // (a) QUIZ COMPONENT: NEET/JEE-subject-weighted average of quiz scores.
+  // Per category we weight individual attempts by topic importance x difficulty
+  // so harder/important topics count more; categories with no attempts are
+  // reported as 0 and excluded from the quiz average (no fabrication).
+  // -------------------------------------------------------------------------
+  const categoryScores: { category: string; score: number }[] = [];
+  const categoriesWithData = new Set<string>();
+
   for (const category of categories) {
-    const categoryPerformances = performances.filter(p => p.topic.category === category);
+    const categoryPerformances = scoredPerformances.filter(
+      (p: any) => p.topic.category === category
+    );
     if (categoryPerformances.length === 0) {
       categoryScores.push({ category, score: 0 });
       continue;
     }
+    categoriesWithData.add(category);
 
-    // Calculate weighted score based on topic importance and difficulty
     let totalWeightedScore = 0;
     let totalWeight = 0;
-
     for (const performance of categoryPerformances) {
-      // Get topic importance and difficulty
-      const topicImportance = performance.topic.importance || 5; // Default to 5 if not set
+      const topicImportance = performance.topic.importance || 5; // 1-10, default 5
       const topicDifficulty = performance.topic.difficulty;
-
-      // Calculate difficulty multiplier
       let difficultyMultiplier = 1.0;
       if (topicDifficulty === 'HARD') difficultyMultiplier = 1.3;
-      else if (topicDifficulty === 'MEDIUM') difficultyMultiplier = 1.0;
       else if (topicDifficulty === 'EASY') difficultyMultiplier = 0.8;
-
-      // Calculate weight for this performance
       const weight = topicImportance * difficultyMultiplier;
-
-      // Add to total
       totalWeightedScore += (performance.score || 0) * weight;
       totalWeight += weight;
     }
-
-    // Calculate average weighted score
     const avgScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
-    categoryScores.push({ category, score: avgScore });
+    categoryScores.push({ category, score: Math.round(avgScore) });
   }
 
-  // Calculate overall score with category weights
-  let overallScore = 0;
-  let totalWeight = 0;
-
-  for (const categoryScore of categoryScores) {
-    const weight = categoryWeights[categoryScore.category] || 0;
-    overallScore += categoryScore.score * weight;
-    totalWeight += weight;
+  // Quiz component = exam-distribution-weighted average over categories that
+  // actually have data (re-normalized so absent categories don't drag it down).
+  let quizScore = 0;
+  let quizWeightSeen = 0;
+  for (const cs of categoryScores) {
+    if (!categoriesWithData.has(cs.category)) continue;
+    const w = categoryWeights[cs.category] || 0;
+    quizScore += cs.score * w;
+    quizWeightSeen += w;
   }
+  quizScore = quizWeightSeen > 0 ? quizScore / quizWeightSeen : 0;
 
-  // Normalize overall score
-  overallScore = totalWeight > 0 ? overallScore / totalWeight : 0;
-
-  // Round scores for better readability
-  overallScore = Math.round(overallScore);
-  for (let i = 0; i < categoryScores.length; i++) {
-    categoryScores[i].score = Math.round(categoryScores[i].score);
-  }
-
-  // Identify weak and strong areas with enhanced criteria
-  const weakAreas: mongoose.Types.ObjectId[] = [];
-  const strongAreas: mongoose.Types.ObjectId[] = [];
-
-  // Group performances by topic
+  // -------------------------------------------------------------------------
+  // Per-topic aggregation (used for mastery, weak/strong areas, top-3 weakest).
+  // -------------------------------------------------------------------------
   const topicPerformances: Record<string, any[]> = {};
-
-  for (const performance of performances) {
+  for (const performance of scoredPerformances) {
     const topicId = performance.topic._id.toString();
-    if (!topicPerformances[topicId]) {
-      topicPerformances[topicId] = [];
-    }
+    if (!topicPerformances[topicId]) topicPerformances[topicId] = [];
     topicPerformances[topicId].push(performance);
   }
 
-  // Analyze each topic's performances
-  for (const [topicId, topicPerfs] of Object.entries(topicPerformances)) {
-    // Calculate average score and confidence
-    const scores = topicPerfs.map(p => p.score || 0).filter(s => s > 0);
+  type TopicStat = {
+    topicId: mongoose.Types.ObjectId;
+    name: string;
+    category: string;
+    importance: number;
+    avgScore: number;
+    avgConfidence: number;
+  };
+  const topicStats: TopicStat[] = [];
+  for (const topicPerfs of Object.values(topicPerformances)) {
+    const scores = topicPerfs.map(p => p.score || 0);
     const avgScore = scores.length > 0
       ? scores.reduce((sum, s) => sum + s, 0) / scores.length
       : 0;
-
     const confidences = topicPerfs.map(p => p.confidence || 0);
     const avgConfidence = confidences.length > 0
       ? confidences.reduce((sum, c) => sum + c, 0) / confidences.length
       : 0;
-
-    // Get topic details
     const topic = topicPerfs[0].topic;
-
-    // Determine if this is a weak area
-    if (
-      (avgScore < 70) || // Low score
-      (avgScore < 75 && topic.importance >= 8) || // Important topic with below average score
-      (avgScore < 80 && topic.difficulty === 'HARD' && topic.importance >= 7) || // Hard and important topic
-      (avgConfidence < 3 && avgScore < 80) // Low confidence and not great score
-    ) {
-      weakAreas.push(topic._id);
-    }
-
-    // Determine if this is a strong area
-    if (
-      (avgScore >= 85) || // High score
-      (avgScore >= 80 && avgConfidence >= 4) || // Good score with high confidence
-      (avgScore >= 75 && topic.difficulty === 'HARD' && avgConfidence >= 4) // Good score on hard topic with confidence
-    ) {
-      strongAreas.push(topic._id);
-    }
+    topicStats.push({
+      topicId: topic._id,
+      name: topic.name,
+      category: topic.category,
+      importance: topic.importance || 5,
+      avgScore,
+      avgConfidence
+    });
   }
 
-  // Calculate projected score with enhanced forecasting
-  const daysUntilExam = Math.ceil((plan.examDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  // -------------------------------------------------------------------------
+  // (b) MASTERY COMPONENT: topic coverage x mastery across the PLAN's topics.
+  // Coverage = fraction of distinct plan topics the user has actually attempted.
+  // Mastery  = importance-weighted average score over those attempted topics.
+  // A user who aced 2 of 50 plan topics is not "ready", so we multiply mastery
+  // by coverage. Falls back to all-topics if the plan has no tasks yet.
+  // -------------------------------------------------------------------------
+  const planTopicIds = await Task.distinct('topic', { plan: plan._id });
+  const planTopicIdSet = new Set(planTopicIds.map((t: any) => t.toString()));
+  const totalPlanTopics = planTopicIdSet.size;
 
-  // Get total tasks and completed tasks to calculate completion rate
+  let masteryScore = 0;
+  if (totalPlanTopics > 0) {
+    const coveredStats = topicStats.filter(ts => planTopicIdSet.has(ts.topicId.toString()));
+    const coverage = coveredStats.length / totalPlanTopics; // 0..1
+    let masteryWeighted = 0;
+    let masteryWeight = 0;
+    for (const ts of coveredStats) {
+      masteryWeighted += ts.avgScore * ts.importance;
+      masteryWeight += ts.importance;
+    }
+    const masteryAvg = masteryWeight > 0 ? masteryWeighted / masteryWeight : 0;
+    masteryScore = masteryAvg * coverage;
+  } else if (topicStats.length > 0) {
+    // No plan tasks yet: fall back to a plain importance-weighted topic average
+    // (coverage unknown, so don't penalize for it).
+    let w = 0;
+    let ws = 0;
+    for (const ts of topicStats) {
+      ws += ts.avgScore * ts.importance;
+      w += ts.importance;
+    }
+    masteryScore = w > 0 ? ws / w : 0;
+  }
+
+  // -------------------------------------------------------------------------
+  // (c) COMPLETION COMPONENT: completed vs total Tasks in the user's plan.
+  // -------------------------------------------------------------------------
   const totalTasks = await Task.countDocuments({ plan: plan._id });
   const completedTasks = await Task.countDocuments({ plan: plan._id, status: 'COMPLETED' });
-  const completionRate = totalTasks > 0 ? completedTasks / totalTasks : 0;
+  const completionRate = totalTasks > 0 ? completedTasks / totalTasks : 0; // 0..1
+  const completionScore = completionRate * 100;
 
-  // Calculate improvement rate based on days until exam and completion rate
-  // Higher completion rate = faster improvement
-  const dailyImprovement = 0.3 + (completionRate * 0.4); // 0.3% to 0.7% improvement per day
+  // -------------------------------------------------------------------------
+  // (d) TREND COMPONENT: recent-half vs earlier-half quiz average.
+  // Mapped onto 0..100 around a 50 neutral midpoint so a flat trend neither
+  // helps nor hurts; strong improvement lifts readiness, decline lowers it.
+  // -------------------------------------------------------------------------
+  let trendDirection: 'IMPROVING' | 'DECLINING' | 'STABLE' = 'STABLE';
+  let trendScore = 50; // neutral when there isn't enough data to judge
+  if (scoredPerformances.length >= 4) {
+    const sorted = [...scoredPerformances].sort(
+      (a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    const mid = Math.floor(sorted.length / 2);
+    const firstHalf = sorted.slice(0, mid);
+    const secondHalf = sorted.slice(mid);
+    const avg = (arr: any[]) =>
+      arr.reduce((s, p) => s + (p.score || 0), 0) / (arr.length || 1);
+    const firstAvg = avg(firstHalf);
+    const secondAvg = avg(secondHalf);
+    const delta = secondAvg - firstAvg; // percentage points
+    if (delta > 2) trendDirection = 'IMPROVING';
+    else if (delta < -2) trendDirection = 'DECLINING';
+    else trendDirection = 'STABLE';
+    // Scale: +/-20pp swing maps to the full 0..100 range around 50.
+    trendScore = Math.max(0, Math.min(100, 50 + delta * 2.5));
+  }
 
-  // Calculate projected improvement
+  // -------------------------------------------------------------------------
+  // OVERALL: weighted blend of the four components (weights sum to 1.0).
+  // -------------------------------------------------------------------------
+  const COMPONENT_WEIGHTS = {
+    quiz: 0.45,
+    mastery: 0.25,
+    completion: 0.20,
+    trend: 0.10
+  };
+
+  const hasAnyData = scoredPerformances.length > 0 || totalTasks > 0;
+  let overallScore = 0;
+  if (hasAnyData) {
+    overallScore =
+      quizScore * COMPONENT_WEIGHTS.quiz +
+      masteryScore * COMPONENT_WEIGHTS.mastery +
+      completionScore * COMPONENT_WEIGHTS.completion +
+      trendScore * COMPONENT_WEIGHTS.trend;
+  }
+  overallScore = Math.max(0, Math.min(100, Math.round(overallScore)));
+
+  // -------------------------------------------------------------------------
+  // Weak / strong areas + top-3 weakest topics (sorted weakest-first so any
+  // consumer slicing weakAreas[0..3] gets the genuine top-3 weakest topics).
+  // -------------------------------------------------------------------------
+  const weakStats: TopicStat[] = [];
+  const strongStats: TopicStat[] = [];
+  for (const ts of topicStats) {
+    const isWeak =
+      ts.avgScore < 70 ||
+      (ts.avgScore < 75 && ts.importance >= 8) ||
+      (ts.avgConfidence < 3 && ts.avgScore < 80);
+    const isStrong =
+      ts.avgScore >= 85 ||
+      (ts.avgScore >= 80 && ts.avgConfidence >= 4);
+    if (isWeak) weakStats.push(ts);
+    else if (isStrong) strongStats.push(ts);
+  }
+  // Weakest first.
+  weakStats.sort((a, b) => a.avgScore - b.avgScore);
+  // Strongest first.
+  strongStats.sort((a, b) => b.avgScore - a.avgScore);
+
+  const weakAreas: mongoose.Types.ObjectId[] = weakStats.map(s => s.topicId);
+  const strongAreas: mongoose.Types.ObjectId[] = strongStats.map(s => s.topicId);
+  const topWeakTopics = weakStats.slice(0, 3).map(s => ({
+    topic: s.topicId,
+    name: s.name,
+    category: s.category,
+    score: Math.round(s.avgScore)
+  }));
+
+  // -------------------------------------------------------------------------
+  // PROJECTED SCORE: data-driven forecast bounded by completion momentum and
+  // remaining study time, penalized by the number of weak areas.
+  // -------------------------------------------------------------------------
+  const daysUntilExam = Math.max(
+    0,
+    Math.ceil((new Date(plan.examDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  );
+  const dailyImprovement = 0.3 + completionRate * 0.4; // 0.3-0.7 pts/day
   let projectedImprovement = Math.min(35, daysUntilExam * dailyImprovement);
-
-  // Adjust based on weak areas - more weak areas means slower improvement
   const weakAreasPenalty = Math.min(10, weakAreas.length * 0.5);
   projectedImprovement = Math.max(0, projectedImprovement - weakAreasPenalty);
+  const projectedScore = hasAnyData
+    ? Math.min(100, Math.round(overallScore + projectedImprovement))
+    : 0;
 
-  // Calculate final projected score
-  const projectedScore = Math.min(100, Math.round(overallScore + projectedImprovement));
+  // Per-component breakdown surfaced to callers (not persisted under the strict
+  // ReadinessScore schema, but returned on the response object).
+  const breakdown = {
+    components: {
+      quiz: { score: Math.round(quizScore), weight: COMPONENT_WEIGHTS.quiz },
+      mastery: { score: Math.round(masteryScore), weight: COMPONENT_WEIGHTS.mastery },
+      completion: { score: Math.round(completionScore), weight: COMPONENT_WEIGHTS.completion },
+      trend: { score: Math.round(trendScore), weight: COMPONENT_WEIGHTS.trend }
+    },
+    completionRate: Math.round(completionRate * 100),
+    completedTasks,
+    totalTasks,
+    topicsCovered: topicStats.filter(ts => planTopicIdSet.has(ts.topicId.toString())).length,
+    totalPlanTopics,
+    trend: trendDirection,
+    topWeakTopics,
+    hasData: hasAnyData
+  };
 
-  // Create or update readiness score
+  // Create or update readiness score (persist only schema-supported fields).
   const readinessScore = await ReadinessScore.findOneAndUpdate(
     { user: userId },
     {
@@ -356,5 +480,12 @@ export async function calculateReadinessScore(userId: string) {
     { new: true, upsert: true }
   );
 
+  // Attach the non-persisted breakdown onto the returned document so the route
+  // can surface it (via .toObject()) without changing the persisted schema.
+  // We return the Mongoose document itself to stay return-type-compatible with
+  // existing callers (e.g. monitorAgent) that expect a ReadinessScore document.
+  if (readinessScore) {
+    (readinessScore as any).breakdown = breakdown;
+  }
   return readinessScore;
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Task, StudyPlan, User, Alert } from '@/models';
 import { addDays, addHours, startOfDay, endOfDay } from 'date-fns';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
  * API endpoint for rescheduling missed tasks
@@ -9,25 +10,19 @@ import { addDays, addHours, startOfDay, endOfDay } from 'date-fns';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request; userId is token-derived and trusted.
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
     // Parse request body
     const body = await request.json();
 
-    // Validate required fields
-    if (!body.userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required field: userId'
-        },
-        { status: 400 }
-      );
-    }
-
-    // Get user's study plan
-    const studyPlan = await StudyPlan.findOne({ user: body.userId });
+    // Get the authenticated user's study plan
+    const studyPlan = await StudyPlan.findOne({ user: userId });
     if (!studyPlan) {
       return NextResponse.json(
         {
@@ -39,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user preferences
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
         {
@@ -148,7 +143,7 @@ export async function POST(request: NextRequest) {
           title: updatedTask.title,
           oldStartTime: missedTask.startTime,
           newStartTime: updatedTask.startTime,
-          topic: missedTask.topic?.name || 'Unknown Topic'
+          topic: (missedTask.topic as any)?.name || 'Unknown Topic'
         });
       } catch (error) {
         console.error(`Error rescheduling task ${missedTask._id}:`, error);
@@ -163,7 +158,7 @@ export async function POST(request: NextRequest) {
     // Create an alert about the rescheduled tasks
     if (rescheduledTasks.length > 0) {
       const alert = new Alert({
-        user: body.userId,
+        user: userId,
         plan: studyPlan._id,
         type: 'SCHEDULE_CHANGE',
         severity: 'MEDIUM',

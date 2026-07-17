@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import { requireAuth } from '@/lib/api-auth';
 import User from '@/models/User';
 import { runMonitorAgent, getMonitoringStats } from '@/services/monitorAgent';
 
@@ -9,25 +10,15 @@ import { runMonitorAgent, getMonitoringStats } from '@/services/monitorAgent';
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to the database
     await dbConnect();
 
-    // Parse request body
-    const body = await request.json();
-
-    // Validate required fields
-    if (!body.userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required field: userId'
-        },
-        { status: 400 }
-      );
-    }
-
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
         {
@@ -39,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Run monitor agent
-    const result = await runMonitorAgent(body.userId);
+    const result = await runMonitorAgent(userId);
 
     // Return success response
     return NextResponse.json({
@@ -68,25 +59,12 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to the database
     await dbConnect();
-
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
-
-    // Validate required fields
-    if (!userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required query parameter: userId'
-        },
-        { status: 400 }
-      );
-    }
-
-    // For demo purposes, skip the user check
-    // In a real implementation, we would check if the user exists
 
     // Get actual data from the database
     const Task = (await import('@/models/Task')).default;
@@ -129,14 +107,93 @@ export async function GET(request: NextRequest) {
     // Calculate days until exam
     const daysUntilExam = Math.ceil((studyPlan.examDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
-    // Get performances
-    const performances = await Performance.find({ user: userId });
+    // Get performances (topic populated for topic-time investment)
+    const performances = await Performance.find({ user: userId }).populate('topic').sort({ createdAt: 1 });
     const averagePerformance = performances.length > 0
       ? performances.reduce((sum, p) => sum + (p.score || 0), 0) / performances.length
       : 0;
     const averageConfidence = performances.length > 0
       ? performances.reduce((sum, p) => sum + (p.confidence || 0), 0) / performances.length
       : 0;
+
+    // Completed tasks with topic — the ground truth for study-habit analytics.
+    const completedTaskDocs = await Task.find({ plan: studyPlan._id, status: 'COMPLETED' }).populate('topic');
+
+    // --- REAL study-habit analytics (empty when there's no data — never fabricated) ---
+    // Time-of-day distribution from when tasks were actually completed (updatedAt).
+    const todBuckets = { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 };
+    for (const t of completedTaskDocs) {
+      const h = new Date((t as any).updatedAt || t.startTime).getHours();
+      if (h >= 5 && h < 12) todBuckets.Morning++;
+      else if (h >= 12 && h < 17) todBuckets.Afternoon++;
+      else if (h >= 17 && h < 21) todBuckets.Evening++;
+      else todBuckets.Night++;
+    }
+    const todTotal = completedTaskDocs.length;
+    const studyPatterns = todTotal > 0
+      ? Object.entries(todBuckets).map(([timeOfDay, n]) => ({ timeOfDay, percentage: Math.round((n / todTotal) * 100) }))
+      : [];
+
+    // Real chronological performance trend (last 7 graded attempts).
+    const performanceTrend = performances.slice(-7).map(p => Math.round(p.score || 0));
+
+    // Hours studied per weekday, from completed task durations.
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayHours: Record<string, number> = {};
+    for (const t of completedTaskDocs) {
+      const d = dayNames[new Date((t as any).updatedAt || t.startTime).getDay()];
+      dayHours[d] = (dayHours[d] || 0) + (t.duration || 0) / 60;
+    }
+    const studyConsistency = todTotal > 0
+      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => ({ day, hours: Math.round((dayHours[day] || 0) * 10) / 10 }))
+      : [];
+
+    // Schedule adherence: on-time vs late completions vs still-missed.
+    let onTimeCount = 0, lateCount = 0;
+    for (const t of completedTaskDocs) {
+      const completedAt = new Date((t as any).updatedAt || t.startTime).getTime();
+      if (completedAt <= new Date(t.endTime).getTime() + 24 * 3600 * 1000) onTimeCount++;
+      else lateCount++;
+    }
+    const adherenceTotal = onTimeCount + lateCount + missedTasks;
+    const scheduleAdherence = adherenceTotal > 0
+      ? {
+          onTime: Math.round((onTimeCount / adherenceTotal) * 100),
+          late: Math.round((lateCount / adherenceTotal) * 100),
+          missed: Math.round((missedTasks / adherenceTotal) * 100),
+        }
+      : null;
+
+    // Session-duration distribution from completed tasks.
+    const durBuckets = { '< 30 min': 0, '30-60 min': 0, '1-2 hours': 0, '> 2 hours': 0 };
+    for (const t of completedTaskDocs) {
+      const m = t.duration || 0;
+      if (m < 30) durBuckets['< 30 min']++;
+      else if (m < 60) durBuckets['30-60 min']++;
+      else if (m < 120) durBuckets['1-2 hours']++;
+      else durBuckets['> 2 hours']++;
+    }
+    const sessionDurations = todTotal > 0
+      ? Object.entries(durBuckets).map(([duration, n]) => ({ duration, percentage: Math.round((n / todTotal) * 100) }))
+      : [];
+
+    // Time invested per topic + performance there (from real Performance records).
+    const topicAgg: Record<string, { topic: string; minutes: number; scores: number[] }> = {};
+    for (const p of performances) {
+      const name = (p.topic as any)?.name;
+      if (!name) continue;
+      if (!topicAgg[name]) topicAgg[name] = { topic: name, minutes: 0, scores: [] };
+      topicAgg[name].minutes += p.timeSpent || 0;
+      if (typeof p.score === 'number') topicAgg[name].scores.push(p.score);
+    }
+    const topicTimeInvestment = Object.values(topicAgg)
+      .map(a => ({
+        topic: a.topic,
+        timeSpent: Math.round((a.minutes / 60) * 10) / 10,
+        performance: a.scores.length ? Math.round(a.scores.reduce((s, v) => s + v, 0) / a.scores.length) : 0,
+      }))
+      .sort((a, b) => b.timeSpent - a.timeSpent)
+      .slice(0, 6);
 
     // Build stats object
     const stats = {
@@ -151,68 +208,23 @@ export async function GET(request: NextRequest) {
       projectedScore: readinessScore ? readinessScore.projectedScore : 0,
       daysUntilExam,
       examDate: studyPlan.examDate.toISOString().split('T')[0],
-      // Include some mock data for visualization purposes
+      // Per-subject scores from the real readiness calculation.
       topicPerformance: readinessScore ? readinessScore.categoryScores.map(c => ({
         topicName: c.category.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' '),
         score: c.score
       })) : [],
-      studyPatterns: [
-        { timeOfDay: 'Morning', percentage: 25 },
-        { timeOfDay: 'Afternoon', percentage: 45 },
-        { timeOfDay: 'Evening', percentage: 20 },
-        { timeOfDay: 'Night', percentage: 10 }
-      ],
-      performanceTrend: [
-        Math.max(0, Math.round(averagePerformance * 0.8)),
-        Math.max(0, Math.round(averagePerformance * 0.85)),
-        Math.max(0, Math.round(averagePerformance * 0.9)),
-        Math.max(0, Math.round(averagePerformance * 0.95)),
-        Math.max(0, Math.round(averagePerformance * 0.98)),
-        Math.max(0, Math.round(averagePerformance)),
-        Math.min(100, Math.round(averagePerformance * 1.05))
-      ],
-      studyConsistency: [
-        { day: 'Mon', hours: 2.5 },
-        { day: 'Tue', hours: 3.0 },
-        { day: 'Wed', hours: 2.0 },
-        { day: 'Thu', hours: 3.5 },
-        { day: 'Fri', hours: 1.5 },
-        { day: 'Sat', hours: 4.0 },
-        { day: 'Sun', hours: 1.0 }
-      ],
-      scheduleAdherence: {
-        onTime: 75,
-        late: 15,
-        missed: 10
-      },
-      sessionDurations: [
-        { duration: '< 30 min', percentage: 15 },
-        { duration: '30-60 min', percentage: 45 },
-        { duration: '1-2 hours', percentage: 30 },
-        { duration: '> 2 hours', percentage: 10 }
-      ],
-      topicTimeInvestment: [
-        { topic: 'Pharmacology', timeSpent: 12, performance: 65 },
-        { topic: 'Cardiovascular', timeSpent: 8, performance: 72 },
-        { topic: 'Mental Health', timeSpent: 6, performance: 78 },
-        { topic: 'Pediatrics', timeSpent: 4, performance: 68 }
-      ],
-      readinessProjection: [
-        { week: 1, actual: Math.max(0, Math.round(readinessScore ? readinessScore.overallScore * 0.7 : 0)) },
-        { week: 2, actual: Math.max(0, Math.round(readinessScore ? readinessScore.overallScore * 0.8 : 0)) },
-        { week: 3, actual: Math.max(0, Math.round(readinessScore ? readinessScore.overallScore * 0.9 : 0)) },
-        { week: 4, actual: Math.max(0, Math.round(readinessScore ? readinessScore.overallScore * 0.95 : 0)) },
-        { week: 5, actual: Math.max(0, Math.round(readinessScore ? readinessScore.overallScore : 0)) },
-        { week: 6, projected: Math.min(100, Math.round(readinessScore ? readinessScore.projectedScore * 0.9 : 0)) },
-        { week: 7, projected: Math.min(100, Math.round(readinessScore ? readinessScore.projectedScore * 0.95 : 0)) },
-        { week: 8, projected: Math.min(100, Math.round(readinessScore ? readinessScore.projectedScore : 0)) }
-      ],
-      readinessBreakdown: {
+      // All computed from real task/performance history above (empty until data exists).
+      studyPatterns,
+      performanceTrend,
+      studyConsistency,
+      scheduleAdherence,
+      sessionDurations,
+      topicTimeInvestment,
+      readinessBreakdown: performances.length > 0 ? {
         Knowledge: Math.round(averagePerformance),
-        TestStrategy: Math.round(averagePerformance * 0.9),
         TimeManagement: Math.round(completionRate),
         Confidence: Math.round(averageConfidence * 20) // Scale 0-5 to 0-100
-      }
+      } : null
     };
 
     // Return success response with actual data

@@ -197,15 +197,15 @@ export default function TaskDetailPopover({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-500/15 text-green-300 border border-green-500/30';
       case 'IN_PROGRESS':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-500/15 text-blue-300 border border-blue-500/30';
       case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
       case 'SKIPPED':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground border border-border';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground border border-border';
     }
   };
 
@@ -213,17 +213,17 @@ export default function TaskDetailPopover({
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'VIDEO':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-500/15 text-blue-300 border border-blue-500/30';
       case 'QUIZ':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-primary/12 text-primary border border-primary/30';
       case 'READING':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-500/15 text-green-300 border border-green-500/30';
       case 'PRACTICE':
-        return 'bg-amber-100 text-amber-800';
+        return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
       case 'REVIEW':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-500/15 text-red-300 border border-red-500/30';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground border border-border';
     }
   };
 
@@ -231,17 +231,17 @@ export default function TaskDetailPopover({
   const getTypeGradient = (type: string) => {
     switch (type) {
       case 'VIDEO':
-        return 'from-blue-700 to-blue-500';
+        return 'from-blue-600 to-blue-500';
       case 'QUIZ':
-        return 'from-purple-700 to-purple-500';
+        return 'from-primary to-primary';
       case 'READING':
-        return 'from-green-700 to-green-500';
+        return 'from-green-600 to-green-500';
       case 'PRACTICE':
-        return 'from-amber-700 to-amber-500';
+        return 'from-amber-600 to-amber-500';
       case 'REVIEW':
-        return 'from-red-700 to-red-500';
+        return 'from-red-600 to-red-500';
       default:
-        return 'from-indigo-700 to-purple-600';
+        return 'from-primary to-primary';
     }
   };
 
@@ -253,7 +253,7 @@ export default function TaskDetailPopover({
           onClick={handleOutsideClick}
         >
           <motion.div
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
+            className="rounded-2xl border border-border bg-card backdrop-blur-sm shadow-2xl max-w-md w-full mx-4 overflow-hidden"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -261,21 +261,21 @@ export default function TaskDetailPopover({
           >
             {loading ? (
               <div className="p-8 flex flex-col items-center justify-center">
-                <div className="w-10 h-10 border-t-3 border-indigo-600 border-solid rounded-full animate-spin"></div>
-                <p className="mt-4 text-gray-500">Loading task details...</p>
+                <div className="w-10 h-10 border-t-2 border-primary border-solid rounded-full animate-spin"></div>
+                <p className="mt-4 text-muted-foreground">Loading task details...</p>
               </div>
             ) : error ? (
               <div className="p-6">
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md mb-4">
+                <div className="bg-red-500/15 border-l-4 border-red-500 p-4 rounded-md mb-4">
                   <div className="flex">
-                    <svg className="h-6 w-6 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-6 w-6 text-red-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                    <p className="text-red-700">{error}</p>
+                    <p className="text-red-300">{error}</p>
                   </div>
                 </div>
                 <button
-                  className="w-full px-4 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300 transition-colors"
+                  className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground hover:bg-muted transition-colors"
                   onClick={onClose}
                 >
                   Close
@@ -313,34 +313,34 @@ export default function TaskDetailPopover({
 
                 <div className="p-6">
                   <div className="mb-6">
-                    <p className="text-gray-700">{task.description}</p>
+                    <p className="text-muted-foreground">{task.description}</p>
                   </div>
 
-                  <div className="mb-6 bg-gray-50 rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Details</h3>
+                  <div className="mb-6 bg-secondary border border-border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-3">Details</h3>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div className="flex flex-col">
-                        <span className="text-gray-500 text-xs">Start Time</span>
-                        <span className="font-medium text-gray-800">
+                        <span className="text-muted-foreground text-xs">Start Time</span>
+                        <span className="font-medium text-foreground">
                           {format(new Date(task.startTime), 'MMM d, yyyy h:mm a')}
                         </span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-gray-500 text-xs">End Time</span>
-                        <span className="font-medium text-gray-800">
+                        <span className="text-muted-foreground text-xs">End Time</span>
+                        <span className="font-medium text-foreground">
                           {format(new Date(task.endTime), 'MMM d, yyyy h:mm a')}
                         </span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-gray-500 text-xs">Difficulty</span>
-                        <span className="font-medium text-gray-800">
+                        <span className="text-muted-foreground text-xs">Difficulty</span>
+                        <span className="font-medium text-foreground">
                           {task.difficulty}
                         </span>
                       </div>
                       {task.topic && (
                         <div className="flex flex-col">
-                          <span className="text-gray-500 text-xs">Topic</span>
-                          <span className="font-medium text-gray-800">{task.topic.name}</span>
+                          <span className="text-muted-foreground text-xs">Topic</span>
+                          <span className="font-medium text-foreground">{task.topic.name}</span>
                         </div>
                       )}
                     </div>
@@ -348,7 +348,7 @@ export default function TaskDetailPopover({
 
                   {onStatusChange && (
                     <div className="mt-6">
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Update Status</h3>
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-3">Update Status</h3>
                       <div className="grid grid-cols-2 gap-3">
                         {['PENDING', 'IN_PROGRESS', 'COMPLETED', 'SKIPPED'].map((status) => (
                           <motion.button
@@ -359,12 +359,12 @@ export default function TaskDetailPopover({
                               task.status === status
                                 ? `bg-gradient-to-r ${getTypeGradient(task.type)} text-white shadow-lg`
                                 : status === 'COMPLETED'
-                                  ? 'bg-green-100 text-green-800 hover:bg-green-200 border border-green-300'
+                                  ? 'bg-green-500/15 text-green-300 hover:bg-green-500/25 border border-green-500/30'
                                   : status === 'IN_PROGRESS'
-                                    ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-300'
+                                    ? 'bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 border border-blue-500/30'
                                     : status === 'SKIPPED'
-                                      ? 'bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300'
-                                      : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-300'
+                                      ? 'bg-secondary text-foreground hover:bg-muted border border-border'
+                                      : 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/30'
                             }`}
                             onClick={() => handleStatusChange(status)}
                             disabled={updatingStatus || task.status === status}
@@ -385,7 +385,7 @@ export default function TaskDetailPopover({
                         ))}
                       </div>
                       {updatingStatus && (
-                        <div className="mt-3 text-sm text-green-600 flex items-center justify-center">
+                        <div className="mt-3 text-sm text-primary flex items-center justify-center">
                           <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -401,7 +401,7 @@ export default function TaskDetailPopover({
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium shadow-md transition-all flex items-center"
+                      className="px-4 py-2 bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 rounded-lg font-medium transition-all flex items-center"
                       onClick={() => setShowDeleteConfirm(true)}
                       disabled={isDeleting}
                     >
@@ -424,7 +424,7 @@ export default function TaskDetailPopover({
                               Start Quiz
                             </motion.button>
                           ) : (
-                            <div className="text-sm text-gray-500 italic mr-auto">
+                            <div className="text-sm text-muted-foreground italic mr-auto">
                               This quiz is not yet available
                             </div>
                           )}
@@ -443,22 +443,22 @@ export default function TaskDetailPopover({
 
                   {/* Delete confirmation dialog */}
                   {showDeleteConfirm && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10 rounded-xl">
-                      <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full mx-4">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Task</h3>
-                        <p className="text-gray-700 mb-6">
+                    <div className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-10 rounded-2xl">
+                      <div className="rounded-xl border border-border bg-card backdrop-blur-sm p-6 shadow-2xl max-w-sm w-full mx-4">
+                        <h3 className="text-lg font-bold text-foreground mb-2">Delete Task</h3>
+                        <p className="text-muted-foreground mb-6">
                           Are you sure you want to delete this task? This action cannot be undone.
                         </p>
                         <div className="flex justify-end space-x-3">
                           <button
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
+                            className="px-4 py-2 bg-secondary hover:bg-muted text-foreground border border-border rounded-lg font-medium transition-colors"
                             onClick={() => setShowDeleteConfirm(false)}
                             disabled={isDeleting}
                           >
                             Cancel
                           </button>
                           <button
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center"
+                            className="px-4 py-2 bg-red-500/90 hover:bg-red-500 text-white rounded-lg font-medium transition-colors flex items-center"
                             onClick={handleDeleteTask}
                             disabled={isDeleting}
                           >
@@ -487,14 +487,14 @@ export default function TaskDetailPopover({
               </>
             ) : (
               <div className="p-8 text-center">
-                <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-16 h-16 mx-auto text-muted-foreground/40 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <p className="text-gray-600 mb-6">No task selected</p>
+                <p className="text-muted-foreground mb-6">No task selected</p>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
+                  className="px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md hover:brightness-110 transition-all"
                   onClick={onClose}
                 >
                   Close

@@ -160,36 +160,36 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
       case 'IMPROVING':
         return {
           icon: (
-            <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-success" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
             </svg>
           ),
-          color: 'text-green-400',
-          bgColor: 'bg-green-900/20',
-          borderColor: 'border-green-900/30'
+          color: 'text-success',
+          bgColor: 'bg-success/10',
+          borderColor: 'border-success/30'
         };
       case 'DECLINING':
         return {
           icon: (
-            <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-destructive" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M12 13a1 1 0 100 2h5a1 1 0 001-1v-5a1 1 0 10-2 0v2.586l-4.293-4.293a1 1 0 00-1.414 0L8 9.586l-4.293-4.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0L11 9.414 14.586 13H12z" clipRule="evenodd" />
             </svg>
           ),
-          color: 'text-red-400',
-          bgColor: 'bg-red-900/20',
-          borderColor: 'border-red-900/30'
+          color: 'text-destructive',
+          bgColor: 'bg-destructive/10',
+          borderColor: 'border-destructive/30'
         };
       case 'STABLE':
       default:
         return {
           icon: (
-            <svg className="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-warning" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a1 1 0 01-1 1H3a1 1 0 110-2h14a1 1 0 011 1z" clipRule="evenodd" />
             </svg>
           ),
-          color: 'text-amber-400',
-          bgColor: 'bg-amber-900/20',
-          borderColor: 'border-amber-900/30'
+          color: 'text-warning',
+          bgColor: 'bg-warning/10',
+          borderColor: 'border-warning/30'
         };
     }
   };
@@ -198,24 +198,24 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
   const getSeverityColor = (severity: 'LOW' | 'MEDIUM' | 'HIGH') => {
     switch (severity) {
       case 'HIGH':
-        return 'text-red-400 bg-red-900/20 border-red-900/30';
+        return 'text-destructive bg-destructive/10 border-destructive/30';
       case 'MEDIUM':
-        return 'text-amber-400 bg-amber-900/20 border-amber-900/30';
+        return 'text-warning bg-warning/10 border-warning/30';
       case 'LOW':
       default:
-        return 'text-blue-400 bg-blue-900/20 border-blue-900/30';
+        return 'text-primary bg-primary/10 border-primary/30';
     }
   };
 
   if (loading) {
     return (
-      <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
+      <div className="bg-card rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-semibold text-archer-white">Long-Term Trend Analysis</h2>
+          <h2 className="text-xl font-semibold text-foreground">Long-Term Trend Analysis</h2>
         </div>
         <div className="flex flex-col items-center justify-center h-64">
-          <div className="w-16 h-16 border-t-4 border-archer-bright-teal border-solid rounded-full animate-spin"></div>
-          <p className="mt-4 text-archer-light-text">Loading trend data...</p>
+          <div className="w-16 h-16 border-t-4 border-primary border-solid rounded-full animate-spin"></div>
+          <p className="mt-4 text-muted-foreground">Loading trend data...</p>
         </div>
       </div>
     );
@@ -223,13 +223,13 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
 
   if (error) {
     return (
-      <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
+      <div className="bg-card rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-semibold text-archer-white">Long-Term Trend Analysis</h2>
+          <h2 className="text-xl font-semibold text-foreground">Long-Term Trend Analysis</h2>
         </div>
-        <div className="p-4 bg-red-900/20 text-red-400 rounded-lg shadow-button border border-red-900/30">
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg shadow-button border border-destructive/30">
           <div className="flex items-center">
-            <svg className="h-5 w-5 text-red-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-destructive mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <p>Error: {error}</p>
@@ -241,13 +241,13 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
 
   if (!trendData) {
     return (
-      <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
+      <div className="bg-card rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-semibold text-archer-white">Long-Term Trend Analysis</h2>
+          <h2 className="text-xl font-semibold text-foreground">Long-Term Trend Analysis</h2>
         </div>
-        <div className="p-4 bg-blue-900/20 text-blue-400 rounded-lg shadow-button border border-blue-900/30">
+        <div className="p-4 bg-primary/10 text-primary rounded-lg shadow-button border border-primary/30">
           <div className="flex items-center">
-            <svg className="h-5 w-5 text-blue-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 4a1 1 0 011 1v4a1 1 0 11-2 0v-4a1 1 0 011-1z" clipRule="evenodd" />
             </svg>
             <p>No trend data available yet. Complete more tasks to see your long-term trends.</p>
@@ -261,25 +261,25 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
   const completionTrendInfo = getTrendInfo(trendData.trends.completionTrend);
 
   return (
-    <div className="bg-card-background-lighter rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
+    <div className="bg-card rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-xl font-semibold text-archer-white">Long-Term Trend Analysis</h2>
+        <h2 className="text-xl font-semibold text-foreground">Long-Term Trend Analysis</h2>
         <div className="flex space-x-2">
           <button
             onClick={() => setPeriod('WEEKLY')}
-            className={`px-3 py-1 rounded-lg text-sm shadow-button ${period === 'WEEKLY' ? 'bg-archer-bright-teal text-archer-dark-bg' : 'bg-archer-dark-teal/50 text-archer-light-text/70'}`}
+            className={`px-3 py-1 rounded-lg text-sm shadow-button ${period === 'WEEKLY' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
           >
             Weekly
           </button>
           <button
             onClick={() => setPeriod('MONTHLY')}
-            className={`px-3 py-1 rounded-lg text-sm shadow-button ${period === 'MONTHLY' ? 'bg-archer-bright-teal text-archer-dark-bg' : 'bg-archer-dark-teal/50 text-archer-light-text/70'}`}
+            className={`px-3 py-1 rounded-lg text-sm shadow-button ${period === 'MONTHLY' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
           >
             Monthly
           </button>
           <button
             onClick={() => setPeriod('QUARTERLY')}
-            className={`px-3 py-1 rounded-lg text-sm shadow-button ${period === 'QUARTERLY' ? 'bg-archer-bright-teal text-archer-dark-bg' : 'bg-archer-dark-teal/50 text-archer-light-text/70'}`}
+            className={`px-3 py-1 rounded-lg text-sm shadow-button ${period === 'QUARTERLY' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
           >
             Quarterly
           </button>
@@ -288,41 +288,41 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Metrics Overview */}
-        <div className="bg-card-background-dark p-5 rounded-lg shadow-card">
-          <h3 className="text-lg font-medium text-archer-white mb-4">Performance Metrics</h3>
+        <div className="bg-secondary p-5 rounded-lg shadow-card">
+          <h3 className="text-lg font-medium text-foreground mb-4">Performance Metrics</h3>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-archer-dark-teal/30 p-4 rounded-lg shadow-button">
-              <div className="text-sm text-archer-light-text/70 mb-1">Average Performance</div>
-              <div className="text-2xl font-bold text-archer-white">{Math.round(trendData.metrics.averagePerformance)}%</div>
+            <div className="bg-muted p-4 rounded-lg shadow-button">
+              <div className="text-sm text-muted-foreground mb-1">Average Performance</div>
+              <div className="text-2xl font-bold text-foreground">{Math.round(trendData.metrics.averagePerformance)}%</div>
               <div className={`text-sm mt-2 flex items-center ${performanceTrendInfo.color}`}>
                 {performanceTrendInfo.icon}
                 <span className="ml-1">{trendData.trends.performanceTrend}</span>
               </div>
             </div>
-            <div className="bg-archer-dark-teal/30 p-4 rounded-lg shadow-button">
-              <div className="text-sm text-archer-light-text/70 mb-1">Completion Rate</div>
-              <div className="text-2xl font-bold text-archer-white">{Math.round(trendData.metrics.completionRate)}%</div>
+            <div className="bg-muted p-4 rounded-lg shadow-button">
+              <div className="text-sm text-muted-foreground mb-1">Completion Rate</div>
+              <div className="text-2xl font-bold text-foreground">{Math.round(trendData.metrics.completionRate)}%</div>
               <div className={`text-sm mt-2 flex items-center ${completionTrendInfo.color}`}>
                 {completionTrendInfo.icon}
                 <span className="ml-1">{trendData.trends.completionTrend}</span>
               </div>
             </div>
-            <div className="bg-archer-dark-teal/30 p-4 rounded-lg shadow-button">
-              <div className="text-sm text-archer-light-text/70 mb-1">Study Consistency</div>
-              <div className="text-2xl font-bold text-archer-white">{Math.round(trendData.metrics.studyConsistency)}/100</div>
+            <div className="bg-muted p-4 rounded-lg shadow-button">
+              <div className="text-sm text-muted-foreground mb-1">Study Consistency</div>
+              <div className="text-2xl font-bold text-foreground">{Math.round(trendData.metrics.studyConsistency)}/100</div>
             </div>
-            <div className="bg-archer-dark-teal/30 p-4 rounded-lg shadow-button">
-              <div className="text-sm text-archer-light-text/70 mb-1">Difficulty Level</div>
-              <div className="text-2xl font-bold text-archer-white">{trendData.metrics.difficultyProgression.toFixed(1)}</div>
-              <div className="text-xs text-archer-light-text/70 mt-1">(1=Easy, 3=Hard)</div>
+            <div className="bg-muted p-4 rounded-lg shadow-button">
+              <div className="text-sm text-muted-foreground mb-1">Difficulty Level</div>
+              <div className="text-2xl font-bold text-foreground">{trendData.metrics.difficultyProgression.toFixed(1)}</div>
+              <div className="text-xs text-muted-foreground mt-1">(1=Easy, 3=Hard)</div>
             </div>
           </div>
         </div>
 
         {/* Performance Over Time */}
-        <div className="bg-card-background-dark p-5 rounded-lg shadow-card">
-          <h3 className="text-lg font-medium text-archer-white mb-4">Performance Trend</h3>
-          <div className="bg-card-background-dark rounded-lg p-6">
+        <div className="bg-secondary p-5 rounded-lg shadow-card">
+          <h3 className="text-lg font-medium text-foreground mb-4">Performance Trend</h3>
+          <div className="bg-secondary rounded-lg p-6">
             {/* Simple bar chart with shadows and proper visibility */}
             <div className="flex justify-between items-end h-40">
               {trendData.visualizationData.performanceOverTime.map((entry, index) => {
@@ -336,16 +336,15 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
                     <div className="w-full h-full flex items-end">
                       {/* Always render bar with minimum height for 0% */}
                         <div
-                          className="w-full rounded-t-md relative group"
+                          className="w-full rounded-t-md relative group bg-primary"
                           style={{
                             height: `${barHeight}px`,
-                            backgroundColor: '#00474E', /* Darker shade matching theme */
                             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)' /* Simple faded shadow like cards */
                           }}
                         >
                           {/* Percentage on hover */}
                           <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100">
-                            <div className="bg-archer-dark-bg px-2 py-1 rounded text-xs text-archer-bright-teal border border-archer-bright-teal/30">
+                            <div className="bg-card px-2 py-1 rounded text-xs text-primary border border-primary/30">
                               {Math.round(entry.value)}%
                             </div>
                           </div>
@@ -353,7 +352,7 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
                     </div>
 
                     {/* Date label */}
-                    <div className="text-xs text-archer-light-text mt-2 text-center">
+                    <div className="text-xs text-muted-foreground mt-2 text-center">
                       {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                   </div>
@@ -366,8 +365,8 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
 
       {/* Anomalies and Insights */}
       {trendData.trends.anomalies.length > 0 && (
-        <div className="bg-card-background-dark p-5 rounded-lg shadow-card mb-6">
-          <h3 className="text-lg font-medium text-archer-white mb-4">Detected Anomalies</h3>
+        <div className="bg-secondary p-5 rounded-lg shadow-card mb-6">
+          <h3 className="text-lg font-medium text-foreground mb-4">Detected Anomalies</h3>
           <div className="space-y-3">
             {trendData.trends.anomalies.map((anomaly, index) => (
               <div
@@ -383,7 +382,7 @@ const LongTermTrends: React.FC<LongTermTrendsProps> = ({ userId }) => {
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-border-color-dark text-xs text-archer-light-text/60">
+      <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
         <p>The Evolution Agent analyzes your long-term study patterns to identify trends and provide insights for continuous improvement.</p>
       </div>
     </div>

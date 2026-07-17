@@ -11,10 +11,31 @@ import TaskDetailPopover from '@/components/calendar/TaskDetailPopover';
 import TaskCreationModal from '@/components/calendar/TaskCreationModal';
 import CalendarFilters, { FilterOptions } from '@/components/calendar/CalendarFilters';
 import AlertButton from '@/components/common/AlertButton';
-import DuplicateSessionsCleanupButton from '@/components/calendar/DuplicateSessionsCleanupButton';
-import ClientOnly from '@/components/common/ClientOnly';
-import ParticleBackground from '@/components/common/ParticleBackground';
-import { fadeIn, fadeInUp, staggerContainer } from '@/utils/animationUtils';
+import { Reveal } from '@/components/ui/reveal';
+import { Badge } from '@/components/ui/badge';
+import {
+  CalendarDays,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  RotateCcw,
+  AlertCircle,
+  ArrowLeft,
+  ClipboardList,
+  CalendarRange,
+  Settings2,
+  TrendingUp,
+  CheckCircle2,
+  PlayCircle,
+  XCircle,
+  CircleDot,
+  Video,
+  FileQuestion,
+  BookOpen,
+  PenLine,
+  LayoutGrid,
+} from 'lucide-react';
 
 export default function CalendarPage() {
   const searchParams = useSearchParams();
@@ -258,17 +279,47 @@ export default function CalendarPage() {
   const getTaskIconColor = (type: string): string => {
     switch (type) {
       case 'VIDEO':
-        return 'text-blue-500';
+        return 'text-sky-600 dark:text-sky-400';
       case 'QUIZ':
-        return 'text-archer-bright-teal';
+        return 'text-primary';
       case 'READING':
-        return 'text-green-500';
+        return 'text-emerald-600 dark:text-emerald-400';
       case 'PRACTICE':
-        return 'text-amber-500';
+        return 'text-amber-600 dark:text-amber-400';
       case 'REVIEW':
-        return 'text-red-500';
+        return 'text-rose-600 dark:text-rose-400';
       default:
-        return 'text-archer-light-text';
+        return 'text-muted-foreground';
+    }
+  };
+
+  // Tinted background tile for the task type icon
+  const getTaskIconBg = (type: string): string => {
+    switch (type) {
+      case 'VIDEO':
+        return 'bg-sky-500/12';
+      case 'QUIZ':
+        return 'bg-primary/12';
+      case 'READING':
+        return 'bg-emerald-500/12';
+      case 'PRACTICE':
+        return 'bg-amber-500/12';
+      case 'REVIEW':
+        return 'bg-rose-500/12';
+      default:
+        return 'bg-muted';
+    }
+  };
+
+  // Lucide icon per task type for the schedule list
+  const getTaskTypeIcon = (type: string) => {
+    switch (type) {
+      case 'VIDEO': return <Video className="h-5 w-5" />;
+      case 'QUIZ': return <FileQuestion className="h-5 w-5" />;
+      case 'READING': return <BookOpen className="h-5 w-5" />;
+      case 'PRACTICE': return <PenLine className="h-5 w-5" />;
+      case 'REVIEW': return <LayoutGrid className="h-5 w-5" />;
+      default: return <CircleDot className="h-5 w-5" />;
     }
   };
 
@@ -428,84 +479,70 @@ export default function CalendarPage() {
   };
 
   if (loading && isInitialLoad) {
-    return <AppLayout><div className="flex flex-col items-center justify-center h-64"><div className="w-16 h-16 border-t-4 border-archer-bright-teal border-solid rounded-full animate-spin"></div><p className="mt-4 text-gray-600">Loading your calendar...</p></div></AppLayout>;
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-64">
+          <div className="w-14 h-14 border-[3px] border-muted border-t-primary border-solid rounded-full animate-spin"></div>
+          <p className="mt-4 text-muted-foreground">Loading your calendar...</p>
+        </div>
+      </AppLayout>
+    );
   }
 
   if (error) {
-    return <AppLayout><div className="bg-red-100 border border-red-300 text-red-600 rounded-lg p-4 mb-6"><div className="flex"><svg className="h-5 w-5 text-red-600 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg><p>{error}</p></div><div className="mt-4"><Link href="/dashboard" className="text-red-600 hover:text-red-500 font-medium">Back to Dashboard →</Link></div></div></AppLayout>;
+    return (
+      <AppLayout>
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 text-destructive p-5 mb-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <p className="font-medium">{error}</p>
+          </div>
+          <div className="mt-4">
+            <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-primary hover:underline font-medium transition-colors">
+              <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+            </Link>
+          </div>
+        </div>
+      </AppLayout>
+    );
   }
 
   return (
     <AppLayout>
-      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 -z-10"></div>
-      <div className="relative z-0 min-h-screen text-white">
-        {/* Enhanced Particle Background */}
-        <ClientOnly>
-          <ParticleBackground
-            particleCount={80}
-            colors={['#6366F1', '#8B5CF6', '#EC4899', '#10B981', '#0EA5E9']}
-            className="opacity-60"
-          />
-        </ClientOnly>
-        
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={staggerContainer}
-          className="relative z-10 mb-6 p-6"
-        >
-          <motion.div
-            className="flex justify-between items-center"
-            variants={fadeIn}
-          >
+      <div className="relative z-0 text-foreground">
+        <Reveal className="relative z-10 mb-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent tracking-tight mb-2 flex items-center">
-                <svg className="w-8 h-8 mr-3 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Study Calendar
-              </h1>
-              {user && (<p className="text-gray-400 text-lg">Viewing {user.name}'s personalized study schedule</p>)}
+              <p className="text-sm font-medium text-muted-foreground">{format(new Date(), 'EEEE, MMMM d')}</p>
+              <h1 className="mt-1 font-display text-3xl font-bold tracking-tight sm:text-4xl">Calendar</h1>
+              <p className="mt-1.5 text-muted-foreground">Your personalized study schedule — drag tasks to reschedule.</p>
             </div>
-            <div className="flex items-center space-x-4">
-              {user && (<DuplicateSessionsCleanupButton userId={user._id} />)}
+            <div className="flex flex-wrap items-center gap-2.5">
               {user && <AlertButton userId={user._id} position="top-right" />}
               {user && user.examDate && (
-                <div className="glassmorphic-card rounded-xl p-4 text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <svg className="w-5 h-5 text-indigo-400 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div className="text-sm font-semibold text-indigo-300">Exam Date</div>
-                  </div>
-                  <div className="text-xl font-bold text-white mb-2">{format(new Date(user.examDate), 'MMM d, yyyy')}</div>
-                  <div className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium rounded-full shadow-md">
-                    <svg className="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    {Math.ceil((new Date(user.examDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days left
+                <div className="flex items-center gap-3 rounded-2xl border border-border bg-card py-2 pl-3 pr-4 shadow-sm">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <CalendarDays className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Exam · {format(new Date(user.examDate), 'MMM d, yyyy')}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {Math.ceil((new Date(user.examDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days left
+                    </p>
                   </div>
                 </div>
               )}
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </Reveal>
 
-        <motion.div
-          className="mb-6 p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+        <Reveal className="mb-6" delay={0.05}>
           <CalendarFilters onFilterChange={handleFilterChange} initialFilters={filters} topics={topics} topicsLoading={topicsLoading} />
-        </motion.div>
+        </Reveal>
 
-        <motion.div
-          className="mb-6 p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
+        <Reveal className="mb-6" delay={0.1}>
           <InteractiveCalendar
             tasks={filteredTasks}
             onTaskUpdate={handleTaskUpdate}
@@ -517,248 +554,172 @@ export default function CalendarPage() {
           />
           
           {/* Task Summary with Color Legend */}
-          <div className="mt-4 glassmorphic-card rounded-lg p-4">
+          <div className="mt-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="flex flex-col space-y-4">
               {/* Task Count and Reset Button Row */}
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-300">
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   {filteredTasks.length !== tasks.length ? (
-                    <><span className="font-medium text-indigo-400">{filteredTasks.length}</span> of <span className="font-medium text-white">{tasks.length}</span> tasks shown<span className="ml-2 text-xs bg-indigo-500 text-white px-2.5 py-1 rounded-full">Filtered</span></>
+                    <>
+                      <span>
+                        <span className="font-semibold text-primary">{filteredTasks.length}</span> of{' '}
+                        <span className="font-semibold text-foreground">{tasks.length}</span> tasks shown
+                      </span>
+                      <Badge variant="default">Filtered</Badge>
+                    </>
                   ) : (
-                    <><span className="font-medium text-indigo-400">{tasks.length}</span> tasks scheduled</>
+                    <span><span className="font-semibold text-primary">{tasks.length}</span> tasks scheduled</span>
                   )}
-                </p>
-                
+                </div>
+
                 <div className="flex items-center gap-4">
-                  <p className="text-gray-400 italic text-sm">Drag and drop to reschedule tasks</p>
+                  <p className="hidden text-sm italic text-muted-foreground sm:block">Drag and drop to reschedule tasks</p>
                   <button
                     onClick={() => setResetConfirmOpen(true)}
-                    className="text-sm bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-all flex items-center shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                    className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive shadow-sm transition-all hover:bg-destructive/15 hover:-translate-y-0.5"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
+                    <RotateCcw className="h-4 w-4" />
                     Reset Schedule
                   </button>
                 </div>
               </div>
-              
+
               {/* Centered Color Legend */}
-              <div className="flex justify-center">
-                <div className="flex flex-wrap justify-center gap-4 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-blue-500/60 border border-blue-400/40 backdrop-blur-sm"></div>
-                    <span className="text-blue-300 font-medium">Video</span>
+              <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs">
+                {[
+                  { label: 'Video', cls: 'bg-sky-500/70 border-sky-500/40', text: 'text-sky-700 dark:text-sky-400' },
+                  { label: 'Quiz', cls: 'bg-primary/70 border-primary/40', text: 'text-primary' },
+                  { label: 'Reading', cls: 'bg-emerald-500/70 border-emerald-500/40', text: 'text-emerald-700 dark:text-emerald-400' },
+                  { label: 'Practice', cls: 'bg-amber-500/70 border-amber-500/40', text: 'text-amber-700 dark:text-amber-400' },
+                  { label: 'Review', cls: 'bg-rose-500/70 border-rose-500/40', text: 'text-rose-700 dark:text-rose-400' },
+                  { label: 'Missed', cls: 'bg-orange-500/70 border-orange-500/40', text: 'text-orange-700 dark:text-orange-400' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-1.5">
+                    <div className={`w-3 h-3 rounded-sm border ${item.cls}`}></div>
+                    <span className={`font-medium ${item.text}`}>{item.label}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-teal-500/60 border border-teal-400/40 backdrop-blur-sm"></div>
-                    <span className="text-teal-300 font-medium">Quiz</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-green-500/60 border border-green-400/40 backdrop-blur-sm"></div>
-                    <span className="text-green-300 font-medium">Reading</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-amber-500/60 border border-amber-400/40 backdrop-blur-sm"></div>
-                    <span className="text-amber-300 font-medium">Practice</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-pink-500/60 border border-pink-400/40 backdrop-blur-sm"></div>
-                    <span className="text-pink-300 font-medium">Review</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-red-500/60 border border-red-400/40 backdrop-blur-sm"></div>
-                    <span className="text-red-300 font-medium">Missed</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
-        </motion.div>
+        </Reveal>
 
-        <motion.div
-          className="glassmorphic-card rounded-xl overflow-hidden mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-        <div className="p-5 border-b border-gray-700 bg-gradient-to-r from-gray-800 to-gray-900">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-white flex items-center">
-              <svg className="w-6 h-6 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+        <Reveal className="mb-6" delay={0.15}>
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-border">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+            <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/12 text-primary">
+                <Clock className="h-5 w-5" />
+              </span>
               {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? "Today's Schedule" : "Schedule"}
             </h2>
-            <div className="flex items-center space-x-3">
-              <button onClick={goToPreviousDay} className="p-2 rounded-full bg-light-bg-secondary hover:bg-light-bg-gradient-end transition-all shadow-button" aria-label="Previous day"><svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+            <div className="flex items-center gap-2">
+              <button onClick={goToPreviousDay} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" aria-label="Previous day"><ChevronLeft className="h-5 w-5" /></button>
               <div className="relative">
-                <button onClick={toggleDatePicker} className="flex items-center px-4 py-2 bg-archer-bright-teal text-white rounded-lg transition-all shadow-button hover:shadow-card-hover">
-                  <span className="text-sm font-medium">{format(selectedDate, 'MMMM d, yyyy')}</span>
-                  <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                <button onClick={toggleDatePicker} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90">
+                  <CalendarDays className="h-4 w-4" />
+                  <span>{format(selectedDate, 'MMMM d, yyyy')}</span>
+                  <ChevronDown className="h-4 w-4" />
                 </button>
                 {showDatePicker && (
-                  <div className="absolute z-10 mt-2 right-0 bg-white rounded-lg shadow-card p-3 border border-gray-200">
-                    <div className="p-2 border-b border-gray-200 mb-2"><button onClick={goToToday} className="w-full px-4 py-2 text-sm font-medium bg-archer-bright-teal text-white rounded-lg shadow-button hover:shadow-card-hover transition-all">Today</button></div>
-                    <div className="p-2">
-                      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-600 mb-2"><div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div></div>
+                  <div className="absolute z-20 mt-2 right-0 rounded-xl border border-border bg-popover shadow-xl p-3">
+                    <div className="pb-2 border-b border-border mb-2"><button onClick={goToToday} className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90">Today</button></div>
+                    <div className="p-1">
+                      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground mb-2"><div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div></div>
                       <div className="grid grid-cols-7 gap-1">
                         {Array.from({ length: 35 }, (_, i) => {
                           const d = new Date(selectedDate); d.setDate(1); const firstDay = d.getDay(); d.setDate(i - firstDay + 1);
                           const isCurrentMonth = d.getMonth() === selectedDate.getMonth();
                           const isToday = format(d, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
                           const isSelected = format(d, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                          return (<button key={i} onClick={() => handleDateSelect(new Date(d))} className={`w-9 h-9 flex items-center justify-center text-sm rounded-lg shadow-button ${isCurrentMonth ? 'text-archer-light-text' : 'text-archer-light-text/40'} ${isToday ? 'bg-archer-light-blue text-white' : ''} ${isSelected ? 'bg-archer-bright-teal text-archer-dark-teal' : ''} ${!isSelected && !isToday && isCurrentMonth ? 'hover:bg-archer-dark-teal' : ''} ${!isSelected && !isToday && !isCurrentMonth ? 'hover:bg-archer-dark-teal/50' : ''}`}>{d.getDate()}</button>);
+                          return (<button key={i} onClick={() => handleDateSelect(new Date(d))} className={`w-9 h-9 flex items-center justify-center text-sm rounded-lg transition-colors ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground/40'} ${isToday && !isSelected ? 'bg-primary/15 text-primary' : ''} ${isSelected ? 'bg-primary text-primary-foreground font-semibold' : ''} ${!isSelected && !isToday ? 'hover:bg-accent' : ''}`}>{d.getDate()}</button>);
                         })}
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-              <button onClick={goToNextDay} className="p-2 rounded-full bg-light-bg-secondary hover:bg-light-bg-gradient-end transition-all shadow-button" aria-label="Next day"><svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
+              <button onClick={goToNextDay} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" aria-label="Next day"><ChevronRight className="h-5 w-5" /></button>
             </div>
           </div>
         </div>
-        <div className="p-6 bg-gradient-to-br from-black/20 to-gray-900/20 backdrop-blur-sm">
+        <div className="p-6">
           {todaysTasks.length === 0 ? (
-            <div className="text-center py-8 glassmorphic-card rounded-lg p-6">
-              <svg className="mx-auto h-16 w-16 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              <h3 className="mt-3 text-lg font-medium text-gray-300">No tasks for {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'today' : 'this day'}</h3>
-              <p className="mt-2 text-gray-400">{user?.name === "New User" ? "You don't have any tasks scheduled yet. Your study plan will be generated soon." : format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? "You don't have any tasks scheduled for today." : `You don't have any tasks scheduled for ${format(selectedDate, 'MMMM d, yyyy')}.`}</p>
+            <div className="text-center py-10 rounded-xl border border-border bg-secondary/40 p-6">
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary/70">
+                <CalendarDays className="h-8 w-8" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">No tasks for {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'today' : 'this day'}</h3>
+              <p className="mt-2 text-muted-foreground">{user?.name === "New User" ? "You don't have any tasks scheduled yet. Your study plan will be generated soon." : format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? "You don't have any tasks scheduled for today." : `You don't have any tasks scheduled for ${format(selectedDate, 'MMMM d, yyyy')}.`}</p>
             </div>
           ) : filteredTodaysTasks.length === 0 ? (
-            <div className="text-center py-8 glassmorphic-card rounded-lg p-6">
-              <svg className="mx-auto h-16 w-16 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-              <h3 className="mt-3 text-lg font-medium text-gray-300">No tasks match your filters</h3>
-              <p className="mt-2 text-gray-400">Try adjusting your filter settings to see tasks for this day.</p>
+            <div className="text-center py-10 rounded-xl border border-border bg-secondary/40 p-6">
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary/70">
+                <Settings2 className="h-8 w-8" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">No tasks match your filters</h3>
+              <p className="mt-2 text-muted-foreground">Try adjusting your filter settings to see tasks for this day.</p>
             </div>
           ) : (
             <div className="max-h-[500px] overflow-y-auto pr-2 custom-scrollbar" style={{ scrollbarWidth: 'thin' }}>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {filteredTodaysTasks.map((task) => (
                   <div key={task._id} className="flex">
-                    <div className="w-24 flex-shrink-0">
-                      <div className="text-sm font-medium bg-gray-700 px-3 py-1.5 rounded-lg shadow-sm text-center text-gray-200 border border-gray-600">
+                    <div className="w-20 flex-shrink-0 sm:w-24">
+                      <div className="rounded-lg border border-border bg-secondary/50 px-2 py-1.5 text-center text-xs font-semibold text-muted-foreground sm:text-sm">
                         {format(new Date(task.startTime), 'h:mm a')}
                       </div>
                     </div>
                     <div className="flex-grow pl-4">
-                      <div className="glassmorphic-card p-4 rounded-lg">
+                      <div className="card-hover rounded-xl border border-border bg-secondary/40 p-4 shadow-sm transition-colors hover:border-primary/30">
                         <div className="flex items-start">
-                          <motion.div
-                            className="h-12 w-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center mr-3 shadow-md border border-gray-600"
-                            whileHover={{
-                              scale: 1.1,
-                              rotate: 5,
-                              borderColor: "rgba(99, 102, 241, 0.6)"
-                            }}
-                            animate={{
-                              boxShadow: ["0 4px 6px rgba(0, 0, 0, 0.1)", "0 8px 15px rgba(0, 0, 0, 0.2)", "0 4px 6px rgba(0, 0, 0, 0.1)"]
-                            }}
-                            transition={{
-                              boxShadow: { duration: 2, repeat: Infinity, repeatType: "reverse" }
-                            }}
-                          >
-                            <motion.span
-                              className={getTaskIconColor(task.type)}
-                              animate={{ scale: [1, 1.1, 1] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                            >
-                              {getTaskIcon(task.type)}
-                            </motion.span>
-                          </motion.div>
-                          <div className="flex-1">
-                            <motion.h3
-                              className="font-medium text-gray-200 text-lg"
-                              whileHover={{ scale: 1.01 }}
-                            >
-                              {task.title}
-                            </motion.h3>
-                            <motion.p
-                              className="text-sm mt-1 text-gray-400"
-                              initial={{ opacity: 0.8 }}
-                              whileHover={{ opacity: 1 }}
-                            >
-                              {task.description}
-                            </motion.p>
+                          <div className={`mr-3 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${getTaskIconBg(task.type)} ${getTaskIconColor(task.type)}`}>
+                            {getTaskTypeIcon(task.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-semibold text-foreground">{task.title}</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">{task.description}</p>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center mt-3 text-sm">
-                          <motion.span
-                            className="bg-gray-700 px-3 py-1 rounded-lg text-gray-200 border border-gray-600 font-medium"
-                            whileHover={{
-                              scale: 1.05,
-                              backgroundColor: "rgba(99, 102, 241, 0.2)",
-                              borderColor: "rgba(99, 102, 241, 0.4)"
-                            }}
-                          >
-                            {task.duration} minutes
-                          </motion.span>
+                        <div className="mt-3 flex items-center justify-between text-sm">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 font-medium text-muted-foreground">
+                            <Clock className="h-3.5 w-3.5" />
+                            {task.duration} min
+                          </span>
                           <div className="flex items-center">
                             {task.status === 'COMPLETED' ? (
-                              <motion.span
-                                className="flex items-center text-green-600"
-                                whileHover={{ scale: 1.05 }}
-                                animate={{
-                                  color: ["rgb(22, 163, 74)", "rgb(34, 197, 94)", "rgb(22, 163, 74)"]
-                                }}
-                                transition={{
-                                  color: { duration: 2, repeat: Infinity }
-                                }}
-                              >
-                                <motion.svg
-                                  className="h-4 w-4 mr-1"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 20 20"
-                                  fill="currentColor"
-                                  initial={{ pathLength: 0 }}
-                                  animate={{ pathLength: 1 }}
-                                  transition={{ duration: 1 }}
-                                >
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </motion.svg>
+                              <span className="inline-flex items-center gap-1.5 text-success font-medium">
+                                <CheckCircle2 className="h-4 w-4" />
                                 <span>Completed</span>
-                              </motion.span>
+                              </span>
                             ) : task.status === 'IN_PROGRESS' ? (
-                              <span className="flex items-center text-blue-600">
-                                <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                                </svg>
+                              <span className="inline-flex items-center gap-1.5 text-sky-600 dark:text-sky-400 font-medium">
+                                <PlayCircle className="h-4 w-4" />
                                 <span>In Progress</span>
                               </span>
                             ) : task.status === 'SKIPPED' ? (
-                              <span className="flex items-center text-gray-600">
-                                <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
+                              <span className="inline-flex items-center gap-1.5 text-muted-foreground font-medium">
+                                <XCircle className="h-4 w-4" />
                                 <span>Skipped</span>
                               </span>
                             ) : (
-                              <span className="flex items-center text-amber-600">
-                                <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                                </svg>
+                              <span className="inline-flex items-center gap-1.5 text-warning font-medium">
+                                <CircleDot className="h-4 w-4" />
                                 <span>Pending</span>
                               </span>
                             )}
                           </div>
                         </div>
-                        {task.type === 'QUIZ' && task.content && (
+                        {(task.content?._id || task.content) && task.status !== 'COMPLETED' && (
                           <div className="mt-4">
-                            <motion.button
-                              className="text-sm bg-archer-bright-teal text-white font-medium py-2 px-4 rounded-lg shadow-button hover:shadow-card-hover transition-all"
-                              onClick={() => { router.push(`/quiz/${task.content._id}?taskId=${task._id}&userId=${user?._id}`); }}
-                              whileHover={{ scale: 1.05, y: -2 }}
-                              whileTap={{ scale: 0.95 }}
-                              animate={{
-                                boxShadow: ["0 4px 6px rgba(20, 184, 166, 0.2)", "0 8px 15px rgba(20, 184, 166, 0.4)", "0 4px 6px rgba(20, 184, 166, 0.2)"]
-                              }}
-                              transition={{
-                                boxShadow: { duration: 2, repeat: Infinity, repeatType: "reverse" }
-                              }}
+                            <button
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:-translate-y-0.5"
+                              onClick={() => { router.push(`/quiz/${task.content?._id || task.content}?taskId=${task._id}&userId=${user?._id}`); }}
                             >
-                              Start Quiz
-                            </motion.button>
+                              <PlayCircle className="h-4 w-4" />
+                              {task.type === 'VIDEO' ? 'Watch' : task.type === 'READING' ? 'Read' : 'Start'}
+                            </button>
                           </div>
                         )}
                       </div>
@@ -769,190 +730,104 @@ export default function CalendarPage() {
             </div>
           )}
         </div>
-        </motion.div>
+        </div>
+        </Reveal>
 
         {studyPlan && (
-        <motion.div
-          className="glassmorphic-card rounded-xl overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          whileHover={{
-            scale: 1.01,
-            boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(99, 102, 241, 0.2)",
-            transition: { duration: 0.4 }
-          }}
-        >
-          <div className="p-5 border-b border-gray-700 bg-gradient-to-r from-gray-800 to-gray-900">
-            <motion.h2
-              className="text-xl font-semibold text-white flex items-center"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.svg
-                className="w-6 h-6 mr-2 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                animate={{
-                  scale: [1, 1.1, 1],
-                  color: ["rgba(255, 255, 255, 1)", "rgba(99, 102, 241, 1)", "rgba(255, 255, 255, 1)"]
-                }}
-                transition={{ duration: 3, repeat: Infinity }}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </motion.svg>
+        <Reveal delay={0.2}>
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-border">
+            <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/12 text-primary">
+                <ClipboardList className="h-5 w-5" />
+              </span>
               Study Plan Summary
-            </motion.h2>
+            </h2>
           </div>
-          <div className="p-6 bg-gradient-to-br from-black/20 to-gray-900/20 backdrop-blur-sm">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <motion.div
-                className="glassmorphic-card rounded-xl p-5"
-                whileHover={{
-                  scale: 1.02,
-                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15), 0 0 5px rgba(20, 184, 166, 0.3)",
-                  transition: { duration: 0.3 }
-                }}
-                variants={fadeIn}
-              >
-                <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-3 shadow-button">
-                    <svg className="w-6 h-6 text-archer-bright-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+              <div className="card-hover rounded-2xl border border-border bg-secondary/40 p-5 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
+                    <ClipboardList className="h-5 w-5" />
                   </div>
-                  <h3 className="font-semibold text-gray-200 text-lg">Plan Details</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Plan Details</h3>
                 </div>
-                <div className="space-y-4 text-sm">
-                  <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 shadow-inner">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Plan Type</span>
-                      <span className="font-medium text-gray-200 px-3 py-1 bg-teal-500/20 text-teal-300 rounded-lg shadow-button">
-                        {studyPlan.isPersonalized ? 'Personalized' : 'Default'}
-                      </span>
-                    </div>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                    <span className="text-muted-foreground">Plan Type</span>
+                    <Badge variant="default">{studyPlan.isPersonalized ? 'Personalized' : 'Default'}</Badge>
                   </div>
-                  <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 shadow-inner">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Created</span>
-                      <span className="font-medium text-gray-200">{format(new Date(studyPlan.createdAt), 'MMM d, yyyy')}</span>
-                    </div>
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                    <span className="text-muted-foreground">Created</span>
+                    <span className="font-medium text-foreground">{format(new Date(studyPlan.createdAt), 'MMM d, yyyy')}</span>
                   </div>
-                  <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 shadow-inner">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Last Updated</span>
-                      <span className="font-medium text-gray-200">{format(new Date(studyPlan.updatedAt), 'MMM d, yyyy')}</span>
-                    </div>
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                    <span className="text-muted-foreground">Last Updated</span>
+                    <span className="font-medium text-foreground">{format(new Date(studyPlan.updatedAt), 'MMM d, yyyy')}</span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
               {user && (
                 <>
-                  <motion.div
-                    className="glassmorphic-card rounded-xl p-5"
-                    whileHover={{
-                      scale: 1.02,
-                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15), 0 0 5px rgba(59, 130, 246, 0.3)",
-                      transition: { duration: 0.3 }
-                    }}
-                    variants={fadeIn}
-                  >
-                    <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-3 shadow-button">
-                        <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                  <div className="card-hover rounded-2xl border border-border bg-secondary/40 p-5 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/12 text-sky-600 dark:text-sky-400">
+                        <CalendarRange className="h-5 w-5" />
                       </div>
-                      <h3 className="font-semibold text-gray-200 text-lg">Study Schedule</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Study Schedule</h3>
                     </div>
-                    <div className="space-y-4 text-sm">
-                      <div className="bg-gray-700/50 p-3 rounded-lg shadow-inner border border-gray-600">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Available Days</span>
-                          <span className="font-medium text-gray-200">{user.preferences?.availableDays?.join(', ') || 'All days'}</span>
-                        </div>
+                    <div className="space-y-2.5 text-sm">
+                      <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                        <span className="text-muted-foreground">Available Days</span>
+                        <span className="font-medium text-foreground">{user.preferences?.availableDays?.join(', ') || 'All days'}</span>
                       </div>
-                      <div className="bg-gray-700/50 p-3 rounded-lg shadow-inner border border-gray-600">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Hours Per Day</span>
-                          <span className="font-medium text-gray-200">{user.preferences?.studyHoursPerDay || '2'} hours</span>
-                        </div>
+                      <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                        <span className="text-muted-foreground">Hours Per Day</span>
+                        <span className="font-medium text-foreground">{user.preferences?.studyHoursPerDay || '2'} hours</span>
                       </div>
-                      <div className="bg-gray-700/50 p-3 rounded-lg shadow-inner border border-gray-600">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Preferred Time</span>
-                          <span className="font-medium text-gray-200 capitalize">{user.preferences?.preferredStudyTime || 'Not set'}</span>
-                        </div>
+                      <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                        <span className="text-muted-foreground">Preferred Time</span>
+                        <span className="font-medium text-foreground capitalize">{user.preferences?.preferredStudyTime || 'Not set'}</span>
                       </div>
                     </div>
-                  </motion.div>
-                  <motion.div
-                    className="glassmorphic-card rounded-xl p-5"
-                    whileHover={{
-                      scale: 1.02,
-                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15), 0 0 5px rgba(34, 197, 94, 0.3)",
-                      transition: { duration: 0.3 }
-                    }}
-                    variants={fadeIn}
-                  >
-                    <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mr-3 shadow-button">
-                        <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                  </div>
+                  <div className="card-hover rounded-2xl border border-border bg-secondary/40 p-5 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600 dark:text-emerald-400">
+                        <TrendingUp className="h-5 w-5" />
                       </div>
-                      <h3 className="font-semibold text-gray-200 text-lg">Progress</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Progress</h3>
                     </div>
-                    <div className="space-y-4 text-sm">
-                      <div className="bg-gray-700/50 p-3 rounded-lg shadow-inner border border-gray-600">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Days Until Exam</span>
-                          <span className="font-medium text-gray-200 px-3 py-1 bg-green-500/20 text-green-300 rounded-lg shadow-button">
-                            {Math.ceil((new Date(user.examDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
-                          </span>
-                        </div>
+                    <div className="space-y-2.5 text-sm">
+                      <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                        <span className="text-muted-foreground">Days Until Exam</span>
+                        <Badge variant="success">
+                          {Math.ceil((new Date(user.examDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
+                        </Badge>
                       </div>
-                      <div className="bg-gray-700/50 p-3 rounded-lg shadow-inner border border-gray-600">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Total Tasks</span>
-                          <span className="font-medium text-gray-200">{tasks.length}</span>
-                        </div>
+                      <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                        <span className="text-muted-foreground">Total Tasks</span>
+                        <span className="font-medium text-foreground">{tasks.length}</span>
                       </div>
-                      <div className="bg-gray-700/50 p-3 rounded-lg shadow-inner border border-gray-600">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Completed Tasks</span>
-                          <span className="font-medium text-gray-200">{tasks.filter(t => t.status === 'COMPLETED').length}</span>
-                        </div>
+                      <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                        <span className="text-muted-foreground">Completed Tasks</span>
+                        <span className="font-medium text-foreground">{tasks.filter(t => t.status === 'COMPLETED').length}</span>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 </>
               )}
             </div>
             <div className="flex justify-center">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link href="/dashboard" className="inline-flex items-center px-5 py-3 bg-gradient-to-r from-archer-bright-teal to-blue-500 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all">
-                  <motion.svg
-                    className="w-5 h-5 mr-2"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    animate={{ x: [0, -3, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </motion.svg>
-                  Back to Dashboard
-                </Link>
-              </motion.div>
+              <Link href="/dashboard" className="group inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:-translate-y-0.5">
+                <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+                Back to Dashboard
+              </Link>
             </div>
           </div>
-        </motion.div>
+        </div>
+        </Reveal>
       )}
 
       <TaskDetailPopover taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} onStatusChange={handleTaskStatusChange} />
@@ -967,38 +842,33 @@ export default function CalendarPage() {
           transition={{ duration: 0.3 }}
         >
           <motion.div
-            className="glassmorphic-strong rounded-xl max-w-md w-full mx-4 p-6 text-white"
+            className="rounded-2xl border border-border bg-popover shadow-2xl max-w-md w-full mx-4 p-6 text-foreground"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <h3 className="text-lg font-bold text-white mb-2">Reset Schedule</h3>
-            <p className="text-gray-200 mb-4">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/12 text-destructive">
+                <RotateCcw className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">Reset Schedule</h3>
+            </div>
+            <p className="text-muted-foreground mb-5">
               Are you sure you want to reset your schedule to the original plan? This will undo all your manual changes.
             </p>
-            <div className="flex justify-end space-x-3">
-              <motion.button
+            <div className="flex justify-end gap-3">
+              <button
                 onClick={() => setResetConfirmOpen(false)}
-                className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-all shadow-button"
-                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.3)" }}
-                whileTap={{ scale: 0.95 }}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-accent hover:text-accent-foreground"
               >
                 Cancel
-              </motion.button>
-              <motion.button
+              </button>
+              <button
                 onClick={handleResetSchedule}
-                className="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-all shadow-button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                animate={{
-                  boxShadow: ["0 4px 6px rgba(220, 38, 38, 0.2)", "0 8px 15px rgba(220, 38, 38, 0.4)", "0 4px 6px rgba(220, 38, 38, 0.2)"]
-                }}
-                transition={{
-                  boxShadow: { duration: 2, repeat: Infinity, repeatType: "reverse" }
-                }}
+                className="rounded-lg border border-destructive/40 bg-destructive/15 px-4 py-2 text-sm font-medium text-destructive transition-all hover:bg-destructive/25"
               >
                 Reset Schedule
-              </motion.button>
+              </button>
             </div>
           </motion.div>
         </motion.div>

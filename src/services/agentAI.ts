@@ -2,9 +2,109 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, GenerativeModel, 
 import { getAgentPrompt } from '../utils/agentPrompts'; // Changed to relative
 import { setCacheItem, getCacheItem } from '../utils/serverCacheUtils'; // Changed to relative
 
+/**
+ * Options for an agent response request.
+ */
+export interface AgentResponseOptions {
+  /**
+   * When true, the LLM is instructed to return raw JSON and (where the
+   * provider supports it) the Gemini call is run in JSON response mode
+   * (responseMimeType: 'application/json'). This makes downstream parsing
+   * deterministic instead of relying on markdown-fence regex extraction.
+   */
+  expectJson?: boolean;
+}
+
+/**
+ * Strip leading/trailing markdown code fences (```json ... ``` or ``` ... ```)
+ * from an LLM response so the inner payload can be JSON.parse'd.
+ * Returns the best-effort inner string; never throws.
+ */
+export function stripCodeFences(text: string): string {
+  if (typeof text !== 'string') return '';
+  const trimmed = text.trim();
+
+  // Prefer an explicitly fenced block if one exists anywhere in the text.
+  const fenced =
+    trimmed.match(/```json\s*([\s\S]*?)\s*```/i) ||
+    trimmed.match(/```\s*([\s\S]*?)\s*```/);
+  if (fenced && fenced[1]) {
+    return fenced[1].trim();
+  }
+
+  // No fenced block: drop any stray leading/trailing fences and return.
+  return trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+}
+
+/**
+ * Safely parse an LLM response as JSON.
+ *
+ * Strips markdown code fences, runs JSON.parse inside a try/catch, then runs
+ * an optional caller-supplied validator. On ANY failure this returns the
+ * provided fallback rather than throwing, so callers never have to guard
+ * against malformed model output crashing the request path.
+ *
+ * @param text       Raw LLM text.
+ * @param fallback   Value to return when parsing or validation fails.
+ * @param validate   Optional shape/enum validator. Return a sanitized value
+ *                   to accept, or null/undefined to reject (-> fallback).
+ */
+export function parseLLMJson<T>(
+  text: string,
+  fallback: T,
+  validate?: (parsed: any) => T | null | undefined
+): { value: T; ok: boolean } {
+  if (typeof text !== 'string' || text.trim().length === 0) {
+    return { value: fallback, ok: false };
+  }
+
+  let parsed: any;
+  try {
+    parsed = JSON.parse(stripCodeFences(text));
+  } catch (err) {
+    console.warn('[AgentAI] Failed to parse LLM response as JSON, using fallback:', err);
+    return { value: fallback, ok: false };
+  }
+
+  if (parsed === null || typeof parsed !== 'object') {
+    console.warn('[AgentAI] Parsed LLM JSON was not an object, using fallback');
+    return { value: fallback, ok: false };
+  }
+
+  if (validate) {
+    try {
+      const validated = validate(parsed);
+      if (validated === null || validated === undefined) {
+        console.warn('[AgentAI] LLM JSON failed shape validation, using fallback');
+        return { value: fallback, ok: false };
+      }
+      return { value: validated, ok: true };
+    } catch (err) {
+      console.warn('[AgentAI] LLM JSON validation threw, using fallback:', err);
+      return { value: fallback, ok: false };
+    }
+  }
+
+  return { value: parsed as T, ok: true };
+}
+
+/**
+ * Coerce an arbitrary value to one of an allowed enum set, falling back to a
+ * default. Useful inside validators passed to parseLLMJson.
+ */
+export function asEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fallback: T
+): T {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
+}
+
 // Initialize the Google Generative AI client
-const geminiApiKey = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_KEY || '';
-const geminiModelName = process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pro';
+const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_KEY || '';
+const geminiModelName = process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pro';
 
 // Initialize OpenRouter configuration
 const openRouterApiKey = process.env.OPENROUTER_API_KEY || '';
@@ -76,7 +176,7 @@ async function callOpenRouter(prompt: string): Promise<string> {
         'Authorization': `Bearer ${openRouterApiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-        'X-Title': 'ArcherReview AI Agent'
+        'X-Title': 'StudyArc AI Agent'
       },
       body: JSON.stringify({
         model: openRouterModel,
@@ -162,8 +262,10 @@ export async function generateAgentResponse(
   prompt: string,
   context: Record<string, any> = {},
   cacheKey?: string,
-  cacheDuration: number = 30 * 60 * 1000 // 30 minutes default
+  cacheDuration: number = 30 * 60 * 1000, // 30 minutes default
+  options: AgentResponseOptions = {}
 ): Promise<{ text: string; cached: boolean; confidence?: number }> {
+  const expectJson = options.expectJson === true;
   // Check cache first if a cache key is provided
   if (cacheKey) {
     const cachedResponse = getCacheItem<{ text: string; confidence?: number }>(cacheKey);
@@ -186,8 +288,19 @@ export async function generateAgentResponse(
           console.warn('[AgentAI] Rate limit exceeded, falling back to OpenRouter');
           // Fall through to OpenRouter
         } else {
+          // Build the generation config. When the caller expects JSON, ask
+          // Gemini to respond in JSON mode so we get a parseable payload
+          // instead of fenced/prose-wrapped output.
+          const generationConfig: GenerationConfig = expectJson
+            ? { ...defaultGenerationConfig, responseMimeType: 'application/json' }
+            : { ...defaultGenerationConfig };
+
           // Get the model
-          const model = genAI.getGenerativeModel({ model: geminiModelName });
+          const model = genAI.getGenerativeModel({
+            model: geminiModelName,
+            safetySettings,
+            generationConfig,
+          });
 
           // Get the agent-specific prompt
           const systemPrompt = getAgentPrompt(agentType, context);
@@ -201,8 +314,8 @@ export async function generateAgentResponse(
           // Extract the response text
           const text = result.response.text();
 
-          // Calculate a simple confidence score based on response length and coherence
-          const confidence = calculateConfidence(text);
+          // Honest groundedness signal (NOT a calibrated confidence number).
+          const confidence = deriveGroundednessSignal(text, { fromLLM: true });
 
           // Cache the response if a cache key is provided
           if (cacheKey) {
@@ -221,9 +334,15 @@ export async function generateAgentResponse(
     // Fallback to OpenRouter
     console.log('[AgentAI] Using OpenRouter fallback for agent response');
     const systemPrompt = getAgentPrompt(agentType, context);
-    const fullPrompt = `${systemPrompt}\n\nUser Input: ${prompt}`;
+    // OpenRouter has no JSON response-mode parity here, so when JSON is
+    // expected we instruct the model to emit raw JSON only. Downstream
+    // parsing still strips fences defensively via parseLLMJson().
+    const jsonInstruction = expectJson
+      ? '\n\nIMPORTANT: Respond with raw, valid JSON only. Do not wrap it in markdown code fences or add any prose before or after the JSON.'
+      : '';
+    const fullPrompt = `${systemPrompt}\n\nUser Input: ${prompt}${jsonInstruction}`;
     const text = await callOpenRouter(fullPrompt);
-    const confidence = calculateConfidence(text);
+    const confidence = deriveGroundednessSignal(text, { fromLLM: true });
 
     // Cache the response if a cache key is provided
     if (cacheKey) {
@@ -279,32 +398,38 @@ async function generateWithRetries(
 }
 
 /**
- * Calculate a simple confidence score for the response
- * @param text The generated text
- * @returns Confidence score between 0 and 1
+ * Derive an HONEST groundedness signal for a response.
+ *
+ * This intentionally replaces the previous calculateConfidence() heuristic,
+ * which derived a "confidence" number from response length and uncertainty
+ * keywords and persisted it as if it were calibrated. That number was
+ * fabricated and misleading, so it has been removed.
+ *
+ * We do NOT have a calibrated probability that an answer is correct, so we
+ * never invent one. The only honest thing we can say at this layer is whether
+ * we actually received a non-empty answer from a live model versus nothing.
+ *
+ * Returns `undefined` when we have no honest basis for a number. Callers that
+ * read `.confidence` already coalesce with their own explicit default
+ * (e.g. `llmResponse.confidence || 0.7`), so returning `undefined` keeps them
+ * working while making the absence of a real confidence value explicit.
+ *
+ * @param text     The generated text.
+ * @param meta     Provenance flags (e.g. whether it came from the LLM).
+ * @returns        `undefined` (no fabricated confidence).
  */
-function calculateConfidence(text: string): number {
-  // Simple heuristics for confidence:
-  // 1. Length of response (longer responses might indicate more confidence)
-  // 2. Presence of uncertainty markers like "I'm not sure", "might be", etc.
-
-  const length = text.length;
-  const uncertaintyMarkers = [
-    "i'm not sure", "i am not sure", "might be", "could be", "possibly",
-    "perhaps", "uncertain", "unclear", "don't know", "do not know"
-  ];
-
-  // Base confidence on length (0.5 - 0.9 range)
-  let confidence = 0.5 + Math.min(0.4, length / 1000 * 0.4);
-
-  // Reduce confidence for each uncertainty marker (up to 0.3 reduction)
-  const uncertaintyCount = uncertaintyMarkers.reduce((count, marker) => {
-    return count + (text.toLowerCase().includes(marker) ? 1 : 0);
-  }, 0);
-
-  confidence -= Math.min(0.3, uncertaintyCount * 0.1);
-
-  return Math.max(0.1, Math.min(0.95, confidence));
+function deriveGroundednessSignal(
+  text: string,
+  _meta: { fromLLM?: boolean } = {}
+): number | undefined {
+  // No honest, calibrated confidence is available here. If the model returned
+  // nothing usable, surface that as "no signal"; otherwise still return
+  // undefined rather than a length-derived guess. Callers supply their own
+  // default. An empty answer is the only thing we can flag negatively.
+  if (typeof text !== 'string' || text.trim().length === 0) {
+    return undefined;
+  }
+  return undefined;
 }
 
 /**
@@ -326,6 +451,6 @@ function getFallbackResponse(agentType: AgentType, prompt: string): string {
     case 'scheduler':
       return "I've analyzed your availability and learning patterns to create an optimized schedule. This balances topic difficulty with your peak performance times.";
     default:
-      return "I'm here to help with your NCLEX preparation. Please let me know if you have any specific questions or need assistance with your study plan.";
+      return "I'm here to help with your NEET/JEE preparation. Please let me know if you have any specific questions or need assistance with your study plan.";
   }
 }

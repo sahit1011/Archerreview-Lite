@@ -40,14 +40,7 @@ const ReadinessScoreSchema: Schema = new Schema(
         type: String, 
         required: true,
         enum: [
-          'MANAGEMENT_OF_CARE',
-          'SAFETY_AND_INFECTION_CONTROL',
-          'HEALTH_PROMOTION',
-          'PSYCHOSOCIAL_INTEGRITY',
-          'BASIC_CARE_AND_COMFORT',
-          'PHARMACOLOGICAL_THERAPIES',
-          'REDUCTION_OF_RISK_POTENTIAL',
-          'PHYSIOLOGICAL_ADAPTATION'
+          'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS'
         ]
       },
       score: { 
@@ -76,4 +69,4 @@ const ReadinessScoreSchema: Schema = new Schema(
 );
 
 // Create and export the ReadinessScore model
-export default mongoose.models.ReadinessScore || mongoose.model<IReadinessScore>('ReadinessScore', ReadinessScoreSchema);
+export default (mongoose.models.ReadinessScore as mongoose.Model<IReadinessScore>) || mongoose.model<IReadinessScore>('ReadinessScore', ReadinessScoreSchema);

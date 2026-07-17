@@ -78,11 +78,11 @@ const RemediationAgentCard: React.FC<RemediationAgentCardProps> = ({
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'HIGH':
-        return 'bg-red-100 text-red-600 border-red-300';
+        return 'bg-red-500/15 text-red-400 border-red-500/30';
       case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-600 border-yellow-300';
+        return 'bg-amber-500/15 text-amber-400 border-amber-500/30';
       default:
-        return 'bg-blue-100 text-blue-600 border-blue-300';
+        return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
     }
   };
 
@@ -90,11 +90,11 @@ const RemediationAgentCard: React.FC<RemediationAgentCardProps> = ({
   const getSeverityIconColor = (severity: string) => {
     switch (severity) {
       case 'HIGH':
-        return 'bg-red-100 text-red-600';
+        return 'bg-red-500/15 text-red-400';
       case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-600';
+        return 'bg-amber-500/15 text-amber-400';
       default:
-        return 'bg-blue-100 text-blue-600';
+        return 'bg-blue-500/15 text-blue-400';
     }
   };
 
@@ -123,12 +123,12 @@ const RemediationAgentCard: React.FC<RemediationAgentCardProps> = ({
   }
 
   return (
-    <div className="bg-card-background-light rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6 border border-border-color-light">
+    <div className="rounded-xl border border-border bg-card backdrop-blur-sm transition-all p-6 mb-6">
       <div className="flex justify-between items-center mb-5">
-        <h2 className="text-xl font-semibold text-archer-dark-text">Remediation Suggestions</h2>
+        <h2 className="text-xl font-semibold text-foreground">Remediation Suggestions</h2>
         <button
           onClick={() => router.push('/remediation')}
-          className="inline-flex items-center px-4 py-2 bg-archer-bright-teal text-white rounded-lg font-medium shadow-button hover:shadow-card-hover transition-all hover:-translate-y-1 text-sm"
+          className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all text-sm"
         >
           View All
         </button>
@@ -137,25 +137,25 @@ const RemediationAgentCard: React.FC<RemediationAgentCardProps> = ({
         {suggestions.slice(0, 2).map((suggestion) => (
           <div
             key={suggestion._id}
-            className={`p-5 rounded-lg shadow-card hover:shadow-card-hover transition-all bg-card-background-light border border-border-color-light ${suggestion.severity === 'HIGH' ? 'border-l-4 border-red-400' : suggestion.severity === 'MEDIUM' ? 'border-l-4 border-yellow-400' : 'border-l-4 border-blue-400'}`}
+            className={`p-5 rounded-lg transition-all bg-secondary border border-border ${suggestion.severity === 'HIGH' ? 'border-l-4 border-l-red-400' : suggestion.severity === 'MEDIUM' ? 'border-l-4 border-l-amber-400' : 'border-l-4 border-l-blue-400'}`}
           >
             <div className="flex items-start">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 shadow-button ${getSeverityIconColor(suggestion.severity)}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${getSeverityIconColor(suggestion.severity)}`}>
                 {getRemediationIcon(suggestion.metadata.remediationType)}
               </div>
               <div className="flex-1">
                 <div className="flex justify-between">
-                  <h3 className="font-medium text-archer-dark-text text-lg">{suggestion.metadata.title}</h3>
+                  <h3 className="font-medium text-foreground text-lg">{suggestion.metadata.title}</h3>
                   <button
                     onClick={() => onResolve(suggestion._id)}
-                    className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shadow-button hover:bg-gray-300 transition-all"
+                    className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-secondary transition-all"
                   >
-                    <XMarkIcon className="h-5 w-5 text-gray-600" />
+                    <XMarkIcon className="h-5 w-5 text-muted-foreground" />
                   </button>
                 </div>
-                <p className="mt-2 text-sm text-archer-dark-text/80 bg-light-bg-secondary p-3 rounded-lg">{suggestion.message}</p>
-                <p className="mt-3 text-sm font-medium text-archer-bright-teal">Suggested Action:</p>
-                <p className="mt-1 text-sm text-archer-dark-text/80">{suggestion.metadata.suggestedAction}</p>
+                <p className="mt-2 text-sm text-muted-foreground bg-card p-3 rounded-lg">{suggestion.message}</p>
+                <p className="mt-3 text-sm font-medium text-primary">Suggested Action:</p>
+                <p className="mt-1 text-sm text-muted-foreground">{suggestion.metadata.suggestedAction}</p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   {suggestion.metadata.remediationType === 'AI_TUTOR_SESSION' && (
                     <button
@@ -163,7 +163,7 @@ const RemediationAgentCard: React.FC<RemediationAgentCardProps> = ({
                         suggestion.metadata.aiPrompt,
                         suggestion.relatedTopic?._id
                       )}
-                      className="inline-flex items-center px-4 py-2 bg-archer-light-blue text-white rounded-lg font-medium shadow-button hover:shadow-card-hover transition-all hover:-translate-y-1 text-sm"
+                      className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all text-sm"
                     >
                       Chat with AI Tutor <ArrowRightIcon className="ml-2 h-5 w-5" />
                     </button>
@@ -172,7 +172,7 @@ const RemediationAgentCard: React.FC<RemediationAgentCardProps> = ({
                     <>
                       <button
                         onClick={() => router.push(`/topics/${suggestion.relatedTopic?._id}`)}
-                        className="inline-flex items-center px-4 py-2 bg-archer-bright-teal text-white rounded-lg font-medium shadow-button hover:shadow-card-hover transition-all hover:-translate-y-1 text-sm"
+                        className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all text-sm"
                       >
                         Review Topic <ArrowRightIcon className="ml-2 h-5 w-5" />
                       </button>
@@ -180,11 +180,11 @@ const RemediationAgentCard: React.FC<RemediationAgentCardProps> = ({
                         <button
                           onClick={() => handleScheduleReview(suggestion.relatedTopic?._id || '', suggestion._id)}
                           disabled={isScheduling[suggestion._id]}
-                          className="inline-flex items-center px-4 py-2 bg-light-bg-secondary text-archer-dark-text rounded-lg font-medium shadow-button hover:shadow-card-hover transition-all hover:-translate-y-1 text-sm disabled:opacity-50"
+                          className="inline-flex items-center px-4 py-2 border border-border text-foreground rounded-lg font-medium hover:bg-muted transition-all text-sm disabled:opacity-50"
                         >
                           {isScheduling[suggestion._id] ? (
                             <>
-                              <span className="animate-spin mr-2 h-5 w-5 border-t-2 border-archer-dark-text border-r-2 rounded-full"></span>
+                              <span className="animate-spin mr-2 h-5 w-5 border-t-2 border-current border-r-2 rounded-full"></span>
                               Scheduling...
                             </>
                           ) : (
@@ -195,7 +195,7 @@ const RemediationAgentCard: React.FC<RemediationAgentCardProps> = ({
                         </button>
                       )}
                       {suggestion.metadata.scheduledTaskId && (
-                        <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-600 rounded-lg font-medium shadow-button text-sm">
+                        <div className="inline-flex items-center px-4 py-2 bg-green-500/15 text-green-400 border border-green-500/30 rounded-lg font-medium text-sm">
                           <CheckCircleIcon className="mr-2 h-5 w-5" />
                           Review Scheduled
                         </div>
@@ -211,7 +211,7 @@ const RemediationAgentCard: React.FC<RemediationAgentCardProps> = ({
           <div className="text-center pt-3">
             <button
               onClick={() => router.push('/remediation')}
-              className="inline-flex items-center px-4 py-2 bg-archer-light-blue text-white rounded-lg font-medium shadow-button hover:shadow-card-hover transition-all hover:-translate-y-1 text-sm"
+              className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all text-sm"
             >
               View {suggestions.length - 2} more suggestions
             </button>

@@ -2,21 +2,37 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { motion } from 'framer-motion';
 import AppLayout from '@/components/layouts/AppLayout';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useUser } from '@/context/UserContext';
-import MonitorSummary from '@/components/dashboard/MonitorSummary';
-import CombinedFocusRemediationCard from '@/components/dashboard/CombinedFocusRemediationCard';
 import { useRemediationAgent } from '@/hooks/useRemediationAgent';
-import AnimatedCard from '@/components/common/AnimatedCard';
-import AnimatedProgressCircle from '@/components/common/AnimatedProgressCircle';
-import EnhancedTaskCard from '@/components/dashboard/EnhancedTaskCard';
-import EnhancedExamCountdown from '@/components/dashboard/EnhancedExamCountdown';
-import ParticleBackground from '@/components/common/ParticleBackground';
-import { fadeIn, fadeInUp, staggerContainer } from '@/utils/animationUtils';
+import PlanUpdatesCard from '@/components/dashboard/PlanUpdatesCard';
+import { toast } from 'sonner';
+import { Reveal, RevealGroup, RevealItem } from '@/components/ui/reveal';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import {
+  CalendarDays,
+  ListTodo,
+  CheckCircle2,
+  Timer,
+  TrendingUp,
+  ArrowRight,
+  ClipboardList,
+  ChevronRight,
+  Target,
+  Video,
+  BookOpen,
+  RefreshCw,
+  PenLine,
+  FileQuestion,
+  Sparkles,
+  NotebookPen,
+} from 'lucide-react';
 
 
 export default function DashboardPage() {
@@ -41,264 +57,90 @@ export default function DashboardPage() {
   } = useRemediationAgent();
   const [user, setUser] = useState<any>(null);
   const [focusAreas, setFocusAreas] = useState<any[]>([]);
+  // Flips one frame after data load so the readiness ring draws in via CSS transition
+  const [ringReady, setRingReady] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      const raf = requestAnimationFrame(() => setRingReady(true));
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [loading]);
 
   // Gamification functionality completely removed
 
   useEffect(() => {
+    // One linear data path: resolve the user id (URL param -> auth context ->
+    // localStorage), then fetch user, plan, tasks and readiness in parallel.
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
+        setError(null);
 
-        // Check if we're coming from onboarding
-        const fromOnboarding = searchParams.get('fromOnboarding');
-        const userId = searchParams.get('userId') || (authUser && authUser.id);
-
-        console.log('Dashboard load - fromOnboarding:', fromOnboarding, 'userId:', userId);
+        const userId =
+          searchParams.get('userId') ||
+          (authUser && authUser.id) ||
+          (typeof window !== 'undefined' ? localStorage.getItem('userId') : null);
 
         if (!userId) {
-          // Check if we have a userId in localStorage
-          const localStorageUserId = localStorage.getItem('userId');
-
-          if (localStorageUserId) {
-            console.log('Using userId from localStorage:', localStorageUserId);
-            // Use the userId from localStorage
-            const userResponse = await fetch(`/api/users/${localStorageUserId}`);
-            const userData = await userResponse.json();
-            console.log('User API response:', userData);
-
-            if (userData.success) {
-              const user = userData.user;
-              console.log('User from localStorage:', user);
-              setUser(user);
-            } else {
-              throw new Error('Failed to fetch user from localStorage userId');
-            }
-          } else {
-            throw new Error('User not authenticated');
-          }
-        } else {
-          // Use the userId from the URL or authUser
-          console.log('Using userId from URL or authUser:', userId);
-          const userResponse = await fetch(`/api/users/${userId}`);
-          const userData = await userResponse.json();
-          console.log('User API response:', userData);
-
-          if (!userData.success) {
-            console.error('Failed to fetch user:', userData);
-            throw new Error('Failed to fetch the authenticated user.');
-          }
-
-          const user = userData.user;
-          console.log('Authenticated user:', user);
-
-          setUser(user);
+          throw new Error('You need to sign in to view your dashboard.');
         }
 
-        // If we're coming from onboarding, we should have a userId in the URL
-        const isFromOnboarding = searchParams.get('fromOnboarding');
-        const urlUserId = searchParams.get('userId');
+        // 1. The user
+        const userRes = await fetch(`/api/users/${userId}`);
+        const userData = await userRes.json();
+        if (!userData.success) throw new Error('Failed to load your profile.');
+        const fetchedUser = userData.user;
+        setUser(fetchedUser);
+        if (typeof window !== 'undefined') localStorage.setItem('userId', userId);
 
-        // If we don't have a user yet but we have a userId in the URL, fetch the user
-        if ((!user || !user._id) && urlUserId) {
-          console.log('No user found yet, but we have a userId in the URL:', urlUserId);
-          try {
-            const userResponse = await fetch(`/api/users/${urlUserId}`);
-            const userData = await userResponse.json();
-
-            if (userData.success) {
-              console.log('Fetched user from URL userId:', userData.user);
-              setUser(userData.user);
-
-              // Create a new variable to use for the rest of the function
-              const fetchedUser = userData.user;
-
-              // Get the user's study plan using the fetched user
-              console.log('Fetching study plan for user:', fetchedUser._id);
-              const planResponse = await fetch(`/api/study-plans?userId=${fetchedUser._id}`);
-              const planData = await planResponse.json();
-
-              // If no study plan is found, check if we're coming from onboarding
-              if (!planData.success || !planData.studyPlan) {
-                // Check if we're coming from onboarding (check for fromOnboarding query param)
-                if (!isFromOnboarding) {
-                  console.log('No study plan found, redirecting to onboarding');
-
-                  // Clear any existing user data before redirecting to onboarding
-                  // This ensures a fresh start for the onboarding process
-                  localStorage.removeItem('token');
-                  localStorage.removeItem('user');
-                  localStorage.removeItem('userId');
-
-                  router.push('/onboarding/account-creation');
-                  return;
-                } else {
-                  console.log('Coming from onboarding, not redirecting despite missing study plan');
-                  // Continue without redirecting, the plan might be in the process of being created
-                }
-              }
-
-              // Get today's tasks
-              const today = new Date();
-              const formattedDate = format(today, 'yyyy-MM-dd');
-              console.log(`Fetching tasks for plan: ${planData.studyPlan?._id} and date: ${formattedDate}`);
-
-              if (planData.studyPlan && planData.studyPlan._id) {
-                const tasksResponse = await fetch(`/api/tasks?planId=${planData.studyPlan._id}&date=${formattedDate}`);
-                const tasksData = await tasksResponse.json();
-                console.log('Tasks API response:', tasksData);
-
-                if (tasksData.success) {
-                  setTodaysTasks(tasksData.tasks || []);
-                  console.log(`Set ${tasksData.tasks?.length || 0} tasks for today`);
-                }
-              }
-
-              // Get readiness score
-              console.log(`Fetching readiness score for user: ${fetchedUser._id}`);
-              const readinessResponse = await fetch(`/api/readiness-score?userId=${fetchedUser._id}`);
-              const readinessData = await readinessResponse.json();
-              console.log('Readiness score API response:', readinessData);
-
-              if (readinessData.success) {
-                const readinessScoreData = readinessData.readinessScore || {
-                  overallScore: 0,
-                  categoryScores: [],
-                  weakAreas: [],
-                  strongAreas: []
-                };
-
-                setReadinessScore(readinessScoreData);
-                console.log(`Set readiness score: ${readinessScoreData.overallScore}%`);
-
-                // Set focus areas based on weak and strong areas
-                const areas = [
-                  ...(readinessData.readinessScore?.weakAreas || []).map((area: any) => ({
-                    ...area,
-                    type: 'weak',
-                    message: 'This area needs improvement. Focus on strengthening your knowledge here.'
-                  })),
-                  ...(readinessData.readinessScore?.strongAreas || []).slice(0, 1).map((area: any) => ({
-                    ...area,
-                    type: 'strong',
-                    message: 'You\'re doing well here! Continue practicing to maintain your strong performance.'
-                  }))
-                ];
-
-                setFocusAreas(areas);
-                console.log(`Set ${areas.length} focus areas`);
-              }
-
-              setLoading(false);
-              return; // Exit the function early since we've handled everything
-            } else {
-              throw new Error('Failed to fetch user from URL userId');
-            }
-          } catch (error) {
-            console.error('Error fetching user from URL:', error);
-            throw new Error('Failed to fetch user from URL userId');
+        // 2. The study plan — no plan means onboarding isn't finished
+        const planRes = await fetch(`/api/study-plans?userId=${fetchedUser._id}`);
+        const planData = await planRes.json();
+        if (!planData.success || !planData.studyPlan) {
+          if (!searchParams.get('fromOnboarding')) {
+            router.push('/onboarding/account-creation');
+            return;
           }
+          // Coming straight from onboarding: the plan may still be generating.
+          setLoading(false);
+          return;
         }
 
-        // If we have a user from the auth context, use it
-        if (user && user._id) {
-          console.log('Using user from auth context:', user._id);
+        // 3. Today's tasks + readiness, in parallel
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const [tasksRes, readinessRes] = await Promise.all([
+          fetch(`/api/tasks?planId=${planData.studyPlan._id}&date=${today}`),
+          fetch(`/api/readiness-score?userId=${fetchedUser._id}`),
+        ]);
+        const tasksData = await tasksRes.json();
+        if (tasksData.success) setTodaysTasks(tasksData.tasks || []);
 
-          try {
-            // Get the user's study plan
-            console.log('Fetching study plan for user:', user._id);
-            const planResponse = await fetch(`/api/study-plans?userId=${user._id}`);
-            const planData = await planResponse.json();
-
-            // If no study plan is found, check if we're coming from onboarding
-            if (!planData.success || !planData.studyPlan) {
-              // Check if we're coming from onboarding (check for fromOnboarding query param)
-              if (!isFromOnboarding) {
-                console.log('No study plan found, redirecting to onboarding');
-
-                // Clear any existing user data before redirecting to onboarding
-                // This ensures a fresh start for the onboarding process
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                localStorage.removeItem('userId');
-
-                router.push('/onboarding/account-creation');
-                return;
-              } else {
-                console.log('Coming from onboarding, not redirecting despite missing study plan');
-                // Continue without redirecting, the plan might be in the process of being created
-              }
-            }
-
-            // Get today's tasks
-            const today = new Date();
-            const formattedDate = format(today, 'yyyy-MM-dd');
-            console.log(`Fetching tasks for plan: ${planData.studyPlan?._id} and date: ${formattedDate}`);
-
-            if (planData.studyPlan && planData.studyPlan._id) {
-              const tasksResponse = await fetch(`/api/tasks?planId=${planData.studyPlan._id}&date=${formattedDate}`);
-              const tasksData = await tasksResponse.json();
-              console.log('Tasks API response:', tasksData);
-
-              if (tasksData.success) {
-                setTodaysTasks(tasksData.tasks || []);
-                console.log(`Set ${tasksData.tasks?.length || 0} tasks for today`);
-              }
-            }
-
-            // Get readiness score
-            console.log(`Fetching readiness score for user: ${user._id}`);
-            const readinessResponse = await fetch(`/api/readiness-score?userId=${user._id}`);
-            const readinessData = await readinessResponse.json();
-            console.log('Readiness score API response:', readinessData);
-
-            if (readinessData.success) {
-              const readinessScoreData = readinessData.readinessScore || {
-                overallScore: 0,
-                categoryScores: [],
-                weakAreas: [],
-                strongAreas: []
-              };
-
-              setReadinessScore(readinessScoreData);
-              console.log(`Set readiness score: ${readinessScoreData.overallScore}%`);
-
-              // Set focus areas based on weak and strong areas
-              const areas = [
-                ...(readinessData.readinessScore?.weakAreas || []).map((area: any) => ({
-                  ...area,
-                  type: 'weak',
-                  message: 'This area needs improvement. Focus on strengthening your knowledge here.'
-                })),
-                ...(readinessData.readinessScore?.strongAreas || []).slice(0, 1).map((area: any) => ({
-                  ...area,
-                  type: 'strong',
-                  message: 'You\'re doing well here! Continue practicing to maintain your strong performance.'
-                }))
-              ];
-
-              setFocusAreas(areas);
-              console.log(`Set ${areas.length} focus areas`);
-            }
-          } catch (error) {
-            console.error('Error fetching dashboard data for authenticated user:', error);
-            setError('Failed to load dashboard data. Please try again later.');
-          }
-        } else {
-          // If we don't have a user from either source, show an error
-          throw new Error('User not found or missing ID');
+        const readinessData = await readinessRes.json();
+        if (readinessData.success && readinessData.readinessScore) {
+          const rs = readinessData.readinessScore;
+          setReadinessScore({
+            overallScore: rs.overallScore || 0,
+            categoryScores: rs.categoryScores || [],
+            weakAreas: rs.weakAreas || [],
+            strongAreas: rs.strongAreas || [],
+          });
+          setFocusAreas([
+            ...(rs.weakAreas || []).map((area: any) => ({
+              ...(typeof area === 'string' ? { name: area } : area),
+              type: 'weak',
+              message: 'This area needs improvement. Focus on strengthening your knowledge here.',
+            })),
+            ...(rs.strongAreas || []).slice(0, 1).map((area: any) => ({
+              ...(typeof area === 'string' ? { name: area } : area),
+              type: 'strong',
+              message: "You're doing well here! Continue practicing to maintain your strong performance.",
+            })),
+          ]);
         }
 
         setLoading(false);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
-
-        // If the error is about no study plan, redirect to onboarding
-        if (err instanceof Error && err.message.includes('No study plan found')) {
-          console.log('No study plan found, redirecting to onboarding');
-          router.push('/onboarding/welcome');
-          return;
-        }
-
         setError(err instanceof Error ? err.message : 'An error occurred while loading dashboard data');
         setLoading(false);
       }
@@ -306,68 +148,6 @@ export default function DashboardPage() {
 
     fetchDashboardData();
   }, [searchParams, authUser, router]);
-
-  // Get task icon based on type
-  const getTaskIcon = (type: string) => {
-    switch (type) {
-      case 'VIDEO':
-        return (
-          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-            <path d="M14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-          </svg>
-        );
-      case 'QUIZ':
-        return (
-          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-            <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-          </svg>
-        );
-      case 'READING':
-        return (
-          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c-1.255 0-2.443.29-3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-          </svg>
-        );
-      case 'PRACTICE':
-        return (
-          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        );
-      case 'REVIEW':
-        return (
-          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-          </svg>
-        );
-      default:
-        return (
-          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-          </svg>
-        );
-    }
-  };
-
-  // Get task background color based on type - using theme variables for consistency
-  const getTaskBgColor = (type: string): string => {
-    switch (type) {
-      case 'VIDEO':
-        return 'bg-blue-100 text-blue-600';
-      case 'QUIZ':
-        return 'bg-purple-100 text-purple-600';
-      case 'READING':
-        return 'bg-green-100 text-green-600';
-      case 'PRACTICE':
-        return 'bg-amber-100 text-amber-600';
-      case 'REVIEW':
-        return 'bg-red-100 text-red-600';
-      default:
-        return 'bg-gray-100 text-gray-600';
-    }
-  };
 
   // Handle task status change
   const handleTaskStatusChange = async (taskId: string, newStatus: string) => {
@@ -399,8 +179,15 @@ export default function DashboardPage() {
 
       // Update readiness score if it was returned (for both completed and pending status changes)
       if (data.readinessScore) {
-        console.log('Updating readiness score in UI from', readinessScore.overallScore, 'to', data.readinessScore.overallScore);
         setReadinessScore(data.readinessScore);
+      }
+
+      // Surface what the adaptive agents changed (reschedules, reviews, remedial content)
+      if (newStatus === 'COMPLETED' && data.adaptation?.triggered && data.adaptation.changes?.length) {
+        toast.success('Your plan adapted to your progress', {
+          description: data.adaptation.changes.join(' · '),
+          duration: 6000,
+        });
       }
 
       return data.task;
@@ -410,25 +197,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Get focus area background color based on type
-  const getFocusAreaBgColor = (type: string) => {
-    // These are status colors, might keep them distinct or map to theme status colors if defined
-    switch (type) {
-      case 'weak':
-        return 'bg-red-50 text-red-800 border-red-500';
-      case 'strong':
-        return 'bg-green-50 text-green-800 border-green-500';
-      default:
-        return 'bg-blue-50 text-blue-800 border-blue-500';
-    }
-  };
-
-  // Get category score color based on score - using theme colors
-  const getCategoryScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-green-500'; // Green for good scores
-    if (score >= 60) return 'bg-amber-500'; // Amber for medium scores
-    return 'bg-red-500'; // Red for low scores (warning)
-  };
 
   // Handle refreshing focus areas
   const handleRefreshFocusAreas = async () => {
@@ -498,13 +266,41 @@ export default function DashboardPage() {
     }
   };
 
+  // Derived KPI values
+  const completedToday = todaysTasks.filter((t) => t.status === 'COMPLETED').length;
+  const pendingToday = todaysTasks.length - completedToday;
+  const daysToExam = user?.examDate
+    ? Math.max(0, Math.ceil((new Date(user.examDate).getTime() - Date.now()) / 86400000))
+    : null;
+  const firstName = (user?.name || 'there').split(' ')[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  // Clean task-type styling for the redesigned task list
+  const getTaskMeta = (type: string) => {
+    switch (type) {
+      case 'VIDEO':
+        return { icon: Video, color: 'text-sky-500', bg: 'bg-sky-500/10', label: 'Video' };
+      case 'QUIZ':
+        return { icon: FileQuestion, color: 'text-primary', bg: 'bg-primary/10', label: 'Quiz' };
+      case 'READING':
+        return { icon: BookOpen, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Reading' };
+      case 'PRACTICE':
+        return { icon: PenLine, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Practice' };
+      case 'REVIEW':
+        return { icon: RefreshCw, color: 'text-rose-500', bg: 'bg-rose-500/10', label: 'Review' };
+      default:
+        return { icon: ClipboardList, color: 'text-muted-foreground', bg: 'bg-secondary', label: 'Task' };
+    }
+  };
+
   if (loading) {
     return (
       <ProtectedRoute>
         <AppLayout>
           <div className="flex flex-col items-center justify-center h-64">
-            <div className="w-16 h-16 border-t-4 border-indigo-500 border-solid rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+            <div className="h-14 w-14 animate-spin rounded-full border-4 border-muted border-t-primary" />
+            <p className="mt-4 text-muted-foreground">Loading your dashboard…</p>
           </div>
         </AppLayout>
       </ProtectedRoute>
@@ -515,18 +311,17 @@ export default function DashboardPage() {
     return (
       <ProtectedRoute>
         <AppLayout>
-          <div className="bg-red-100 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
-            <div className="flex">
-              <svg className="h-5 w-5 text-red-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <p>{error}</p>
+          <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/15">
+              <Timer className="h-6 w-6 text-destructive" />
             </div>
-            <div className="mt-4">
-              <Link href="/" className="text-red-600 hover:text-red-800 font-medium">
-                Back to Home →
-              </Link>
-            </div>
+            <p className="font-medium text-foreground">{error}</p>
+            <Link
+              href="/"
+              className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+            >
+              Back to home <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </AppLayout>
       </ProtectedRoute>
@@ -535,248 +330,311 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <AppLayout light>
-        <div className="relative min-h-screen">
-          {/* Particle Background */}
-          <ParticleBackground
-            particleCount={25}
-            colors={['#6366F1', '#8B5CF6', '#EC4899', '#10B981']}
-            className="opacity-20"
-          />
+      <AppLayout>
+        <div className="mx-auto max-w-6xl space-y-8">
+          {/* Greeting */}
+          <Reveal>
+            <p className="text-sm font-medium text-muted-foreground">{format(new Date(), 'EEEE, MMMM d')}</p>
+            <h1 className="mt-1.5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+              {greeting}, <span className="gradient-text">{firstName}</span>
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              {todaysTasks.length === 0
+                ? "You're all caught up — nothing scheduled for today."
+                : pendingToday === 0
+                  ? `All ${todaysTasks.length} of today's tasks are done. Great work!`
+                  : `You have ${pendingToday} task${pendingToday > 1 ? 's' : ''} left today. Let's get to it.`}
+            </p>
+          </Reveal>
 
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-            className="relative z-10"
-          >
-            {/* Header */}
-            <motion.div
-              className="mb-8 flex justify-between items-start"
-              variants={fadeIn}
-            >
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900 bg-gradient-to-r from-indigo-600 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent tracking-tight mb-2">
-                  Dashboard
-                </h1>
-                <p className="text-gray-600 text-lg">
-                  Welcome back, <span className="font-semibold text-gray-800">{user?.name}</span>. Here's your focus for today.
-                </p>
-              </div>
-            </motion.div>
+          {/* KPIs */}
+          <RevealGroup className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {[
+              { label: 'Exam readiness', value: readinessScore.overallScore, suffix: '%', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', dash: false },
+              { label: "Today's tasks", value: todaysTasks.length, suffix: '', icon: ListTodo, color: 'text-sky-500', bg: 'bg-sky-500/10', dash: false },
+              { label: 'Completed', value: completedToday, suffix: '', icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10', dash: false },
+              { label: 'Days to exam', value: daysToExam ?? 0, suffix: '', icon: CalendarDays, color: 'text-amber-500', bg: 'bg-amber-500/10', dash: daysToExam === null },
+            ].map((kpi) => (
+              <RevealItem key={kpi.label}>
+                <div className="card-hover rounded-2xl border border-border bg-card p-5 shadow-sm">
+                  <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${kpi.bg} ${kpi.color}`}>
+                    <kpi.icon className="h-5 w-5" />
+                  </div>
+                  <div className="font-display text-3xl font-bold">
+                    {kpi.dash ? '—' : <AnimatedCounter value={kpi.value} suffix={kpi.suffix} />}
+                  </div>
+                  <div className="mt-0.5 text-sm text-muted-foreground">{kpi.label}</div>
+                </div>
+              </RevealItem>
+            ))}
+          </RevealGroup>
 
-            {/* Monitor Summary - Shows key insights from the Monitor Agent */}
-            {user && <MonitorSummary userId={user._id} />}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-              {/* Today's Tasks Section */}
-              <div className="lg:col-span-2">
-                <AnimatedCard className="p-8 mb-6" gradient>
-                  <motion.div variants={fadeInUp}>
-                    <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-2xl font-bold text-gray-800 tracking-tight flex items-center">
-                        <svg className="w-6 h-6 mr-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        Today's Tasks
-                      </h2>
-                      <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                        {format(new Date(), 'MMMM d, yyyy')}
-                      </span>
+          {/* Main grid */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Today's plan */}
+            <Reveal className="lg:col-span-2">
+              <div className="flex h-full flex-col rounded-2xl border border-border bg-card shadow-sm">
+                <div className="flex items-center justify-between border-b border-border px-6 py-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <ListTodo className="h-5 w-5" />
                     </div>
+                    <h2 className="font-display text-lg font-semibold">Today's plan</h2>
+                  </div>
+                  {todaysTasks.length > 0 && (
+                    <Badge variant="secondary">{completedToday}/{todaysTasks.length} done</Badge>
+                  )}
+                </div>
 
-                    {todaysTasks.length === 0 ? (
-                      <motion.div
-                        className="text-center py-12"
-                        variants={fadeIn}
-                      >
-                        <motion.div
-                          animate={{
-                            y: [0, -10, 0],
-                            rotate: [0, 5, -5, 0]
-                          }}
-                          transition={{
-                            duration: 4,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                        >
-                          <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </motion.div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">You're all caught up! 🎉</h3>
-                        <p className="text-gray-600 mb-6">
-                          {user?.name === "New User"
-                            ? "Your study plan is being generated. Check back shortly."
-                            : "No tasks scheduled for today. Explore your calendar or start a review."}
-                        </p>
-                        <Link
-                          href={`/calendar?userId=${user?._id}`}
-                          className="group inline-flex items-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-fuchsia-600 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
-                        >
-                          <span className="mr-2">View Calendar</span>
-                          <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L13.586 10l-3.293-3.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                          </svg>
-                        </Link>
-                      </motion.div>
-                    ) : (
-                      <div className="max-h-[400px] overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-gray-200 scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
-                        {todaysTasks.map((task, index) => (
-                          <EnhancedTaskCard
-                            key={task._id}
-                            task={task}
-                            index={index}
-                            onStatusChange={handleTaskStatusChange}
-                            onTaskClick={(task) => {
-                              if (task.type === 'QUIZ' && task.content) {
-                                router.push(`/quiz/${task.content._id}?taskId=${task._id}&userId=${user?._id}`);
-                              }
-                            }}
-                            userId={user?._id}
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    <motion.div
-                      className="mt-8 text-center"
-                      variants={fadeIn}
-                    >
-                      <Link
-                        href={`/calendar?userId=${user?._id}`}
-                        className="group inline-flex items-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-fuchsia-600 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
-                      >
-                        <span className="mr-2">View Full Schedule</span>
-                        <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L13.586 10l-3.293-3.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                        </svg>
-                      </Link>
-                    </motion.div>
-                  </motion.div>
-                </AnimatedCard>
-              </div>
-
-              {/* Right Sidebar */}
-              <div className="space-y-6">
-                {/* NCLEX Readiness */}
-                <AnimatedCard className="p-6" gradient delay={0.2}>
-                  <motion.div variants={fadeInUp}>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-tight flex items-center">
-                      <svg className="w-6 h-6 mr-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                      NCLEX Readiness
-                    </h2>
-                    
-                    <div className="flex justify-center mb-6">
-                      <AnimatedProgressCircle
-                        percentage={readinessScore.overallScore}
-                        size={160}
-                        strokeWidth={10}
-                        label="Ready"
-                        duration={2.5}
-                        delay={0.5}
-                      />
+                {todaysTasks.length === 0 ? (
+                  <div className="flex flex-1 flex-col items-center justify-center px-6 py-14 text-center">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <CheckCircle2 className="h-7 w-7" />
                     </div>
-
-                    <div className="space-y-4">
-                      {readinessScore.categoryScores.slice(0, 3).map((category, index) => (
-                        <motion.div
-                          key={category.category}
-                          className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-white/20"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 1 + index * 0.1 }}
+                    <h3 className="font-display text-lg font-semibold">You're all caught up</h3>
+                    <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                      {user?.name === 'New User'
+                        ? 'Your study plan is being generated — check back shortly.'
+                        : 'No tasks scheduled today. Plan ahead from your calendar.'}
+                    </p>
+                    <Link href={`/calendar?userId=${user?._id}`} className="mt-5">
+                      <Button variant="outline">Open calendar <ArrowRight className="h-4 w-4" /></Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {todaysTasks.map((task, ti) => {
+                      const meta = getTaskMeta(task.type);
+                      const done = task.status === 'COMPLETED';
+                      // Any task with attached content is startable (quiz, practice,
+                      // reading, video, review) — the /quiz/[id] runner handles every type.
+                      const contentId = task.content?._id || task.content;
+                      const clickable = !!contentId;
+                      return (
+                        <div
+                          key={task._id}
+                          className="rise-in group flex items-center gap-3 px-6 py-4 transition-colors hover:bg-secondary/50"
+                          style={{ ['--i' as string]: ti }}
                         >
-                          <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-700 font-medium">
-                              {category.category.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
-                            </span>
-                            <span className="font-bold text-gray-800">{category.score}%</span>
+                          <button
+                            onClick={() => handleTaskStatusChange(task._id, done ? 'PENDING' : 'COMPLETED')}
+                            className={cn(
+                              'press flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-colors',
+                              done ? 'check-pop border-success bg-success text-white' : 'border-input hover:border-primary'
+                            )}
+                            aria-label={done ? 'Mark incomplete' : 'Mark complete'}
+                          >
+                            {done && <CheckCircle2 className="h-4 w-4" />}
+                          </button>
+                          <div
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105 ${meta.bg} ${meta.color}`}
+                          >
+                            <meta.icon className="h-[18px] w-[18px]" />
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                            <motion.div
-                              className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full"
-                              initial={{ width: 0 }}
-                              animate={{ width: `${category.score}%` }}
-                              transition={{
-                                duration: 1.5,
-                                delay: 1.2 + index * 0.1,
-                                ease: "easeOut"
-                              }}
+                          <div className="min-w-0 flex-1 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none">
+                            <p className={cn('truncate text-sm font-medium', done && 'text-muted-foreground line-through')}>
+                              {task.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {meta.label}
+                              {task.duration ? ` · ${task.duration} min` : ''}
+                            </p>
+                          </div>
+                          {clickable && !done && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="opacity-70 transition-opacity group-hover:opacity-100"
+                              onClick={() => router.push(`/quiz/${contentId}?taskId=${task._id}&userId=${user?._id}`)}
+                            >
+                              Start <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {todaysTasks.length > 0 && (
+                  <div className="border-t border-border px-6 py-4">
+                    <Link
+                      href={`/calendar?userId=${user?._id}`}
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                    >
+                      View full schedule <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </Reveal>
+
+            {/* Right column */}
+            <div className="space-y-6">
+              {/* Readiness */}
+              <Reveal delay={0.05}>
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <div className="mb-5 flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <TrendingUp className="h-5 w-5" />
+                    </div>
+                    <h2 className="font-display text-lg font-semibold">Exam readiness</h2>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="relative h-32 w-32">
+                      <svg viewBox="0 0 120 120" className="h-32 w-32 -rotate-90">
+                        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--secondary)" strokeWidth="10" />
+                        {/* ring draws in on mount (ringReady flips post-mount → CSS transition) */}
+                        <circle
+                          cx="60" cy="60" r="52" fill="none" stroke="url(#rg)" strokeWidth="10" strokeLinecap="round"
+                          className="ring-draw ring-glow"
+                          strokeDasharray={2 * Math.PI * 52}
+                          strokeDashoffset={
+                            ringReady
+                              ? 2 * Math.PI * 52 * (1 - (readinessScore.overallScore || 0) / 100)
+                              : 2 * Math.PI * 52
+                          }
+                        />
+                        <defs>
+                          <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="var(--brand-from)" />
+                            <stop offset="100%" stopColor="var(--brand-to)" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="font-display text-3xl font-bold">
+                          <AnimatedCounter value={readinessScore.overallScore || 0} />
+                          <span className="text-lg">%</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground">ready</span>
+                      </div>
+                    </div>
+                  </div>
+                  {readinessScore.categoryScores.length > 0 ? (
+                    <div className="mt-6 space-y-3">
+                      {readinessScore.categoryScores.slice(0, 3).map((c, ci) => (
+                        <div key={c.category}>
+                          <div className="mb-1 flex justify-between text-xs">
+                            <span className="font-medium text-muted-foreground">
+                              {c.category.split('_').map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')}
+                            </span>
+                            <span className="font-semibold">{c.score}%</span>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                            <div
+                              className="bar-grow h-full rounded-full brand-gradient"
+                              style={{ width: `${c.score}%`, ['--i' as string]: ci }}
                             />
                           </div>
-                        </motion.div>
-                      ))}
-
-                      {readinessScore.categoryScores.length === 0 && (
-                        <div className="text-center py-6">
-                          <p className="text-gray-500">
-                            {user?.name === "New User"
-                              ? "Complete some tasks to see your readiness score."
-                              : "No category scores available yet."}
-                          </p>
                         </div>
-                      )}
+                      ))}
                     </div>
+                  ) : (
+                    <p className="mt-5 text-center text-sm text-muted-foreground">
+                      Complete tasks to build your readiness score.
+                    </p>
+                  )}
+                  <Link href={`/progress?userId=${user?._id}`} className="mt-5 block">
+                    <Button variant="outline" className="w-full">
+                      View detailed progress <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </Reveal>
 
-                    <motion.div
-                      className="mt-6 text-center"
-                      variants={fadeIn}
-                    >
-                      <Link
-                        href={`/progress?userId=${user?._id}`}
-                        className="group inline-flex items-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-fuchsia-600 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
-                      >
-                        <span className="mr-2">View Detailed Progress</span>
-                        <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L13.586 10l-3.293-3.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                        </svg>
+              {/* Countdown */}
+              <Reveal delay={0.1}>
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <div className="mb-4 flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+                      <Timer className="h-5 w-5" />
+                    </div>
+                    <h2 className="font-display text-lg font-semibold">Exam countdown</h2>
+                  </div>
+                  {daysToExam !== null ? (
+                    <div className="text-center">
+                      <div className="font-display text-5xl font-bold gradient-text">{daysToExam}</div>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        days to go · {format(new Date(user.examDate), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">No exam date set yet.</p>
+                      <Link href={`/profile?userId=${user?._id}`}>
+                        <Button variant="ghost" size="sm" className="mt-2">Set exam date</Button>
                       </Link>
-                    </motion.div>
-                  </motion.div>
-                </AnimatedCard>
+                    </div>
+                  )}
+                </div>
+              </Reveal>
 
-                {/* Exam Countdown */}
-                <AnimatedCard className="p-6" delay={0.4}>
-                  <motion.div variants={fadeInUp}>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-tight flex items-center">
-                      <svg className="w-6 h-6 mr-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Exam Countdown
-                    </h2>
-                    {user?.examDate ? (
-                      <EnhancedExamCountdown examDate={user.examDate} />
-                    ) : (
-                      <div className="text-center py-8">
-                        <div className="text-6xl mb-4">📅</div>
-                        <p className="text-gray-500">No exam date set.</p>
-                      </div>
-                    )}
-                  </motion.div>
-                </AnimatedCard>
-              </div>
+              {/* Adaptive agent activity — what the AI changed recently */}
+              <PlanUpdatesCard userId={user?._id} />
             </div>
+          </div>
 
-            {/* Combined Focus Areas and Remediation Card */}
-            {user && (
-              <motion.div variants={fadeInUp}>
-                <CombinedFocusRemediationCard
-                  focusAreas={focusAreas}
-                  remediationSuggestions={remediationSuggestions}
-                  onRefreshFocusAreas={handleRefreshFocusAreas}
-                  onGenerateRemediationSuggestions={handleGenerateRemediationSuggestions}
-                  onResolve={resolveSuggestion}
-                  onStartTutorSession={startTutorSession}
-                  onScheduleReview={scheduleReviewSession}
-                  userId={user._id}
-                />
-              </motion.div>
-            )}
-          </motion.div>
+          {/* Where to focus */}
+          {focusAreas.length > 0 && (
+            <Reveal>
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="mb-5 flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Target className="h-5 w-5" />
+                  </div>
+                  <h2 className="font-display text-lg font-semibold">Where to focus</h2>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {focusAreas.slice(0, 4).map((area, i) => {
+                    const topicName = area.name || area.topic || area.category || 'Topic';
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          'lift rise-in flex flex-col rounded-xl border p-4',
+                          area.type === 'weak' ? 'border-destructive/20 bg-destructive/5' : 'border-success/20 bg-success/5'
+                        )}
+                        style={{ ['--i' as string]: i }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              'flex h-7 w-7 items-center justify-center rounded-lg',
+                              area.type === 'weak' ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'
+                            )}
+                          >
+                            {area.type === 'weak' ? <Target className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                          </span>
+                          <p className="text-sm font-semibold">{topicName}</p>
+                        </div>
+                        <p className="mt-2 flex-1 text-xs text-muted-foreground">{area.message}</p>
+                        {/* Close the loop: a weak area is one click from a tutoring session on it */}
+                        {area._id && (
+                          <div className="mt-3 flex items-center gap-3">
+                            <Link
+                              href={`/tutor/topic/${area._id}?prompt=${encodeURIComponent(
+                                `I keep struggling with ${topicName}. Can you review the core concepts with me and quiz me on the tricky parts?`
+                              )}`}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" /> Ask AI Tutor
+                            </Link>
+                            <Link
+                              href={`/notes?q=${encodeURIComponent(topicName)}`}
+                              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                            >
+                              <NotebookPen className="h-3.5 w-3.5" /> My notes
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Reveal>
+          )}
         </div>
       </AppLayout>
     </ProtectedRoute>

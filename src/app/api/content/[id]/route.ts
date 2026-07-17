@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Content, Topic } from '@/models';
-import { type NextRouteContext } from 'next/dist/server/future/route-modules/app-route/module';
+import { requireAuth, requireAdmin } from '@/lib/api-auth';
 
 /**
  * API endpoint for managing a specific content item
@@ -12,14 +12,19 @@ import { type NextRouteContext } from 'next/dist/server/future/route-modules/app
 
 export async function GET(
   request: NextRequest,
-  { params }: NextRouteContext<{ id: string }>
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require an authenticated user (study content is shared, not per-user scoped)
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const { id } = await params;
+
     // Connect to the database
     await dbConnect();
 
     // Find content by ID
-    const content = await Content.findById(params.id).populate('topic');
+    const content = await Content.findById(id).populate('topic');
 
     // Check if content exists
     if (!content) {
@@ -54,9 +59,14 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: NextRouteContext<{ id: string }>
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Updating shared study content requires admin privileges
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+    const { id } = await params;
+
     // Connect to the database
     await dbConnect();
 
@@ -64,7 +74,7 @@ export async function PUT(
     const body = await request.json();
 
     // Check if content exists
-    const existingContent = await Content.findById(params.id);
+    const existingContent = await Content.findById(id);
     if (!existingContent) {
       return NextResponse.json(
         {
@@ -91,7 +101,7 @@ export async function PUT(
 
     // Update content
     const updatedContent = await Content.findByIdAndUpdate(
-      params.id,
+      id,
       {
         title: body.title,
         description: body.description,
@@ -129,14 +139,19 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: NextRouteContext<{ id: string }>
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Deleting shared study content requires admin privileges
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+    const { id } = await params;
+
     // Connect to the database
     await dbConnect();
 
     // Find and delete content
-    const deletedContent = await Content.findByIdAndDelete(params.id);
+    const deletedContent = await Content.findByIdAndDelete(id);
 
     // Check if content exists
     if (!deletedContent) {

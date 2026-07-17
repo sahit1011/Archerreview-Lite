@@ -56,4 +56,4 @@ const StudyPlanSchema: Schema = new Schema(
 );
 
 // Create and export the StudyPlan model
-export default mongoose.models.StudyPlan || mongoose.model<IStudyPlan>('StudyPlan', StudyPlanSchema);
+export default (mongoose.models.StudyPlan as mongoose.Model<IStudyPlan>) || mongoose.model<IStudyPlan>('StudyPlan', StudyPlanSchema);

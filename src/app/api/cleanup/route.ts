@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/api-auth';
 
 /**
  * API endpoint for running all cleanup operations
@@ -6,27 +7,22 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function POST(req: NextRequest) {
   try {
-    // Parse request body
-    const body = await req.json();
+    // Admin-only destructive operation
+    const auth = requireAdmin(req);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
 
-    // Validate required fields
-    if (!body.userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required field: userId'
-        },
-        { status: 400 }
-      );
-    }
+    // Forward the caller's auth header to the internal cleanup sub-routes
+    const authHeader = req.headers.get('authorization') || '';
 
     // Run duplicate reviews cleanup
     const reviewsResponse = await fetch(`${req.nextUrl.origin}/api/cleanup/duplicate-reviews`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
-      body: JSON.stringify({ userId: body.userId }),
+      body: JSON.stringify({}),
     });
 
     const reviewsResult = await reviewsResponse.json();
@@ -36,8 +32,9 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
-      body: JSON.stringify({ userId: body.userId }),
+      body: JSON.stringify({}),
     });
 
     const alertsResult = await alertsResponse.json();
@@ -47,9 +44,9 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
       body: JSON.stringify({
-        userId: body.userId,
         // Not specifying hour will process all hours
         date: '2025-05-09'
       }),
@@ -64,9 +61,9 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(authHeader ? { Authorization: authHeader } : {}),
         },
         body: JSON.stringify({
-          userId: body.userId,
           date: '2025-05-09',
           type: 'REVIEW'
         }),
@@ -81,9 +78,9 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
       body: JSON.stringify({
-        userId: body.userId,
         // Not specifying hour or date will process all hours and dates
       }),
     });
@@ -96,10 +93,9 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
-      body: JSON.stringify({
-        userId: body.userId
-      }),
+      body: JSON.stringify({}),
     });
 
     const remediationResult = await remediationResponse.json();

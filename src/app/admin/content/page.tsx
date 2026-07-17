@@ -130,7 +130,7 @@ export default function ContentManagement() {
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Content Management</h1>
-          <p className="text-gray-600">Manage content items for NCLEX topics</p>
+          <p className="text-gray-600">Manage content items for NEET/JEE topics</p>
         </div>
         <Link 
           href="/admin/content/new" 

@@ -273,7 +273,11 @@ function calculateMetrics(performances: any[], tasks: any[]) {
 /**
  * Analyze trends from performance and task data
  */
-function analyzeTrends(performances: any[], tasks: any[], metrics: any) {
+function analyzeTrends(
+  performances: any[],
+  tasks: any[],
+  metrics: any
+): TrendAnalysisResult['trends'] {
   // Need at least 2 data points to analyze trends
   if (performances.length < 2) {
     return {
@@ -332,7 +336,7 @@ function analyzeTrends(performances: any[], tasks: any[], metrics: any) {
   }
 
   // Detect anomalies
-  const anomalies = [];
+  const anomalies: TrendAnalysisResult['trends']['anomalies'] = [];
 
   // Check for performance anomalies
   if (metrics.averagePerformance < 50) {

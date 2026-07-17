@@ -3,11 +3,12 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  examType?: 'NEET' | 'JEE';
   examDate: Date;
   preferences?: {
     availableDays: string[];
     studyHoursPerDay: number;
-    preferredStudyTime: 'morning' | 'afternoon' | 'evening';
+    preferredStudyTime: 'morning' | 'afternoon' | 'evening' | 'night';
     notifications: boolean;
   };
   role: 'user' | 'admin';
@@ -85,13 +86,10 @@ export interface Topic {
   updatedAt: Date;
 }
 
+// Subject-level categories (NEET/JEE). Chapter detail lives on Topic.name/subcategory.
 export enum Category {
-  MANAGEMENT_OF_CARE = 'MANAGEMENT_OF_CARE',
-  SAFETY_AND_INFECTION_CONTROL = 'SAFETY_AND_INFECTION_CONTROL',
-  HEALTH_PROMOTION = 'HEALTH_PROMOTION',
-  PSYCHOSOCIAL_INTEGRITY = 'PSYCHOSOCIAL_INTEGRITY',
-  BASIC_CARE_AND_COMFORT = 'BASIC_CARE_AND_COMFORT',
-  PHARMACOLOGICAL_THERAPIES = 'PHARMACOLOGICAL_THERAPIES',
-  REDUCTION_OF_RISK_POTENTIAL = 'REDUCTION_OF_RISK_POTENTIAL',
-  PHYSIOLOGICAL_ADAPTATION = 'PHYSIOLOGICAL_ADAPTATION',
+  PHYSICS = 'PHYSICS',
+  CHEMISTRY = 'CHEMISTRY',
+  BIOLOGY = 'BIOLOGY',
+  MATHEMATICS = 'MATHEMATICS',
 }

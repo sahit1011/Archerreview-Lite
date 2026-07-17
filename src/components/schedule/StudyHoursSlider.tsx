@@ -53,20 +53,20 @@ export default function StudyHoursSlider({
           onMouseUp={() => setIsDragging(false)}
           onTouchStart={() => setIsDragging(true)}
           onTouchEnd={() => setIsDragging(false)}
-          className="w-full h-3 appearance-none cursor-pointer rounded-full bg-white/10"
+          className="w-full h-3 appearance-none cursor-pointer rounded-full bg-secondary"
           style={{
-            background: `linear-gradient(to right, #0D9488 0%, #059669 ${percentage}%, rgba(255, 255, 255, 0.1) ${percentage}%, rgba(255, 255, 255, 0.1) 100%)`
+            background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${percentage}%, var(--secondary) ${percentage}%, var(--secondary) 100%)`
           }}
         />
         <motion.div
-          className="ml-4 min-w-[4rem] text-center font-bold text-white bg-gradient-to-br from-teal-500 to-green-600 px-3 py-2 rounded-lg shadow-lg shadow-teal-500/30"
+          className="ml-4 min-w-[4rem] text-center font-bold text-primary-foreground bg-primary px-3 py-2 rounded-lg shadow-lg shadow-primary/30"
           animate={{ scale: isDragging ? 1.1 : 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           {displayValue}
         </motion.div>
       </div>
-      <div className="flex justify-between text-xs text-white/50 px-1 mt-2">
+      <div className="flex justify-between text-xs text-muted-foreground px-1 mt-2">
         <span>{min} hour</span>
         <span>{max} hours</span>
       </div>

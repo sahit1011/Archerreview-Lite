@@ -42,8 +42,8 @@ export default function PlanOverview({ examDate, studyHoursPerDay, availableDays
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold text-white/90 mb-4 flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
         </svg>
         <span>Plan Overview</span>
@@ -52,15 +52,15 @@ export default function PlanOverview({ examDate, studyHoursPerDay, availableDays
         {overviewItems.map((item, index) => (
           <motion.div
             key={index}
-            className="bg-white/5 p-4 rounded-xl shadow-lg border border-white/10 backdrop-blur-md"
+            className="bg-card p-4 rounded-xl shadow-lg border border-border"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 + index * 0.1 }}
             whileHover={{ y: -5, scale: 1.02, boxShadow: '0 10px 20px rgba(0,0,0,0.2)' }}
           >
-            <div className="text-white/70 text-sm mb-1">{item.label}</div>
-            <div className="text-3xl font-bold text-teal-400">{item.value}</div>
-            <div className="text-white/60 text-xs mt-1">{item.subValue}</div>
+            <div className="text-muted-foreground text-sm mb-1">{item.label}</div>
+            <div className="text-3xl font-bold text-primary">{item.value}</div>
+            <div className="text-muted-foreground text-xs mt-1">{item.subValue}</div>
           </motion.div>
         ))}
       </div>

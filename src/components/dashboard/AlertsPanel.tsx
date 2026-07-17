@@ -72,13 +72,13 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'HIGH':
-        return 'bg-red-100 text-red-600 border border-red-300';
+        return 'bg-red-500/15 text-red-400 border border-red-500/30';
       case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-600 border border-yellow-300';
+        return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
       case 'LOW':
-        return 'bg-blue-100 text-blue-600 border border-blue-300';
+        return 'bg-blue-500/15 text-blue-400 border border-blue-500/30';
       default:
-        return 'bg-gray-100 text-gray-600 border border-gray-300';
+        return 'bg-secondary text-muted-foreground border border-border';
     }
   };
 
@@ -104,8 +104,8 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
         );
       case 'TOPIC_DIFFICULTY':
         return (
-          <div className="w-8 h-8 rounded-full bg-archer-light-blue/20 flex items-center justify-center shadow-button">
-            <ExclamationCircleIcon className="h-5 w-5 text-archer-light-blue" />
+          <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shadow-button">
+            <ExclamationCircleIcon className="h-5 w-5 text-primary" />
           </div>
         );
       case 'STUDY_PATTERN':
@@ -116,8 +116,8 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
         );
       default:
         return (
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shadow-button">
-            <ExclamationCircleIcon className="h-5 w-5 text-gray-500" />
+          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shadow-button">
+            <ExclamationCircleIcon className="h-5 w-5 text-muted-foreground" />
           </div>
         );
     }
@@ -135,18 +135,18 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
 
   if (loading) {
     return (
-      <div className="bg-card-background-light rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6 border border-border-color-light">
+      <div className="rounded-xl border border-border bg-card backdrop-blur-sm transition-all p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-semibold text-archer-dark-text">Alerts</h2>
-          <div className="animate-pulse h-8 w-8 bg-light-bg-secondary rounded-full shadow-button"></div>
+          <h2 className="text-xl font-semibold text-foreground">Alerts</h2>
+          <div className="animate-pulse h-8 w-8 bg-muted rounded-full"></div>
         </div>
         <div className="space-y-4">
           {[1, 2].map(i => (
-            <div key={i} className="animate-pulse flex items-start p-4 bg-light-bg-secondary rounded-lg shadow-card">
-              <div className="h-8 w-8 bg-gray-200 rounded-full mr-3"></div>
+            <div key={i} className="animate-pulse flex items-start p-4 bg-secondary rounded-lg border border-border">
+              <div className="h-8 w-8 bg-muted rounded-full mr-3"></div>
               <div className="flex-1">
-                <div className="h-5 bg-gray-200 rounded-lg w-3/4 mb-3"></div>
-                <div className="h-4 bg-gray-200 rounded-lg w-full"></div>
+                <div className="h-5 bg-muted rounded-lg w-3/4 mb-3"></div>
+                <div className="h-4 bg-muted rounded-lg w-full"></div>
               </div>
             </div>
           ))}
@@ -157,16 +157,16 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
 
   if (error) {
     return (
-      <div className="bg-card-background-light rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6 border border-border-color-light">
+      <div className="rounded-xl border border-border bg-card backdrop-blur-sm transition-all p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-semibold text-archer-dark-text">Alerts</h2>
-          <div className="w-8 h-8 rounded-full bg-light-bg-secondary flex items-center justify-center shadow-button">
-            <BellIcon className="h-5 w-5 text-gray-500" />
+          <h2 className="text-xl font-semibold text-foreground">Alerts</h2>
+          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+            <BellIcon className="h-5 w-5 text-muted-foreground" />
           </div>
         </div>
-        <div className="p-4 bg-red-100 text-red-600 rounded-lg shadow-button border border-red-300">
+        <div className="p-4 bg-red-500/15 text-red-400 rounded-lg border border-red-500/30">
           <div className="flex items-center">
-            <svg className="h-5 w-5 text-red-600 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-red-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <p>Error: {error}</p>
@@ -177,30 +177,30 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
   }
 
   return (
-    <div className="bg-card-background-light rounded-xl shadow-card hover:shadow-card-hover transition-all p-6 mb-6 border border-border-color-light">
+    <div className="rounded-xl border border-border bg-card backdrop-blur-sm transition-all p-6 mb-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-xl font-semibold text-archer-dark-text">Alerts</h2>
+        <h2 className="text-xl font-semibold text-foreground">Alerts</h2>
         <div className="flex items-center">
           {alerts.length > 0 && (
-            <span className="inline-flex items-center justify-center px-2.5 py-1 mr-3 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-button">
+            <span className="inline-flex items-center justify-center px-2.5 py-1 mr-3 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
               {alerts.length}
             </span>
           )}
           <button
             onClick={() => setExpanded(!expanded)}
-            className="w-10 h-10 rounded-full bg-light-bg-secondary flex items-center justify-center shadow-button hover:bg-light-bg-gradient-end transition-all"
+            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border hover:bg-muted transition-all"
           >
-            <BellIcon className="h-5 w-5 text-archer-dark-text" />
+            <BellIcon className="h-5 w-5 text-foreground" />
           </button>
         </div>
       </div>
 
       {alerts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-8 bg-light-bg-secondary rounded-lg shadow-card border border-border-color-light">
-          <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3 shadow-button">
-            <CheckCircleIcon className="h-6 w-6 text-green-600" />
+        <div className="flex flex-col items-center justify-center p-8 bg-secondary rounded-lg border border-border">
+          <div className="w-12 h-12 rounded-full bg-success/15 flex items-center justify-center mb-3">
+            <CheckCircleIcon className="h-6 w-6 text-success" />
           </div>
-          <p className="text-archer-dark-text">No alerts at this time</p>
+          <p className="text-muted-foreground">No alerts at this time</p>
         </div>
       ) : (
         <motion.div
@@ -216,22 +216,22 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
           {alerts.map((alert) => (
             <div
               key={alert._id}
-              className={`flex items-start p-4 rounded-lg shadow-card hover:shadow-card-hover transition-all ${getSeverityColor(alert.severity)}`}
+              className={`flex items-start p-4 rounded-lg transition-all ${getSeverityColor(alert.severity)}`}
             >
               <div className="flex-shrink-0 mr-3">
                 {getTypeIcon(alert.type)}
               </div>
               <div className="flex-1">
                 <div className="flex justify-between">
-                  <p className="font-medium text-archer-dark-text">{alert.message}</p>
+                  <p className="font-medium text-foreground">{alert.message}</p>
                   <button
                     onClick={() => handleResolveAlert(alert._id)}
-                    className="ml-2 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shadow-button hover:bg-gray-300 transition-all"
+                    className="ml-2 w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-secondary transition-all"
                   >
-                    <XMarkIcon className="h-5 w-5 text-gray-600" />
+                    <XMarkIcon className="h-5 w-5 text-muted-foreground" />
                   </button>
                 </div>
-                <p className="text-xs mt-2 text-gray-600 bg-gray-100 px-3 py-1 rounded-lg inline-block">
+                <p className="text-xs mt-2 text-muted-foreground bg-card px-3 py-1 rounded-lg inline-block">
                   {formatDate(alert.createdAt)}
                 </p>
               </div>
@@ -241,7 +241,7 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
           {!expanded && alerts.length > 2 && (
             <button
               onClick={() => setExpanded(true)}
-              className="w-full text-center text-sm bg-archer-bright-teal text-white rounded-lg font-medium shadow-button hover:shadow-card-hover transition-all hover:-translate-y-1 py-2"
+              className="w-full text-center text-sm bg-primary text-primary-foreground font-semibold rounded-lg hover:brightness-110 transition-all py-2"
             >
               Show {alerts.length - 2} more alerts
             </button>

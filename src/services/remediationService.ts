@@ -116,18 +116,20 @@ export async function generateRemediationSuggestions(userId: string): Promise<Re
     // Get all content
     const contents = await Content.find({});
 
+    const planId = studyPlan._id as mongoose.Types.ObjectId;
+
     // Run remediation processes
     await Promise.all([
-      detectConceptDifficulties(userId, studyPlan._id, tasks, performances, topics, contents, result),
-      suggestStudyTechniques(userId, studyPlan._id, tasks, performances, readinessScore, result),
-      recommendAITutorSessions(userId, studyPlan._id, tasks, performances, topics, result)
+      detectConceptDifficulties(userId, planId, tasks, performances, topics, contents, result),
+      suggestStudyTechniques(userId, planId, tasks, performances, readinessScore, result),
+      recommendAITutorSessions(userId, planId, tasks, performances, topics, result)
     ]);
 
     // Update summary
     result.summary.totalSuggestions = result.remediations.length;
 
     // Save remediation suggestions as alerts
-    await saveRemediationAlerts(userId, studyPlan._id, result.remediations);
+    await saveRemediationAlerts(userId, planId, result.remediations);
 
     console.log(`Generated ${result.remediations.length} remediation suggestions`);
     console.log(`Remediation summary:`, result.summary);
@@ -335,7 +337,7 @@ async function suggestStudyTechniques(
         description: 'Your recent performance is declining. Try active recall techniques to improve retention.',
         urgency: 'MEDIUM',
         suggestedAction: 'After studying a concept, close your materials and explain it out loud as if teaching someone else.',
-        aiPrompt: 'How can I use active recall to improve my NCLEX preparation?',
+        aiPrompt: 'How can I use active recall to improve my NEET/JEE preparation?',
         metadata: {
           recentScores: recentPerformances.map(p => p.score || 0),
           trend: 'declining',
@@ -404,7 +406,7 @@ async function recommendAITutorSessions(
       // Perfect case for AI tutor intervention
 
       // Generate a tailored AI prompt for this topic
-      const aiPrompt = `I'm struggling with ${topic.name} in my NCLEX preparation. My scores are inconsistent and my confidence is low. Can you explain the key concepts I should focus on?`;
+      const aiPrompt = `I'm struggling with ${topic.name} in my NEET/JEE preparation. My scores are inconsistent and my confidence is low. Can you explain the key concepts I should focus on?`;
 
       // Create remediation suggestion
       result.remediations.push({
@@ -672,7 +674,7 @@ export async function createMockRemediationSuggestion(userId: string): Promise<a
         ? `Try the Pomodoro Technique: 25 minutes of focused study followed by a 5-minute break.`
         : `Read more about ${randomTopic.name} to strengthen your understanding`,
       aiPrompt: useGenericSuggestion
-        ? `What are effective study techniques for NCLEX preparation?`
+        ? `What are effective study techniques for NEET/JEE preparation?`
         : `Can you explain the key concepts of ${randomTopic.name} in simple terms?`,
       topicName: useGenericSuggestion ? undefined : randomTopic.name,
       averageScore: 65,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import { requireAdmin } from '@/lib/api-auth';
 import { User, StudyPlan } from '@/models';
 import { runAdaptationAgent } from '@/services/adaptationAgent';
 import { runMonitorAgent } from '@/services/monitorAgent';
@@ -11,22 +12,11 @@ import { runMonitorAgent } from '@/services/monitorAgent';
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = requireAdmin(request);
+    if (auth.response) return auth.response;
+
     // Connect to the database
     await dbConnect();
-
-    // Parse request body
-    const body = await request.json();
-
-    // Check for admin key (simple protection for demo)
-    if (!body.adminKey || body.adminKey !== process.env.ADMIN_KEY) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Unauthorized access'
-        },
-        { status: 401 }
-      );
-    }
 
     // Get all users with study plans
     const studyPlans = await StudyPlan.find({});

@@ -88,28 +88,28 @@ const SpecificTimeCleanupButton: React.FC<SpecificTimeCleanupButtonProps> = ({ u
     <div className="relative">
       <button
         onClick={() => setShowTimeSelector(!showTimeSelector)}
-        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        className="flex items-center px-4 py-2 bg-blue-500/15 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-500/25 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-0 transition-colors"
       >
         <ClockIcon className="h-5 w-5 mr-2" />
         Clean Specific Time
       </button>
 
       {showTimeSelector && (
-        <div className="absolute z-10 mt-2 w-64 bg-white rounded-md shadow-lg p-4 border border-gray-200">
-          <h3 className="font-medium text-gray-900 mb-2">Select time to clean up</h3>
-          
+        <div className="absolute z-10 mt-2 w-64 rounded-xl border border-border bg-card backdrop-blur-sm shadow-2xl p-4">
+          <h3 className="font-medium text-foreground mb-2">Select time to clean up</h3>
+
           <div className="space-y-2 mb-4">
             <div className="flex flex-col">
-              <label className="text-sm text-gray-600 mb-1">Common times:</label>
+              <label className="text-sm text-muted-foreground mb-1">Common times:</label>
               <div className="grid grid-cols-2 gap-2">
                 {commonTimes.map(time => (
                   <button
                     key={time}
                     onClick={() => setSelectedTime(time)}
-                    className={`text-sm py-1 px-2 rounded ${
-                      selectedTime === time 
-                        ? 'bg-blue-100 text-blue-800 font-medium' 
-                        : 'bg-gray-100 hover:bg-gray-200'
+                    className={`text-sm py-1 px-2 rounded transition-colors ${
+                      selectedTime === time
+                        ? 'bg-primary/15 text-primary font-medium border border-primary/40'
+                        : 'bg-secondary text-foreground hover:bg-muted'
                     }`}
                   >
                     {formatTime(time)}
@@ -117,29 +117,29 @@ const SpecificTimeCleanupButton: React.FC<SpecificTimeCleanupButtonProps> = ({ u
                 ))}
               </div>
             </div>
-            
+
             <div className="flex flex-col">
-              <label className="text-sm text-gray-600 mb-1">Custom time:</label>
+              <label className="text-sm text-muted-foreground mb-1">Custom time:</label>
               <input
                 type="time"
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1"
+                className="bg-background text-foreground border border-input rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
           </div>
-          
+
           <div className="flex justify-between">
             <button
               onClick={() => setShowTimeSelector(false)}
-              className="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+              className="text-sm px-3 py-1 bg-secondary text-foreground border border-border rounded hover:bg-muted transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleCleanup}
               disabled={isLoading}
-              className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="text-sm px-3 py-1 bg-primary text-primary-foreground font-semibold rounded hover:brightness-110 disabled:opacity-50 transition-all"
             >
               {isLoading ? 'Cleaning...' : 'Clean Up'}
             </button>
@@ -148,22 +148,22 @@ const SpecificTimeCleanupButton: React.FC<SpecificTimeCleanupButtonProps> = ({ u
       )}
 
       {error && (
-        <div className="mt-2 text-sm text-red-600">
+        <div className="mt-2 text-sm text-red-400">
           {error}
         </div>
       )}
 
       {showSuccess && (
-        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+        <div className="mt-2 p-3 bg-green-500/15 border border-green-500/30 rounded-lg">
           <div className="flex items-center mb-2">
-            <svg className="h-5 w-5 text-green-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-green-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
-            <span className="font-medium text-green-800">Cleanup successful!</span>
+            <span className="font-medium text-green-300">Cleanup successful!</span>
           </div>
-          
+
           {result && (
-            <div className="text-sm text-green-700">
+            <div className="text-sm text-green-300/90">
               <p>{result.message}</p>
               {result.deletedTasks && result.deletedTasks.length > 0 && (
                 <div className="mt-2">
@@ -183,7 +183,7 @@ const SpecificTimeCleanupButton: React.FC<SpecificTimeCleanupButtonProps> = ({ u
             </div>
           )}
           
-          <p className="text-sm text-gray-600 mt-2">Page will refresh in a moment to show changes...</p>
+          <p className="text-sm text-muted-foreground mt-2">Page will refresh in a moment to show changes...</p>
         </div>
       )}
     </div>

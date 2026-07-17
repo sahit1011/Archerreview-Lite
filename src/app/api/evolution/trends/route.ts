@@ -1,31 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeLongTermTrends } from '../../../../services/evolutionAgent';
 import dbConnect from '../../../../lib/db';
+import { requireAuth } from '@/lib/api-auth';
 import { User } from '../../../../models';
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to database
     await dbConnect();
 
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
-    console.log('Received request for trends with userId:', userId);
-
-    // For now, we'll just use the provided userId directly
-    // In a production environment, we would validate the user's session
-    if (!userId) {
-      console.warn('No userId provided in request');
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'User ID is required'
-        },
-        { status: 400 }
-      );
-    }
-
-    // Use the provided userId
+    // Use the authenticated (token-derived) userId
     const userIdToUse = userId;
 
     // Get period from query params (default to MONTHLY)

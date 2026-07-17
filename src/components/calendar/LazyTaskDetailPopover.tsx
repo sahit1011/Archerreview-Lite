@@ -157,17 +157,17 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
   const getTaskBgColor = (type: string): string => {
     switch (type) {
       case 'VIDEO':
-        return 'bg-blue-100';
+        return 'bg-blue-500/15';
       case 'QUIZ':
-        return 'bg-purple-100';
+        return 'bg-primary/12';
       case 'READING':
-        return 'bg-green-100';
+        return 'bg-green-500/15';
       case 'PRACTICE':
-        return 'bg-amber-100';
+        return 'bg-amber-500/15';
       case 'REVIEW':
-        return 'bg-red-100';
+        return 'bg-red-500/15';
       default:
-        return 'bg-gray-100';
+        return 'bg-secondary';
     }
   };
 
@@ -175,17 +175,17 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
   const getTaskTextColor = (type: string): string => {
     switch (type) {
       case 'VIDEO':
-        return 'text-blue-800';
+        return 'text-blue-200';
       case 'QUIZ':
-        return 'text-purple-800';
+        return 'text-primary';
       case 'READING':
-        return 'text-green-800';
+        return 'text-green-200';
       case 'PRACTICE':
-        return 'text-amber-800';
+        return 'text-amber-200';
       case 'REVIEW':
-        return 'text-red-800';
+        return 'text-red-200';
       default:
-        return 'text-gray-800';
+        return 'text-foreground';
     }
   };
 
@@ -193,30 +193,30 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
   const getTaskBorderColor = (type: string): string => {
     switch (type) {
       case 'VIDEO':
-        return 'border-blue-200';
+        return 'border-blue-500/30';
       case 'QUIZ':
-        return 'border-purple-200';
+        return 'border-primary/30';
       case 'READING':
-        return 'border-green-200';
+        return 'border-green-500/30';
       case 'PRACTICE':
-        return 'border-amber-200';
+        return 'border-amber-500/30';
       case 'REVIEW':
-        return 'border-red-200';
+        return 'border-red-500/30';
       default:
-        return 'border-gray-200';
+        return 'border-border';
     }
   };
 
   // Render task detail skeleton
   const renderSkeleton = () => (
     <div className="p-6 space-y-4 animate-pulse">
-      <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-      <div className="h-24 bg-gray-200 rounded"></div>
+      <div className="h-6 bg-muted rounded w-3/4"></div>
+      <div className="h-4 bg-muted rounded w-1/2"></div>
+      <div className="h-4 bg-muted rounded w-1/4"></div>
+      <div className="h-24 bg-muted rounded"></div>
       <div className="flex space-x-2">
-        <div className="h-10 bg-gray-200 rounded w-1/3"></div>
-        <div className="h-10 bg-gray-200 rounded w-1/3"></div>
+        <div className="h-10 bg-muted rounded w-1/3"></div>
+        <div className="h-10 bg-muted rounded w-1/3"></div>
       </div>
     </div>
   );
@@ -229,7 +229,7 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
           onClick={handleOutsideClick}
         >
           <motion.div
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
+            className="rounded-2xl border border-border bg-card backdrop-blur-sm shadow-2xl max-w-md w-full mx-4 overflow-hidden"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -239,17 +239,17 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
               renderSkeleton()
             ) : error ? (
               <div className="p-6">
-                <div className="flex items-center text-red-600 mb-4">
+                <div className="flex items-center text-red-300 mb-4">
                   <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                   <h3 className="font-medium">Error</h3>
                 </div>
-                <p className="text-gray-600">{error}</p>
+                <p className="text-muted-foreground">{error}</p>
                 <div className="mt-4 flex justify-end">
                   <button
                     onClick={onClose}
-                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm font-medium transition-colors"
+                    className="px-4 py-2 bg-secondary hover:bg-muted text-foreground border border-border rounded-lg text-sm font-medium transition-colors"
                   >
                     Close
                   </button>
@@ -269,7 +269,7 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
                     </div>
                     <button
                       onClick={onClose}
-                      className="text-gray-500 hover:text-gray-700"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -280,25 +280,25 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
 
                 <div className="p-6">
                   <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Description</h3>
-                    <p className="text-gray-800">{task.description}</p>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+                    <p className="text-foreground">{task.description}</p>
                   </div>
 
                   {task.topic && (
                     <div className="mb-4">
-                      <h3 className="text-sm font-medium text-gray-500 mb-1">Topic</h3>
-                      <p className="text-gray-800">{task.topic.name}</p>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Topic</h3>
+                      <p className="text-foreground">{task.topic.name}</p>
                     </div>
                   )}
 
                   <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Status</h3>
                     <div className="flex items-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        task.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                        task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                        task.status === 'SKIPPED' ? 'bg-gray-100 text-gray-800' :
-                        'bg-yellow-100 text-yellow-800'
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                        task.status === 'COMPLETED' ? 'bg-green-500/15 text-green-300 border-green-500/30' :
+                        task.status === 'IN_PROGRESS' ? 'bg-blue-500/15 text-blue-300 border-blue-500/30' :
+                        task.status === 'SKIPPED' ? 'bg-muted text-muted-foreground border-border' :
+                        'bg-amber-500/15 text-amber-300 border-amber-500/30'
                       }`}>
                         {task.status === 'COMPLETED' ? 'Completed' :
                          task.status === 'IN_PROGRESS' ? 'In Progress' :
@@ -312,16 +312,16 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
                     {task.status === 'PENDING' && (
                       <button
                         onClick={handleStartTask}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+                        className="flex-1 bg-primary hover:brightness-110 text-primary-foreground font-semibold py-2 px-4 rounded-lg text-sm transition-all"
                       >
                         Start Task
                       </button>
                     )}
-                    
+
                     {task.status === 'IN_PROGRESS' && (
                       <button
                         onClick={handleCompleteTask}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+                        className="flex-1 bg-green-500/15 hover:bg-green-500/25 text-green-300 border border-green-500/30 font-medium py-2 px-4 rounded-lg text-sm transition-colors"
                       >
                         Mark as Completed
                       </button>
@@ -330,7 +330,7 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
                     {task.type === 'QUIZ' && task.content && (
                       <button
                         onClick={handleStartQuiz}
-                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+                        className="flex-1 bg-primary hover:brightness-110 text-primary-foreground font-semibold py-2 px-4 rounded-lg text-sm transition-all"
                       >
                         Start Quiz
                       </button>
@@ -338,7 +338,7 @@ export default function LazyTaskDetailPopover({ taskId, onClose }: TaskDetailPop
 
                     <button
                       onClick={onClose}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+                      className="flex-1 bg-secondary hover:bg-muted text-foreground border border-border font-medium py-2 px-4 rounded-lg text-sm transition-colors"
                     >
                       Close
                     </button>

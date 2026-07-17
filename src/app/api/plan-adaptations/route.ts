@@ -1,26 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { User, Task, Topic, Adaptation } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
-    
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
-    
-    // Validate required fields
-    if (!userId) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Missing required query parameter: userId' 
-        },
-        { status: 400 }
-      );
-    }
-    
+
     // Check if user exists
     const user = await User.findById(userId);
     if (!user) {
@@ -33,15 +25,29 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Get adaptations for the user
+    // Get adaptations for the user (optionally capped via ?limit= for dashboard feeds)
+    const limitParam = parseInt(request.nextUrl.searchParams.get('limit') || '', 10);
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 100) : 100;
     const adaptations = await Adaptation.find({ user: userId })
       .sort({ createdAt: -1 })
+      .limit(limit)
       .populate('task')
       .populate('topic');
     
     // Format adaptations for response
     const formattedAdaptations = adaptations.map(adaptation => {
-      const formattedAdaptation = {
+      const formattedAdaptation: {
+        _id: unknown;
+        type: string;
+        description: string;
+        reason: string;
+        date: Date;
+        metadata: Record<string, any>;
+        taskId?: unknown;
+        taskTitle?: string;
+        topicId?: unknown;
+        topicName?: string;
+      } = {
         _id: adaptation._id,
         type: adaptation.type,
         description: adaptation.description,
@@ -49,19 +55,21 @@ export async function GET(request: NextRequest) {
         date: adaptation.createdAt,
         metadata: adaptation.metadata || {}
       };
-      
+
       // Add task details if available
       if (adaptation.task) {
-        formattedAdaptation.taskId = adaptation.task._id;
-        formattedAdaptation.taskTitle = adaptation.task.title;
+        const task = adaptation.task as any;
+        formattedAdaptation.taskId = task._id;
+        formattedAdaptation.taskTitle = task.title;
       }
-      
+
       // Add topic details if available
       if (adaptation.topic) {
-        formattedAdaptation.topicId = adaptation.topic._id;
-        formattedAdaptation.topicName = adaptation.topic.name;
+        const topic = adaptation.topic as any;
+        formattedAdaptation.topicId = topic._id;
+        formattedAdaptation.topicName = topic.name;
       }
-      
+
       return formattedAdaptation;
     });
     
@@ -87,38 +95,43 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
-    
+
     // Parse request body
     const body = await request.json();
-    
+
     // Validate required fields
-    if (!body.userId || !body.planId || !body.type || !body.description || !body.reason) {
+    if (!body.planId || !body.type || !body.description || !body.reason) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Missing required fields: userId, planId, type, description, reason' 
+        {
+          success: false,
+          message: 'Missing required fields: planId, type, description, reason'
         },
         { status: 400 }
       );
     }
-    
+
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'User not found' 
+        {
+          success: false,
+          message: 'User not found'
         },
         { status: 404 }
       );
     }
-    
+
     // Create adaptation record
     const adaptation = new Adaptation({
-      user: body.userId,
+      user: userId,
       plan: body.planId,
       type: body.type,
       description: body.description,

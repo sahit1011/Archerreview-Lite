@@ -7,7 +7,7 @@ const steps = [
   {
     number: "01",
     title: "Set Your Goal",
-    description: "Choose your NCLEX exam date and let us plan backwards"
+    description: "Choose your NEET/JEE exam date and let us plan backwards"
   },
   {
     number: "02",
@@ -81,10 +81,10 @@ export default function StepsCarousel() {
               setIsAutoPlaying(false);
             }}
             className={`glassmorphic px-6 py-3 rounded-lg transition-all duration-300 hover:scale-105 ${
-              currentStep === index ? 'ring-2 ring-[#00A99D]' : ''
+              currentStep === index ? 'ring-2 ring-primary' : ''
             }`}
           >
-            <div className="text-sm text-white/70 mb-1">Step {step.number}</div>
+            <div className="text-sm text-muted-foreground mb-1">Step {step.number}</div>
             <div className="font-medium">{step.title}</div>
           </button>
         ))}
@@ -111,20 +111,20 @@ export default function StepsCarousel() {
               </div>
               <div>
                 <h3 className="text-2xl font-semibold mb-3">{steps[currentStep].title}</h3>
-                <p className="text-lg text-white/70">{steps[currentStep].description}</p>
+                <p className="text-lg text-muted-foreground">{steps[currentStep].description}</p>
               </div>
             </div>
           </motion.div>
         </AnimatePresence>
 
         <button
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glassmorphic flex items-center justify-center hover:bg-white/10 transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glassmorphic flex items-center justify-center text-foreground hover:bg-muted transition-colors"
           onClick={() => navigate(-1)}
         >
           ←
         </button>
         <button
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glassmorphic flex items-center justify-center hover:bg-white/10 transition-colors"
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glassmorphic flex items-center justify-center text-foreground hover:bg-muted transition-colors"
           onClick={() => navigate(1)}
         >
           →
@@ -141,9 +141,9 @@ export default function StepsCarousel() {
               setIsAutoPlaying(false);
             }}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              currentStep === index 
-                ? 'bg-gradient-to-r from-[#00A99D] to-[#42B0E8] w-8' 
-                : 'bg-white/30'
+              currentStep === index
+                ? 'bg-gradient-to-r from-[#00A99D] to-[#42B0E8] w-8'
+                : 'bg-muted-foreground/40'
             }`}
           />
         ))}

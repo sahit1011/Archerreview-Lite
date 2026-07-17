@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import { requireAuth } from '@/lib/api-auth';
 import { User, StudyPlan } from '@/models';
 import { 
   runAgent, 
@@ -30,11 +31,14 @@ import {
  */
 export async function GET(request: NextRequest) {
   try {
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const agentType = searchParams.get('type') as AgentType | null;
     const enabledOnly = searchParams.get('enabledOnly') === 'true';
-    const userId = searchParams.get('userId');
     const includeSchedule = searchParams.get('includeSchedule') === 'true';
     
     // Return specific agent if type is provided
@@ -51,20 +55,14 @@ export async function GET(request: NextRequest) {
         );
       }
       
-      // Include schedule information if requested
+      // Include schedule information if requested (scoped to the authenticated user)
       let scheduleEntries;
       if (includeSchedule) {
-        if (userId) {
-          scheduleEntries = getUserScheduledEntries(userId).filter(
-            entry => entry.agentType === agentType
-          );
-        } else {
-          scheduleEntries = getAllScheduledEntries().filter(
-            entry => entry.agentType === agentType
-          );
-        }
+        scheduleEntries = (await getUserScheduledEntries(userId)).filter(
+          entry => entry.agentType === agentType
+        );
       }
-      
+
       return NextResponse.json({
         success: true,
         agent,
@@ -75,16 +73,12 @@ export async function GET(request: NextRequest) {
     // Return all agents
     const agents = enabledOnly ? getEnabledAgents() : getAllAgents();
     
-    // Include schedule information if requested
+    // Include schedule information if requested (scoped to the authenticated user)
     let scheduleEntries;
     if (includeSchedule) {
-      if (userId) {
-        scheduleEntries = getUserScheduledEntries(userId);
-      } else {
-        scheduleEntries = getAllScheduledEntries();
-      }
+      scheduleEntries = await getUserScheduledEntries(userId);
     }
-    
+
     return NextResponse.json({
       success: true,
       agents,
@@ -111,38 +105,42 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to the database
     await dbConnect();
-    
+
     // Parse request body
     const body = await request.json();
-    
+
     // Validate required fields
-    if (!body.agentType || !body.userId) {
+    if (!body.agentType) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Missing required fields: agentType and userId' 
+        {
+          success: false,
+          message: 'Missing required field: agentType'
         },
         { status: 400 }
       );
     }
-    
+
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'User not found' 
+        {
+          success: false,
+          message: 'User not found'
         },
         { status: 404 }
       );
     }
-    
+
     // Check if user has a study plan (except for scheduler agent)
     if (body.agentType !== 'scheduler' && body.agentType !== 'sequence') {
-      const studyPlan = await StudyPlan.findOne({ user: body.userId });
+      const studyPlan = await StudyPlan.findOne({ user: userId });
       if (!studyPlan) {
         return NextResponse.json(
           { 
@@ -162,11 +160,11 @@ export async function POST(request: NextRequest) {
       const sequenceType = body.sequenceType || 'standard';
       
       if (sequenceType === 'standard') {
-        result = await runStandardSequence(body.userId, body.options);
+        result = await runStandardSequence(userId, body.options);
       } else if (sequenceType === 'comprehensive') {
-        result = await runComprehensiveSequence(body.userId, body.options);
+        result = await runComprehensiveSequence(userId, body.options);
       } else if (Array.isArray(body.agents)) {
-        result = await runAgentSequence(body.agents, body.userId, body.params, body.options);
+        result = await runAgentSequence(body.agents, userId, body.params, body.options);
       } else {
         return NextResponse.json(
           { 
@@ -178,7 +176,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Run a single agent
-      result = await runAgent(body.agentType, body.userId, body.params, body.options);
+      result = await runAgent(body.agentType, userId, body.params, body.options);
     }
     
     // Return success response

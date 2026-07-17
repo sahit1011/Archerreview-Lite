@@ -2,10 +2,54 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { SparklesIcon } from '@heroicons/react/24/outline';
 import ChatMessage, { ChatMessageProps } from './ChatMessage';
 import ChatInput from './ChatInput';
 import TypingIndicator from './TypingIndicator';
 import ChatSidebar from './ChatSidebar';
+import { useUser } from '@/context/UserContext';
+import { NotebookPen } from 'lucide-react';
+import { toast } from 'sonner';
+
+// Exam-specific empty-state content so a JEE student never sees Biology chips (and vice versa).
+const EXAM_TUTOR_COPY = {
+  NEET: {
+    intro:
+      "I'm your AI NEET tutor. Ask me anything about Physics, Chemistry, or Biology — concepts, practice problems, or study strategies.",
+    suggestions: [
+      "Explain Newton's laws of motion",
+      'How do I balance chemical equations?',
+      "What's the difference between mitosis and meiosis?",
+      'What are the key concepts of human physiology for NEET?',
+      'Explain the mechanism of photosynthesis',
+      'How do I remember inorganic chemistry reactions?',
+    ],
+  },
+  JEE: {
+    intro:
+      "I'm your AI JEE tutor. Ask me anything about Physics, Chemistry, or Mathematics — concepts, practice problems, or study strategies.",
+    suggestions: [
+      "Explain Newton's laws of motion",
+      'How do I balance chemical equations?',
+      'Help me solve integration problems',
+      'How do I solve projectile motion problems?',
+      'What are common mistakes in coordinate geometry?',
+      'Explain rotational dynamics with an example',
+    ],
+  },
+  DEFAULT: {
+    intro:
+      "I'm your AI NEET/JEE tutor. Ask me anything about Physics, Chemistry, Biology, or Mathematics — concepts, practice problems, or study strategies.",
+    suggestions: [
+      "Explain Newton's laws of motion",
+      'How do I balance chemical equations?',
+      'Help me solve integration problems',
+      "What's the difference between mitosis and meiosis?",
+      'How do I solve projectile motion problems?',
+      'What are common mistakes in coordinate geometry?',
+    ],
+  },
+} as const;
 
 interface Conversation {
   id: string;
@@ -24,6 +68,13 @@ export default function ChatInterface({
   initialPrompt?: string;
   conversationTitle?: string;
 }) {
+  const { user: authUser } = useUser();
+  const examCopy =
+    authUser?.examType === 'JEE'
+      ? EXAM_TUTOR_COPY.JEE
+      : authUser?.examType === 'NEET'
+        ? EXAM_TUTOR_COPY.NEET
+        : EXAM_TUTOR_COPY.DEFAULT;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -575,6 +626,38 @@ export default function ChatInterface({
   // Get active conversation
   const activeConversation = conversations.find(conv => conv.id === activeConversationId);
 
+  // "Save key points to My Notes": distill this conversation into revision bullets.
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const handleSaveToNotes = async () => {
+    if (!activeConversation || activeConversation.messages.length < 2) return;
+    setIsSavingNote(true);
+    try {
+      const res = await fetch('/api/notes/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: activeConversation.id,
+          title: activeConversation.title !== 'New Conversation' ? `${activeConversation.title} — notes` : undefined,
+          messages: activeConversation.messages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Saved to My Notes', {
+          description: 'Key points from this session are in your notebook.',
+          action: { label: 'Open notes', onClick: () => (window.location.href = '/notes') },
+        });
+      } else {
+        toast.error(data.message || 'Could not save notes.');
+      }
+    } catch (err) {
+      console.error('Error saving notes:', err);
+      toast.error('Could not save notes right now.');
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
 
 
   return (
@@ -596,7 +679,7 @@ export default function ChatInterface({
       <div className="flex-1 flex flex-col min-h-0 relative">
         {/* Chat Messages Container - Fixed height with proper scrolling */}
         <div className="flex-1 min-h-0 relative">
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <div className="min-h-full">
               {activeConversation && activeConversation.messages.length > 0 ? (
                 <div className="max-w-4xl mx-auto py-6 px-4 pb-24">
@@ -615,88 +698,26 @@ export default function ChatInterface({
                   </div>
                 </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 pb-24">
-                  <div className="max-w-4xl mx-auto">
-                    <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-8">
-                      Hello, {userId ? 'User' : 'Guest'}
+                <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+                  <div className="mx-auto w-full max-w-2xl">
+                    <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
+                      <SparklesIcon className="h-8 w-8 text-primary" />
+                    </div>
+                    <h1 className="font-display text-3xl font-bold sm:text-4xl">
+                      Hello, <span className="gradient-text">{authUser?.name?.split(' ')[0] || (userId ? 'Aspirant' : 'Guest')}</span>
                     </h1>
-                    <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
-                      I'm your AI NCLEX Tutor. Ask me anything about nursing concepts, practice questions, or study strategies!
-                    </p>
+                    <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{examCopy.intro}</p>
 
-                    <div className="max-w-3xl mx-auto mb-12">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                        {[
-                          {
-                            title: "Explain fluid and electrolyte balance",
-                            icon: (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                              </svg>
-                            )
-                          },
-                          {
-                            title: "What are priority nursing interventions?",
-                            icon: (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            )
-                          },
-                          {
-                            title: "Help me understand medication calculations",
-                            icon: (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                              </svg>
-                            )
-                          }
-                        ].map((suggestion, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleSendMessage(suggestion.title)}
-                            className="glassmorphic-card rounded-xl p-6 text-center transition-all transform hover:-translate-y-2 hover:scale-105 hover:bg-white/15 group"
-                          >
-                            <div className="p-4 rounded-full mb-4 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto w-fit group-hover:from-purple-500 group-hover:to-pink-500 transition-all">
-                              <div className="text-white">{suggestion.icon}</div>
-                            </div>
-                            <span className="text-sm font-medium text-white leading-tight">{suggestion.title}</span>
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="glassmorphic-card rounded-xl p-8 transform hover:-translate-y-2 transition-all hover:bg-white/15">
-                        <div className="flex items-center mb-6">
-                          <div className="mr-4 p-4 rounded-full bg-gradient-to-r from-teal-500 to-blue-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-semibold text-white">NCLEX Study Assistant</h3>
-                            <p className="text-gray-300 text-sm">Your AI-powered study companion</p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {[
-                            "Explain the nursing process",
-                            "What are the priority nursing interventions for a patient with heart failure?",
-                            "Help me understand delegation principles",
-                            "What's the difference between type 1 and type 2 diabetes?",
-                            "How do I calculate medication dosages?",
-                            "What are the signs and symptoms of electrolyte imbalances?"
-                          ].map((suggestion, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleSendMessage(suggestion)}
-                              className="glassmorphic rounded-lg p-4 text-left transition-all text-sm text-white hover:-translate-y-1 hover:bg-white/15 hover:scale-105"
-                            >
-                              {suggestion}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                    <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {examCopy.suggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSendMessage(suggestion)}
+                          className="rounded-xl border border-border bg-secondary/60 px-4 py-3 text-left text-sm text-foreground transition-all hover:border-primary/40 hover:bg-accent"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -706,8 +727,20 @@ export default function ChatInterface({
         </div>
 
         {/* Fixed Input Area at Bottom */}
-        <div className="flex-shrink-0 border-t border-white/10 bg-gray-900/80 backdrop-blur-md">
+        <div className="flex-shrink-0 border-t border-border bg-background/80 backdrop-blur-md">
           <div className="max-w-4xl mx-auto py-4 px-6">
+            {activeConversation && activeConversation.messages.length >= 2 && (
+              <div className="mb-2 flex justify-end">
+                <button
+                  onClick={handleSaveToNotes}
+                  disabled={isSavingNote}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                >
+                  <NotebookPen className="h-3.5 w-3.5" />
+                  {isSavingNote ? 'Saving…' : 'Save key points to My Notes'}
+                </button>
+              </div>
+            )}
             <ChatInput onSendMessage={handleSendMessage} isLoading={isTyping} />
           </div>
         </div>

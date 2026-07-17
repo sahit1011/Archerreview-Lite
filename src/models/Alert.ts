@@ -68,4 +68,4 @@ const AlertSchema: Schema = new Schema(
 );
 
 // Create and export the Alert model
-export default mongoose.models.Alert || mongoose.model<IAlert>('Alert', AlertSchema);
+export default (mongoose.models.Alert as mongoose.Model<IAlert>) || mongoose.model<IAlert>('Alert', AlertSchema);

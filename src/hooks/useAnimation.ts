@@ -24,10 +24,10 @@ export function useAnimateInView(options: AnimationOptions = {}) {
   } = options;
   
   const ref = useRef<HTMLElement>(null);
-  const isInView = useInView(ref, { 
-    once, 
+  const isInView = useInView(ref, {
+    once,
     amount: threshold,
-    margin: rootMargin
+    margin: rootMargin as any
   });
   
   const [shouldAnimate, setShouldAnimate] = useState(false);

@@ -1,27 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Task, StudyPlan, Topic } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
+import { parseBody, errorResponse, dateString, nonEmptyString, z } from '@/lib/validation';
+
+const createTaskSchema = z.object({
+  planId: nonEmptyString,
+  title: nonEmptyString,
+  type: nonEmptyString,
+  startTime: dateString,
+  endTime: dateString,
+  topicId: nonEmptyString,
+  description: z.string().optional(),
+  status: z.string().optional(),
+  contentId: z.string().optional(),
+  difficulty: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request; userId is token-derived and trusted.
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
-    // Parse request body
-    const body = await request.json();
+    // Validate request body
+    const parsed = await parseBody(request, createTaskSchema);
+    if (parsed.response) return parsed.response;
+    const body = parsed.data;
 
-    // Validate required fields
-    if (!body.planId || !body.title || !body.type || !body.startTime || !body.endTime || !body.topicId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required fields: planId, title, type, startTime, endTime, topicId'
-        },
-        { status: 400 }
-      );
-    }
-
-    // Check if study plan exists
+    // Check if study plan exists and belongs to the authenticated user
     const studyPlan = await StudyPlan.findById(body.planId);
     if (!studyPlan) {
       return NextResponse.json(
@@ -30,6 +41,17 @@ export async function POST(request: NextRequest) {
           message: 'Study plan not found'
         },
         { status: 404 }
+      );
+    }
+
+    // Ownership check: the plan must belong to the authenticated user
+    if (studyPlan.user.toString() !== userId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Forbidden'
+        },
+        { status: 403 }
       );
     }
 
@@ -77,26 +99,23 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating task:', error);
 
-    // Return error response
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Failed to create task',
-        error: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
+    // Return a generic error response (do not leak error.message to clients)
+    return errorResponse('Failed to create task', 500);
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate the request; userId is token-derived and trusted.
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
     // Get query params
     const planId = request.nextUrl.searchParams.get('planId');
-    const userId = request.nextUrl.searchParams.get('userId');
     const date = request.nextUrl.searchParams.get('date');
     const startDate = request.nextUrl.searchParams.get('startDate');
     const endDate = request.nextUrl.searchParams.get('endDate');
@@ -108,41 +127,39 @@ export async function GET(request: NextRequest) {
     // Build the query object
     let query: any = {};
 
-    // If userId is provided, find the user's study plan first
-    if (userId && userId !== 'undefined' && userId !== 'null') {
-      try {
-        // Find study plan for this user
-        const studyPlan = await StudyPlan.findOne({ user: userId });
-        if (studyPlan) {
-          query.plan = studyPlan._id;
-        } else {
-          // If no study plan found, return empty array
-          return NextResponse.json({
-            success: true,
-            tasks: []
-          });
-        }
-      } catch (error) {
-        console.error('Error finding study plan:', error);
-        // Return empty array on error
-        return NextResponse.json({
-          success: true,
-          tasks: []
-        });
-      }
-    }
-
-    // If planId is provided, use it directly
-    if (planId) {
-      query.plan = planId;
-    }
-
-    // If no plan identifier is available, return empty array
-    if (!query.plan) {
+    // Resolve the authenticated user's study plan and scope all tasks to it.
+    let userStudyPlan;
+    try {
+      userStudyPlan = await StudyPlan.findOne({ user: userId });
+    } catch (error) {
+      console.error('Error finding study plan:', error);
+      // Return empty array on error
       return NextResponse.json({
         success: true,
         tasks: []
       });
+    }
+
+    if (!userStudyPlan) {
+      // If no study plan found, return empty array
+      return NextResponse.json({
+        success: true,
+        tasks: []
+      });
+    }
+
+    // Always scope to the authenticated user's own plan.
+    query.plan = userStudyPlan._id;
+
+    // If a planId is supplied, it must match the user's own plan; otherwise deny.
+    if (planId && planId !== userStudyPlan._id.toString()) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Forbidden'
+        },
+        { status: 403 }
+      );
     }
 
     // Add task type filter if provided
@@ -189,14 +206,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching tasks:', error);
 
-    // Return error response
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Failed to fetch tasks',
-        error: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
+    // Return a generic error response (do not leak error.message to clients)
+    return errorResponse('Failed to fetch tasks', 500);
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Content, Topic } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
  * API endpoint for searching content and topics
@@ -9,9 +10,13 @@ import { Content, Topic } from '@/models';
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate: search over shared study content requires a valid session
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+
     // Connect to the database
     await dbConnect();
-    
+
     // Get query parameters
     const query = request.nextUrl.searchParams.get('q');
     const type = request.nextUrl.searchParams.get('type') || 'all';

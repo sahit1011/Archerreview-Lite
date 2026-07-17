@@ -59,4 +59,4 @@ const ContentSchema: Schema = new Schema(
 );
 
 // Create and export the Content model
-export default mongoose.models.Content || mongoose.model<IContent>('Content', ContentSchema);
+export default (mongoose.models.Content as mongoose.Model<IContent>) || mongoose.model<IContent>('Content', ContentSchema);

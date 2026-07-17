@@ -1,9 +1,8 @@
-import MainNav from '@/components/navigation/MainNav';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'AI Tutor - ArcherReview',
-  description: 'Get personalized help with your NCLEX preparation',
+  title: 'AI Tutor - StudyArc',
+  description: 'Get personalized help with your NEET & JEE preparation',
 };
 
 export default function TutorLayout({
@@ -12,5 +11,5 @@ export default function TutorLayout({
   children: React.ReactNode;
 }) 
 {
-  return <div className="min-h-screen bg-gray-900">{children}</div>;
+  return <div className="min-h-screen bg-background">{children}</div>;
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import { requireAuth } from '@/lib/api-auth';
 import { User, StudyPlan, Task, Alert, Topic } from '@/models';
 import { findOptimalReviewTime } from '@/services/schedulerUtils';
 import { trackRemediationEffectiveness, RemediationActionType } from '@/services/remediationAgent';
@@ -10,6 +11,10 @@ import { trackRemediationEffectiveness, RemediationActionType } from '@/services
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = requireAuth(req);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to the database
     await dbConnect();
 
@@ -17,18 +22,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // Validate required fields
-    if (!body.userId || !body.topicId) {
+    if (!body.topicId) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Missing required fields: userId and topicId'
+          message: 'Missing required field: topicId'
         },
         { status: 400 }
       );
     }
 
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
         {
@@ -52,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get user's study plan
-    const studyPlan = await StudyPlan.findOne({ user: body.userId });
+    const studyPlan = await StudyPlan.findOne({ user: userId });
     if (!studyPlan) {
       return NextResponse.json(
         {
@@ -102,7 +107,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Determine the best time for the review session
-    const scheduledTime = await findOptimalReviewTime(body.userId, studyPlan._id.toString());
+    const scheduledTime = await findOptimalReviewTime(userId, studyPlan._id.toString());
 
     // Create the review task
     const task = new Task({
@@ -128,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     // Create an alert for the user
     const alert = new Alert({
-      user: body.userId,
+      user: userId,
       plan: studyPlan._id,
       type: 'REMEDIATION',
       severity: 'MEDIUM',
@@ -159,7 +164,7 @@ export async function POST(req: NextRequest) {
 
     // Track the effectiveness of this action
     await trackRemediationEffectiveness(
-      body.userId,
+      userId,
       RemediationActionType.SCHEDULE_REVIEW,
       body.topicId,
       {

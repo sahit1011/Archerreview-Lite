@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { SparklesIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon, UserIcon } from '@heroicons/react/24/outline';
 
 export interface ChatMessageProps {
   id: string;
@@ -44,13 +44,13 @@ export default function ChatMessage({ content, role, timestamp }: ChatMessagePro
         const code = match?.[2] || '';
 
         return (
-          <div key={index} className="my-2 rounded-md overflow-hidden">
+          <div key={index} className="my-2 rounded-lg overflow-hidden border border-border">
             {language && (
-              <div className="bg-gray-800 text-gray-300 text-xs px-4 py-1">
+              <div className="bg-muted text-muted-foreground text-xs px-4 py-1 border-b border-border">
                 {language}
               </div>
             )}
-            <pre className="bg-gray-900 p-4 overflow-x-auto text-gray-100 text-sm">
+            <pre className="bg-background p-4 overflow-x-auto text-foreground text-sm">
               <code>{code}</code>
             </pre>
           </div>
@@ -71,15 +71,24 @@ export default function ChatMessage({ content, role, timestamp }: ChatMessagePro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`mb-6 last:mb-2 ${isUser ? 'flex justify-end' : 'flex justify-start'}`}
+      className={`mb-6 last:mb-2 flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
     >
-      <div className={`max-w-[80%] ${isUser ? 'order-2' : 'order-1'}`}>
+      {/* Avatar */}
+      <div
+        className={`flex-shrink-0 h-9 w-9 rounded-xl flex items-center justify-center shadow-sm ${
+          isUser ? 'bg-secondary text-muted-foreground' : 'bg-primary/15 text-primary'
+        }`}
+      >
+        {isUser ? <UserIcon className="h-5 w-5" /> : <SparklesIcon className="h-5 w-5" />}
+      </div>
+
+      <div className="max-w-[80%]">
         {/* Message header */}
         <div className={`flex items-center mb-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
-          <div className="text-xs text-gray-400 font-medium">
+          <div className="text-xs text-muted-foreground font-medium">
             {isUser ? 'You' : 'AI Tutor'}
           </div>
-          <div className="text-xs text-gray-500 ml-2">
+          <div className="text-xs text-muted-foreground/70 ml-2">
             {formattedTime}
           </div>
         </div>
@@ -87,10 +96,10 @@ export default function ChatMessage({ content, role, timestamp }: ChatMessagePro
         {/* Message content */}
         <div className={`relative group ${isUser ? 'ml-auto' : 'mr-auto'}`}>
           <div
-            className={`px-4 py-3 rounded-2xl shadow-lg backdrop-blur-sm border ${
+            className={`px-4 py-3 rounded-2xl shadow-sm border ${
               isUser
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-indigo-400/30 rounded-br-md'
-                : 'bg-white/10 text-white border-white/20 rounded-bl-md'
+                ? 'bg-primary text-primary-foreground border-primary/40 rounded-tr-md'
+                : 'bg-card text-foreground border-border rounded-tl-md'
             }`}
           >
             <div className={`${content.length > 500 && !isExpanded ? 'line-clamp-6' : ''} text-sm leading-relaxed`}>
@@ -101,14 +110,14 @@ export default function ChatMessage({ content, role, timestamp }: ChatMessagePro
               <div className="mt-2 flex items-center space-x-2">
                 <button
                   onClick={() => setShowSummary(!showSummary)}
-                  className="text-xs font-medium text-blue-300 hover:text-blue-200 transition-colors"
+                  className="text-xs font-medium text-primary hover:text-foreground transition-colors"
                 >
                   {showSummary ? 'Show full' : 'Show summary'}
                 </button>
-                <span className="text-gray-500">•</span>
+                <span className="text-muted-foreground/50">•</span>
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-xs font-medium text-gray-300 hover:text-white transition-colors"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {isExpanded ? 'Show less' : 'Show more'}
                 </button>
@@ -118,7 +127,7 @@ export default function ChatMessage({ content, role, timestamp }: ChatMessagePro
             {content.length > 500 && isUser && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="mt-2 text-xs font-medium text-indigo-200 hover:text-white transition-colors"
+                className="mt-2 text-xs font-medium text-primary-foreground/70 hover:text-primary-foreground transition-colors"
               >
                 {isExpanded ? 'Show less' : 'Show more'}
               </button>
@@ -129,7 +138,7 @@ export default function ChatMessage({ content, role, timestamp }: ChatMessagePro
           {!isUser && (
             <div className="flex items-center space-x-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all"
                 title="Copy message"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,7 +146,7 @@ export default function ChatMessage({ content, role, timestamp }: ChatMessagePro
                 </svg>
               </button>
               <button
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all"
                 title="Regenerate response"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

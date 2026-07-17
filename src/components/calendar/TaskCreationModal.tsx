@@ -202,7 +202,7 @@ export default function TaskCreationModal({
           onClick={handleOutsideClick}
         >
           <motion.div
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
+            className="rounded-2xl border border-border bg-card backdrop-blur-sm shadow-2xl max-w-md w-full mx-4 overflow-hidden"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -211,10 +211,10 @@ export default function TaskCreationModal({
           >
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Create New Task</h2>
+                <h2 className="text-xl font-bold text-foreground">Create New Task</h2>
                 <button
                   onClick={onClose}
-                  className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                  className="text-muted-foreground hover:text-foreground focus:outline-none transition-colors"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -223,7 +223,7 @@ export default function TaskCreationModal({
               </div>
 
               {error && (
-                <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">
+                <div className="mb-4 p-3 bg-red-500/15 text-red-300 border border-red-500/30 rounded-lg">
                   {error}
                 </div>
               )}
@@ -231,7 +231,7 @@ export default function TaskCreationModal({
               <form onSubmit={handleSubmit}>
                 {/* Title */}
                 <div className="mb-4">
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="title" className="block text-sm font-medium text-muted-foreground mb-1">
                     Title*
                   </label>
                   <input
@@ -239,19 +239,19 @@ export default function TaskCreationModal({
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className={`w-full px-3 py-2 border ${
-                      formErrors.title ? 'border-red-500' : 'border-gray-300'
-                    } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                    className={`w-full px-3 py-2 bg-background text-foreground placeholder-muted-foreground border ${
+                      formErrors.title ? 'border-red-500/50' : 'border-input'
+                    } rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring`}
                     placeholder="Task title"
                   />
                   {formErrors.title && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.title}</p>
+                    <p className="mt-1 text-sm text-red-400">{formErrors.title}</p>
                   )}
                 </div>
 
                 {/* Description */}
                 <div className="mb-4">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="description" className="block text-sm font-medium text-muted-foreground mb-1">
                     Description*
                   </label>
                   <textarea
@@ -259,28 +259,28 @@ export default function TaskCreationModal({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
-                    className={`w-full px-3 py-2 border ${
-                      formErrors.description ? 'border-red-500' : 'border-gray-300'
-                    } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                    className={`w-full px-3 py-2 bg-background text-foreground placeholder-muted-foreground border ${
+                      formErrors.description ? 'border-red-500/50' : 'border-input'
+                    } rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring`}
                     placeholder="Task description"
                   ></textarea>
                   {formErrors.description && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.description}</p>
+                    <p className="mt-1 text-sm text-red-400">{formErrors.description}</p>
                   )}
                 </div>
 
                 {/* Task Type */}
                 <div className="mb-4">
-                  <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="type" className="block text-sm font-medium text-muted-foreground mb-1">
                     Task Type*
                   </label>
                   <select
                     id="type"
                     value={type}
                     onChange={(e) => setType(e.target.value)}
-                    className={`w-full px-3 py-2 border ${
-                      formErrors.type ? 'border-red-500' : 'border-gray-300'
-                    } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                    className={`w-full px-3 py-2 bg-background text-foreground border ${
+                      formErrors.type ? 'border-red-500/50' : 'border-input'
+                    } rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring`}
                   >
                     <option value="QUIZ">Quiz</option>
                     <option value="VIDEO">Video</option>
@@ -289,19 +289,19 @@ export default function TaskCreationModal({
                     <option value="REVIEW">Review</option>
                   </select>
                   {formErrors.type && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.type}</p>
+                    <p className="mt-1 text-sm text-red-400">{formErrors.type}</p>
                   )}
                 </div>
 
                 {/* Topic */}
                 <div className="mb-4">
-                  <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="topic" className="block text-sm font-medium text-muted-foreground mb-1">
                     Topic*
                   </label>
                   {topicsLoading ? (
                     <div className="flex items-center space-x-2">
-                      <div className="w-5 h-5 border-t-2 border-indigo-600 border-solid rounded-full animate-spin"></div>
-                      <span className="text-sm text-gray-500">Loading topics...</span>
+                      <div className="w-5 h-5 border-t-2 border-primary border-solid rounded-full animate-spin"></div>
+                      <span className="text-sm text-muted-foreground">Loading topics...</span>
                     </div>
                   ) : (
                     <>
@@ -309,9 +309,9 @@ export default function TaskCreationModal({
                         id="topic"
                         value={topicId}
                         onChange={(e) => setTopicId(e.target.value)}
-                        className={`w-full px-3 py-2 border ${
-                          formErrors.topicId ? 'border-red-500' : 'border-gray-300'
-                        } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                        className={`w-full px-3 py-2 bg-background text-foreground border ${
+                          formErrors.topicId ? 'border-red-500/50' : 'border-input'
+                        } rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring`}
                       >
                         {topics.map((topic) => (
                           <option key={topic._id} value={topic._id}>
@@ -320,7 +320,7 @@ export default function TaskCreationModal({
                         ))}
                       </select>
                       {formErrors.topicId && (
-                        <p className="mt-1 text-sm text-red-600">{formErrors.topicId}</p>
+                        <p className="mt-1 text-sm text-red-400">{formErrors.topicId}</p>
                       )}
                     </>
                   )}
@@ -329,7 +329,7 @@ export default function TaskCreationModal({
                 {/* Time Selection */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="startTime" className="block text-sm font-medium text-muted-foreground mb-1">
                       Start Time*
                     </label>
                     <input
@@ -337,24 +337,24 @@ export default function TaskCreationModal({
                       id="startTime"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className={`w-full px-3 py-2 border ${
-                        formErrors.startTime ? 'border-red-500' : 'border-gray-300'
-                      } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      className={`w-full px-3 py-2 bg-background text-foreground border ${
+                        formErrors.startTime ? 'border-red-500/50' : 'border-input'
+                      } rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring`}
                     />
                     {formErrors.startTime && (
-                      <p className="mt-1 text-sm text-red-600">{formErrors.startTime}</p>
+                      <p className="mt-1 text-sm text-red-400">{formErrors.startTime}</p>
                     )}
                   </div>
 
                   <div>
-                    <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="duration" className="block text-sm font-medium text-muted-foreground mb-1">
                       Duration
                     </label>
                     <select
                       id="duration"
                       value={duration}
                       onChange={handleDurationChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 bg-background text-foreground border border-input rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring"
                     >
                       <option value="15">15 minutes</option>
                       <option value="30">30 minutes</option>
@@ -368,7 +368,7 @@ export default function TaskCreationModal({
 
                 {/* End Time (Read-only) */}
                 <div className="mb-4">
-                  <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="endTime" className="block text-sm font-medium text-muted-foreground mb-1">
                     End Time
                   </label>
                   <input
@@ -376,16 +376,16 @@ export default function TaskCreationModal({
                     id="endTime"
                     value={endTime}
                     readOnly
-                    className="w-full px-3 py-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm focus:outline-none"
+                    className="w-full px-3 py-2 border border-input bg-secondary text-muted-foreground rounded-lg shadow-sm focus:outline-none"
                   />
                   {formErrors.endTime && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.endTime}</p>
+                    <p className="mt-1 text-sm text-red-400">{formErrors.endTime}</p>
                   )}
                 </div>
 
                 {/* Difficulty */}
                 <div className="mb-6">
-                  <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="difficulty" className="block text-sm font-medium text-muted-foreground mb-1">
                     Difficulty
                   </label>
                   <div className="flex space-x-4">
@@ -396,9 +396,9 @@ export default function TaskCreationModal({
                         value="EASY"
                         checked={difficulty === 'EASY'}
                         onChange={() => setDifficulty('EASY')}
-                        className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                        className="h-4 w-4 accent-[var(--primary)] bg-background border-input focus:ring-ring"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Easy</span>
+                      <span className="ml-2 text-sm text-foreground">Easy</span>
                     </label>
                     <label className="inline-flex items-center">
                       <input
@@ -407,9 +407,9 @@ export default function TaskCreationModal({
                         value="MEDIUM"
                         checked={difficulty === 'MEDIUM'}
                         onChange={() => setDifficulty('MEDIUM')}
-                        className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                        className="h-4 w-4 accent-[var(--primary)] bg-background border-input focus:ring-ring"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Medium</span>
+                      <span className="ml-2 text-sm text-foreground">Medium</span>
                     </label>
                     <label className="inline-flex items-center">
                       <input
@@ -418,9 +418,9 @@ export default function TaskCreationModal({
                         value="HARD"
                         checked={difficulty === 'HARD'}
                         onChange={() => setDifficulty('HARD')}
-                        className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                        className="h-4 w-4 accent-[var(--primary)] bg-background border-input focus:ring-ring"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Hard</span>
+                      <span className="ml-2 text-sm text-foreground">Hard</span>
                     </label>
                   </div>
                 </div>
@@ -430,18 +430,18 @@ export default function TaskCreationModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="px-4 py-2 border border-border rounded-lg shadow-sm text-sm font-medium text-foreground bg-secondary hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-ring transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 rounded-lg shadow-sm text-sm font-semibold text-primary-foreground bg-primary hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     {loading ? (
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-t-2 border-white border-solid rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-t-2 border-primary-foreground border-solid rounded-full animate-spin"></div>
                         <span>Creating...</span>
                       </div>
                     ) : (

@@ -1,46 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { Conversation, User } from '@/models';
+import { Conversation } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
- * API endpoint for getting all conversations for a user
- * GET /api/conversations?userId=<userId>
+ * API endpoint for getting all conversations for the authenticated user
+ * GET /api/conversations
  */
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
-    // Get userId from query parameters
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    // If userId is provided, get conversations for that user
-    if (userId) {
-      // Check if user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: 'User not found'
-          },
-          { status: 404 }
-        );
-      }
-
-      // Get conversations for user
-      const conversations = await Conversation.find({ user: userId })
-        .sort({ timestamp: -1 });
-
-      return NextResponse.json({
-        success: true,
-        conversations
-      });
-    }
-
-    // If no userId is provided, return guest conversations (no user field)
-    const conversations = await Conversation.find({ user: { $exists: false } })
+    // Get conversations for the authenticated user only
+    const conversations = await Conversation.find({ user: userId })
       .sort({ timestamp: -1 });
 
     return NextResponse.json({
@@ -68,6 +46,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
@@ -88,24 +71,10 @@ export async function POST(request: NextRequest) {
     // Set default values for optional fields
     const timestamp = body.timestamp ? new Date(body.timestamp) : new Date();
 
-    // Check if user exists if userId is provided
-    if (body.userId) {
-      const user = await User.findById(body.userId);
-      if (!user) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: 'User not found'
-          },
-          { status: 404 }
-        );
-      }
-    }
-
-    // Create conversation object
+    // Create conversation object (owned by the authenticated user)
     const conversationData = {
       id: body.id,
-      user: body.userId || undefined,
+      user: userId,
       title: body.title,
       lastMessage: body.lastMessage || '',
       timestamp: timestamp,

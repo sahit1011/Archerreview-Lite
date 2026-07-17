@@ -1,28 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { StudyPlan, Task } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
-    // Parse request body
-    const body = await request.json();
-
-    // Validate required fields
-    if (!body.userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required field: userId'
-        },
-        { status: 400 }
-      );
-    }
-
     // Find the user's study plan
-    const studyPlan = await StudyPlan.findOne({ user: body.userId });
+    const studyPlan = await StudyPlan.findOne({ user: userId });
 
     if (!studyPlan) {
       return NextResponse.json(

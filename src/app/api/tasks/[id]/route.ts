@@ -1,17 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { Task } from '@/models';
+import { Task, StudyPlan } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
+
+/**
+ * Verify the given task belongs to a study plan owned by userId.
+ * Returns true when the task's plan is owned by the authenticated user.
+ */
+async function taskBelongsToUser(planId: any, userId: string): Promise<boolean> {
+  if (!planId) return false;
+  const studyPlan = await StudyPlan.findById(planId);
+  if (!studyPlan) return false;
+  return studyPlan.user.toString() === userId;
+}
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate the request; userId is token-derived and trusted.
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
     // Access the id directly without destructuring
-    const taskId = context.params.id;
+    const taskId = (await context.params).id;
 
     // Find task by ID
     const task = await Task.findById(taskId)
@@ -26,6 +43,17 @@ export async function GET(
           message: 'Task not found'
         },
         { status: 404 }
+      );
+    }
+
+    // Ownership check: the task's plan must belong to the authenticated user
+    if (!(await taskBelongsToUser(task.plan, userId))) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Forbidden'
+        },
+        { status: 403 }
       );
     }
 
@@ -51,9 +79,14 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate the request; userId is token-derived and trusted.
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
@@ -61,7 +94,7 @@ export async function PUT(
     const body = await request.json();
 
     // Access the id directly without destructuring
-    const taskId = context.params.id;
+    const taskId = (await context.params).id;
 
     // Find task by ID
     const task = await Task.findById(taskId);
@@ -74,6 +107,17 @@ export async function PUT(
           message: 'Task not found'
         },
         { status: 404 }
+      );
+    }
+
+    // Ownership check: the task's plan must belong to the authenticated user
+    if (!(await taskBelongsToUser(task.plan, userId))) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Forbidden'
+        },
+        { status: 403 }
       );
     }
 
@@ -154,17 +198,22 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate the request; userId is token-derived and trusted.
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
     // Access the id directly without destructuring
-    const taskId = context.params.id;
+    const taskId = (await context.params).id;
 
-    // Find and delete task
-    const task = await Task.findByIdAndDelete(taskId);
+    // Find task by ID first so we can verify ownership before deleting
+    const task = await Task.findById(taskId);
 
     // Check if task exists
     if (!task) {
@@ -176,6 +225,20 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Ownership check: the task's plan must belong to the authenticated user
+    if (!(await taskBelongsToUser(task.plan, userId))) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Forbidden'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Delete the task now that ownership is confirmed
+    await Task.findByIdAndDelete(taskId);
 
     // Return success response
     return NextResponse.json({

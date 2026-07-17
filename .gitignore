@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-prod/
 /out/
 
 # production
@@ -48,3 +49,6 @@ next-env.d.ts
 
 # Large binary files
 cloudflared.deb
+
+# Local persistent dev database
+.mongodb-data/

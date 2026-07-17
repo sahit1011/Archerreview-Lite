@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Conversation } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
  * API endpoint for getting a specific conversation
@@ -8,9 +9,14 @@ import { Conversation } from '@/models';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
@@ -22,6 +28,17 @@ export async function GET(
 
     // Check if conversation exists
     if (!conversation) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Conversation not found'
+        },
+        { status: 404 }
+      );
+    }
+
+    // Ownership check: the conversation must belong to the authenticated user
+    if (!conversation.user || conversation.user.toString() !== userId) {
       return NextResponse.json(
         {
           success: false,
@@ -57,9 +74,14 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
@@ -74,6 +96,17 @@ export async function PUT(
 
     // Check if conversation exists
     if (!conversation) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Conversation not found'
+        },
+        { status: 404 }
+      );
+    }
+
+    // Ownership check: the conversation must belong to the authenticated user
+    if (!conversation.user || conversation.user.toString() !== userId) {
       return NextResponse.json(
         {
           success: false,
@@ -119,9 +152,14 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
@@ -133,6 +171,17 @@ export async function DELETE(
 
     // Check if conversation exists
     if (!conversation) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Conversation not found'
+        },
+        { status: 404 }
+      );
+    }
+
+    // Ownership check: the conversation must belong to the authenticated user
+    if (!conversation.user || conversation.user.toString() !== userId) {
       return NextResponse.json(
         {
           success: false,

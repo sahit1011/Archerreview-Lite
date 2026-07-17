@@ -1,44 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { Alert, User } from '@/models';
+import { Alert } from '@/models';
 import { getUnresolvedAlerts, resolveAlert } from '@/services/monitorAgent';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
  * API endpoint for getting alerts
- * GET /api/alerts?userId=123
+ * GET /api/alerts
  */
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
-    
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
-    
-    // Validate required fields
-    if (!userId) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Missing required query parameter: userId' 
-        },
-        { status: 400 }
-      );
-    }
-    
-    // Check if user exists
-    const user = await User.findById(userId);
-    if (!user) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'User not found' 
-        },
-        { status: 404 }
-      );
-    }
-    
-    // Get unresolved alerts
+
+    // Get unresolved alerts for the authenticated user
     const alerts = await getUnresolvedAlerts(userId);
     
     // Return success response
@@ -67,35 +47,51 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
-    
+
     // Parse request body
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.alertId) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Missing required field: alertId' 
+        {
+          success: false,
+          message: 'Missing required field: alertId'
         },
         { status: 400 }
       );
     }
-    
+
     // Check if alert exists
     const alert = await Alert.findById(body.alertId);
     if (!alert) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Alert not found' 
+        {
+          success: false,
+          message: 'Alert not found'
         },
         { status: 404 }
       );
     }
-    
+
+    // Ownership check: the alert must belong to the authenticated user
+    if (!alert.user || alert.user.toString() !== userId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Alert not found'
+        },
+        { status: 404 }
+      );
+    }
+
     // Resolve alert
     const updatedAlert = await resolveAlert(body.alertId);
     

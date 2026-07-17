@@ -9,10 +9,13 @@ import WeeklySchedulePreview from '@/components/plan/WeeklySchedulePreview';
 import FocusAreas, { TopicPriority } from '@/components/plan/FocusAreas';
 import { useOnboarding } from '@/context/OnboardingContext';
 import OnboardingProgressBar from '@/components/onboarding/OnboardingProgressBar';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, ArrowRight, ListChecks, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function PreviewPage() {
   const router = useRouter();
   const {
+    examType,
     examDate,
     availableDays,
     studyHoursPerDay,
@@ -186,42 +189,45 @@ export default function PreviewPage() {
     return weeks;
   };
 
-  // Get topics for a specific week based on focus areas
+  // Preview-only sample weeks, matched to the chosen exam's subjects.
+  // The real schedule is generated server-side after onboarding completes.
   const getTopicsForWeek = (weekNumber: number) => {
-    // This is a simplified version - in a real app, this would be more sophisticated
-    switch (weekNumber) {
-      case 1:
-        return 'Fundamentals of Nursing, Health Assessment';
-      case 2:
-        return 'Pharmacology Basics, Medication Administration';
-      case 3:
-        return 'Medical-Surgical Nursing: Cardiovascular, Respiratory';
-      default:
-        return 'General NCLEX Review';
-    }
+    const weeksByExam: Record<'NEET' | 'JEE', string[]> = {
+      NEET: [
+        'Physics: Kinematics & Laws of Motion, Biology: Cell Structure',
+        'Chemistry: Atomic Structure, Biology: Human Physiology',
+        'Biology: Genetics & Evolution, Physics: Current Electricity',
+      ],
+      JEE: [
+        'Physics: Kinematics & Laws of Motion, Mathematics: Quadratics',
+        'Chemistry: Atomic Structure, Physics: Work, Energy & Power',
+        'Mathematics: Calculus, Chemistry: Equilibrium & Kinetics',
+      ],
+    };
+    const weeks = weeksByExam[examType === 'JEE' ? 'JEE' : 'NEET'];
+    return weeks[weekNumber - 1] || `General ${examType || 'NEET/JEE'} Review`;
   };
 
   return (
     <OnboardingLayout>
       <motion.div
-        className="text-center mb-8"
+        className="text-center mb-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h1 className="text-5xl font-bold gradient-text mb-6">
-          Final Step: Review Your Study Plan
+        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-3">
+          Review your study plan
         </h1>
-        <p className="text-xl text-white/80 max-w-2xl mx-auto mb-8 glassmorphic p-4 rounded-xl backdrop-blur-xl">
-          Based on your inputs, we've created a personalized study plan to help you prepare for your NCLEX exam.
+        <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
+          Based on your inputs, we&apos;ve built a personalized plan to help you prepare for your {examType || 'NEET / JEE'} exam. Take a look, then start studying.
         </p>
-        
-        <OnboardingProgressBar currentStep="preview" />
 
+        <OnboardingProgressBar currentStep="preview" />
       </motion.div>
 
       <motion.div
-        className="max-w-4xl mx-auto glassmorphic p-8 rounded-xl"
+        className="max-w-4xl mx-auto rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-lg shadow-primary/5"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
@@ -251,48 +257,46 @@ export default function PreviewPage() {
             onUpdatePriorities={setCustomizedTopics}
           />
 
-          {/* Weekly Breakdown */}
-          <div>
-            <h2 className="text-2xl font-semibold text-white/90 mb-4 flex items-center gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-              <span>Weekly Breakdown</span>
-            </h2>
-            <div className="space-y-4">
-              {getWeeklyBreakdown().map((week, index) => (
-                <motion.div
-                  key={week.weekNumber}
-                  className="border border-white/10 bg-white/5 rounded-lg p-4 shadow-lg hover:bg-white/10 transition-all duration-300"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + (index * 0.1) }}
-                  whileHover={{ y: -3, scale: 1.01 }}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium text-[#00A99D]">Week {week.weekNumber}</h3>
-                    <span className="text-sm text-white/70">{week.dateRange}</span>
-                  </div>
-                  <div className="text-white/90">{week.topics}</div>
-                </motion.div>
-              ))}
+          {/* Weekly Breakdown — only once plan data exists */}
+          {getWeeklyBreakdown().length > 0 && (
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-3">
+                <ListChecks className="h-6 w-6 text-primary" />
+                <span>Weekly Breakdown</span>
+              </h2>
+              <div className="space-y-3">
+                {getWeeklyBreakdown().map((week, index) => (
+                  <motion.div
+                    key={week.weekNumber}
+                    className="rounded-xl border border-border bg-secondary/60 p-4 transition-all duration-300 hover:bg-secondary"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + (index * 0.1) }}
+                    whileHover={{ y: -3 }}
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-semibold text-primary">Week {week.weekNumber}</h3>
+                      <span className="text-sm text-muted-foreground">{week.dateRange}</span>
+                    </div>
+                    <div className="text-foreground">{week.topics}</div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <motion.div
-            className="bg-white/5 p-4 rounded-lg border border-white/10 shadow-lg"
+            className="rounded-xl border border-primary/20 bg-primary/5 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
           >
-            <div className="flex items-start">
-              <svg className="h-5 w-5 text-[#00A99D] mr-3 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-              </svg>
+            <div className="flex items-start gap-3">
+              <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div>
-                <h3 className="font-medium text-[#00A99D]">This plan will adapt to your progress</h3>
-                <p className="text-sm text-white/80 mt-1">
-                  As you complete tasks and quizzes, our AI will adjust your plan to focus on areas where you need more practice.
+                <h3 className="font-semibold text-foreground">This plan adapts to your progress</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  As you complete tasks and quizzes, our AI adjusts your plan to focus on the topics where you need more practice.
                 </p>
               </div>
             </div>
@@ -302,48 +306,50 @@ export default function PreviewPage() {
 
       {error && (
         <motion.div
-          className="bg-red-900/20 p-4 rounded-lg border border-red-900/30 my-6 shadow-lg"
+          className="max-w-4xl mx-auto flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 my-6 text-sm text-destructive"
+          role="alert"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <div className="flex items-start">
-            <svg className="h-5 w-5 text-red-400 mr-3 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <div>
-              <h3 className="font-medium text-red-400">Error</h3>
-              <p className="text-sm text-white/80 mt-1">{error}</p>
-            </div>
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <h3 className="font-semibold">Something went wrong</h3>
+            <p className="mt-1">{error}</p>
           </div>
         </motion.div>
       )}
 
-      <div className="flex justify-between items-center mt-8 max-w-4xl mx-auto">
-        <button
+      <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-8 max-w-4xl mx-auto">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
           onClick={goToPreviousStep}
-          className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 font-medium transition-all duration-200 flex items-center gap-2 group"
           disabled={isLoading}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+          <ArrowLeft className="h-4 w-4" />
           Back
-        </button>
-        <button
+        </Button>
+        <Button
+          type="button"
+          variant="brand"
+          size="lg"
           onClick={handleStartPlan}
-          className={`px-8 py-3 rounded-xl bg-gradient-to-r from-[#00A99D] to-[#42B0E8] text-white font-medium transform hover:translate-y-[-1px] hover:shadow-lg transition-all duration-200 flex items-center gap-2 ${
-            isLoading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
           disabled={isLoading}
+          className="shine"
         >
-          {isLoading && (
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Generating plan…
+            </>
+          ) : (
+            <>
+              Complete onboarding &amp; start my plan
+              <ArrowRight className="h-4 w-4" />
+            </>
           )}
-          {isLoading ? 'Generating Plan...' : 'Complete Onboarding & Start My Plan'}
-        </button>
+        </Button>
       </div>
     </OnboardingLayout>
   );

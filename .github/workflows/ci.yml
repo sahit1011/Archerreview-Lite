@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      # Build with placeholder env so the production MONGODB_URI guard doesn't trip
+      # in CI (no real DB needed — this validates the build compiles & type-checks).
+      - run: npm run build
+        env:
+          NODE_ENV: production
+          MONGODB_URI: mongodb+srv://ci:ci@ci.example.mongodb.net/studyarc
+          JWT_SECRET: ci-only-build-secret-not-used-at-runtime-000000
+          CRON_SECRET: ci-only-cron-secret

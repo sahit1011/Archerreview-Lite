@@ -1,45 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { DiagnosticResult, User, Topic } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
+import { parseBody, errorResponse, z } from '@/lib/validation';
+
+const createDiagnosticSchema = z.object({
+  completed: z.boolean().optional(),
+  skipped: z.boolean().optional(),
+  score: z.number().optional(),
+  categoryScores: z.array(z.any()).optional(),
+  topicScores: z.array(z.any()).optional(),
+  answers: z.array(z.any()).optional(),
+  weakAreas: z.array(z.any()).optional(),
+  recommendedFocus: z.array(z.any()).optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
-    
-    // Parse request body
-    const body = await request.json();
-    
-    // Validate required fields
-    if (!body.userId) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Missing required field: userId' 
-        },
-        { status: 400 }
-      );
-    }
-    
+
+    // Validate request body
+    const parsed = await parseBody(request, createDiagnosticSchema);
+    if (parsed.response) return parsed.response;
+    const body = parsed.data;
+
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'User not found' 
+        {
+          success: false,
+          message: 'User not found'
         },
         { status: 404 }
       );
     }
-    
+
     // Create diagnostic result
     const diagnosticResult = new DiagnosticResult({
-      user: body.userId,
+      user: userId,
       completed: body.completed || false,
       skipped: body.skipped || false,
       score: body.score,
       categoryScores: body.categoryScores || [],
+      topicScores: body.topicScores || [],
       answers: body.answers || [],
       weakAreas: body.weakAreas || [],
       recommendedFocus: body.recommendedFocus || []
@@ -56,38 +66,22 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error saving diagnostic result:', error);
-    
-    // Return error response
-    return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Failed to save diagnostic result',
-        error: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
+
+    // Return a generic error response (do not leak error.message to clients)
+    return errorResponse('Failed to save diagnostic result', 500);
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
-    
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
-    
-    // Validate required fields
-    if (!userId) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Missing required query parameter: userId' 
-        },
-        { status: 400 }
-      );
-    }
-    
+
     // Check if user exists
     const user = await User.findById(userId);
     if (!user) {
@@ -120,15 +114,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching diagnostic result:', error);
-    
-    // Return error response
-    return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Failed to fetch diagnostic result',
-        error: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
+
+    // Return a generic error response (do not leak error.message to clients)
+    return errorResponse('Failed to fetch diagnostic result', 500);
   }
 }

@@ -32,7 +32,7 @@ export default function AnimatedList({
   
   return (
     <Container
-      ref={containerRef as React.RefObject<HTMLElement>}
+      ref={containerRef as any}
       className={className}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}

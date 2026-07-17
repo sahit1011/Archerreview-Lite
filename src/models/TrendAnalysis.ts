@@ -113,5 +113,5 @@ const TrendAnalysisSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.TrendAnalysis ||
+export default (mongoose.models.TrendAnalysis as mongoose.Model<ITrendAnalysis>) ||
   mongoose.model<ITrendAnalysis>('TrendAnalysis', TrendAnalysisSchema);

@@ -19,8 +19,8 @@ const AnimatedProgressCircle: React.FC<AnimatedProgressCircleProps> = ({
   percentage,
   size = 144,
   strokeWidth = 8,
-  color = '#6366F1',
-  backgroundColor = '#E5E7EB',
+  color = 'var(--primary)',
+  backgroundColor = 'var(--border)',
   showPercentage = true,
   label,
   duration = 2,
@@ -44,10 +44,10 @@ const AnimatedProgressCircle: React.FC<AnimatedProgressCircleProps> = ({
     if (percent >= 80) return '#10B981'; // Green
     if (percent >= 65) return '#F59E0B'; // Amber
     if (percent >= 50) return '#EF4444'; // Red
-    return '#6B7280'; // Gray
+    return 'var(--primary)'; // Theme primary
   };
 
-  const dynamicColor = color === '#6366F1' ? getColorByPercentage(percentage) : color;
+  const dynamicColor = color === 'var(--primary)' ? getColorByPercentage(percentage) : color;
 
   return (
     <div className="relative flex items-center justify-center">
@@ -143,7 +143,7 @@ const AnimatedProgressCircle: React.FC<AnimatedProgressCircleProps> = ({
         
         {label && (
           <motion.div
-            className="text-sm text-gray-500 mt-1 font-medium"
+            className="text-sm text-muted-foreground mt-1 font-medium"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{

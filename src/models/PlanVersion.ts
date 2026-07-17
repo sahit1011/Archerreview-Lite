@@ -110,5 +110,5 @@ const PlanVersionSchema: Schema = new Schema(
 );
 
 // Create and export the PlanVersion model
-export default mongoose.models.PlanVersion || 
+export default (mongoose.models.PlanVersion as mongoose.Model<IPlanVersion>) || 
   mongoose.model<IPlanVersion>('PlanVersion', PlanVersionSchema);

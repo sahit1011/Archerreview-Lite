@@ -53,10 +53,10 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
                  unit === 'minutes' ? 'from-yellow-500 to-yellow-600' :
                  'from-red-400 to-red-500';
         }
-        return unit === 'days' ? 'from-indigo-500 to-indigo-600' : 
-               unit === 'hours' ? 'from-blue-500 to-blue-600' :
-               unit === 'minutes' ? 'from-purple-500 to-purple-600' :
-               'from-pink-500 to-pink-600';
+        return unit === 'days' ? 'from-archer-bright-teal to-teal-600' :
+               unit === 'hours' ? 'from-archer-light-blue to-blue-600' :
+               unit === 'minutes' ? 'from-teal-500 to-teal-600' :
+               'from-cyan-500 to-cyan-600';
       };
 
       setTimeLeft([
@@ -82,8 +82,8 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
         className="text-center p-8 rounded-xl border border-green-500/30"
       >
         <div className="text-6xl mb-4">🎉</div>
-        <h3 className="text-2xl font-bold text-green-600 mb-2">Exam Day!</h3>
-        <p className="text-green-700">Good luck with your NCLEX exam!</p>
+        <h3 className="text-2xl font-bold text-green-400 mb-2">Exam Day!</h3>
+        <p className="text-green-300/80">Good luck with your NEET/JEE exam!</p>
       </motion.div>
     );
   }
@@ -124,12 +124,12 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
 
       {/* Main countdown display */}
       <div className="text-center mb-6">
-        <p className="text-gray-600 text-sm mb-2">
+        <p className="text-muted-foreground text-sm mb-2">
           {formattedDate}
         </p>
         {isUrgent && (
           <motion.div
-            className="text-red-600 text-sm font-semibold mb-2"
+            className="text-red-400 text-sm font-semibold mb-2"
             variants={pulseAnimation}
             animate="pulse"
           >
@@ -193,13 +193,13 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
 
       {/* Progress bar showing days until exam */}
       <div className="mb-4">
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
+        <div className="flex justify-between text-sm text-muted-foreground mb-2">
           <span>Progress to Exam</span>
           <span>{timeLeft[0]?.value || 0} days left</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+        <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
           <motion.div
-            className={`h-full bg-gradient-to-r ${isUrgent ? 'from-red-500 to-red-600' : 'from-indigo-500 to-indigo-600'} rounded-full relative`}
+            className={`h-full bg-gradient-to-r ${isUrgent ? 'from-red-500 to-red-600' : 'from-archer-bright-teal to-teal-600'} rounded-full relative`}
             initial={{ width: 0 }}
             animate={{ 
               width: `${Math.max(10, Math.min(100, ((90 - (timeLeft[0]?.value || 0)) / 90) * 100))}%`
@@ -230,8 +230,8 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
         className={`
           text-center p-4 rounded-lg
           ${isUrgent
-            ? 'border border-red-200 text-red-800'
-            : 'border border-indigo-200 text-indigo-800'
+            ? 'border border-red-500/30 bg-red-500/10 text-red-500'
+            : 'border border-primary/30 bg-primary/10 text-primary'
           }
         `}
       >

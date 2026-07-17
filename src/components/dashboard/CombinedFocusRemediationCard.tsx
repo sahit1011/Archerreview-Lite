@@ -91,27 +91,27 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'HIGH': return 'border-red-300 bg-red-50';
-      case 'MEDIUM': return 'border-blue-300 bg-blue-50';
-      case 'LOW': return 'border-teal-300 bg-teal-50';
-      default: return 'border-gray-300 bg-gray-50';
+      case 'HIGH': return 'border-red-500/30 bg-red-500/10';
+      case 'MEDIUM': return 'border-blue-500/30 bg-blue-500/10';
+      case 'LOW': return 'border-primary/30 bg-primary/10';
+      default: return 'border-border bg-secondary';
     }
   };
 
   const getSeverityIconColor = (severity: string) => {
     switch (severity) {
-      case 'HIGH': return 'bg-red-100 text-red-600';
-      case 'MEDIUM': return 'bg-blue-100 text-blue-600';
-      case 'LOW': return 'bg-teal-100 text-teal-600';
-      default: return 'bg-gray-100 text-gray-600';
+      case 'HIGH': return 'bg-red-500/15 text-red-400';
+      case 'MEDIUM': return 'bg-blue-500/15 text-blue-400';
+      case 'LOW': return 'bg-primary/15 text-primary';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
   const getFocusAreaBgColor = (type: string) => {
     switch (type) {
-      case 'weak': return 'bg-red-100 text-red-600';
-      case 'strong': return 'bg-green-100 text-green-600';
-      default: return 'bg-gray-100 text-gray-600';
+      case 'weak': return 'bg-red-500/15 text-red-400';
+      case 'strong': return 'bg-green-500/15 text-green-400';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -192,8 +192,8 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
           className="flex justify-between items-center mb-6"
           variants={fadeIn}
         >
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-            <svg className="w-6 h-6 mr-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <h2 className="text-2xl font-bold text-foreground flex items-center">
+            <svg className="w-6 h-6 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
             Learning Focus & Remediation
@@ -201,7 +201,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
           <motion.button
             onClick={activeTab === 'focus' ? onRefreshFocusAreas : onGenerateRemediationSuggestions}
             disabled={activeTab === 'focus' ? isRefreshingFocusAreas : isGeneratingSuggestions}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             whileHover={hoverScale}
             whileTap={{ scale: 0.95 }}
           >
@@ -236,15 +236,15 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
         </motion.div>
 
         <motion.div
-          className="flex border-b border-gray-200/50 mb-6"
+          className="flex border-b border-border mb-6"
           variants={fadeIn}
         >
           <motion.button
             onClick={() => setActiveTab('focus')}
             className={`py-3 px-6 text-sm font-semibold transition-all ${
               activeTab === 'focus'
-                ? 'text-indigo-600 border-b-2 border-indigo-500 bg-indigo-50/50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                ? 'text-primary border-b-2 border-primary bg-primary/10'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             } rounded-t-lg`}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.95 }}
@@ -255,15 +255,15 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
             onClick={() => setActiveTab('remediation')}
             className={`py-3 px-6 text-sm font-semibold transition-all ${
               activeTab === 'remediation'
-                ? 'text-indigo-600 border-b-2 border-indigo-500 bg-indigo-50/50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                ? 'text-primary border-b-2 border-primary bg-primary/10'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             } rounded-t-lg`}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.95 }}
           >
             Remediation Suggestions {remediationSuggestions.length > 0 && (
               <motion.span
-                className="ml-2 px-2 py-0.5 bg-indigo-600 text-white rounded-full text-xs"
+                className="ml-2 px-2 py-0.5 bg-primary text-primary-foreground rounded-full text-xs font-semibold"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 500 }}
@@ -297,18 +297,18 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                     ease: "easeInOut"
                   }}
                 >
-                  <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="mx-auto h-16 w-16 text-muted-foreground mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </motion.div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">No focus areas yet</h3>
-                <p className="text-gray-600 mb-6">
+                <h3 className="text-xl font-bold text-foreground mb-2">No focus areas yet</h3>
+                <p className="text-muted-foreground mb-6">
                   Complete some tasks to get personalized focus area recommendations.
                 </p>
                 <motion.button
                   onClick={onRefreshFocusAreas}
                   disabled={isRefreshingFocusAreas}
-                  className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={hoverScale}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -330,9 +330,9 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                   <motion.div
                     key={index}
                     className={`
-                      bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg
-                      hover:shadow-xl transition-all transform hover:-translate-y-2
-                      ${area.type === 'weak' ? 'border-l-4 border-red-500' : 'border-l-4 border-green-500'}
+                      bg-secondary backdrop-blur-sm rounded-xl p-6 border border-border
+                      hover:bg-muted transition-all transform hover:-translate-y-2
+                      ${area.type === 'weak' ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-green-500'}
                     `}
                     variants={fadeInUp}
                     transition={{ delay: index * 0.1 }}
@@ -352,11 +352,11 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                           )}
                         </svg>
                       </motion.div>
-                      <h3 className="font-bold text-gray-800 text-lg">
+                      <h3 className="font-bold text-foreground text-lg">
                         {area.name || (area.category && area.category.replace(/_/g, ' ').toLowerCase())}
                       </h3>
                     </div>
-                    <p className="text-sm text-gray-700 mb-6 bg-white/50 p-4 rounded-lg border border-white/20">
+                    <p className="text-sm text-muted-foreground mb-6 bg-card p-4 rounded-lg border border-border">
                       {area.message}
                     </p>
                     <div className="flex flex-wrap gap-3">
@@ -364,7 +364,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                         <>
                           {scheduledFocusAreas[area._id] ? (
                             <motion.div
-                              className="inline-flex items-center px-4 py-2 bg-green-100 text-green-600 text-sm rounded-lg font-medium"
+                              className="inline-flex items-center px-4 py-2 bg-green-500/15 text-green-400 border border-green-500/30 text-sm rounded-lg font-medium"
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
                               transition={{ type: "spring", stiffness: 500 }}
@@ -380,7 +380,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                                 }
                               }}
                               disabled={isScheduling['focus-' + index] || !area._id}
-                              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white text-sm rounded-lg font-medium shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 disabled:opacity-50"
+                              className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50"
                               whileHover={hoverScale}
                               whileTap={{ scale: 0.95 }}
                             >
@@ -405,7 +405,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                               `I need help understanding ${area.name || area.category}. Can you explain the key concepts and provide some practice questions?`,
                               area.name || area.category
                             )}
-                            className="inline-flex items-center px-4 py-2 bg-white/70 text-gray-800 text-sm rounded-lg font-medium shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 border border-white/20"
+                            className="inline-flex items-center px-4 py-2 border border-border text-foreground text-sm rounded-lg font-medium hover:bg-muted transition-all"
                             whileHover={hoverScale}
                             whileTap={{ scale: 0.95 }}
                           >
@@ -444,10 +444,10 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                     ease: "easeInOut"
                   }}
                 >
-                  <LightBulbIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                  <LightBulbIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">No active remediation suggestions</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-bold text-foreground mb-2">No active remediation suggestions</h3>
+                <p className="text-muted-foreground">
                   Click "Get Suggestions" to get personalized recommendations.
                 </p>
               </motion.div>
@@ -457,11 +457,11 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                   <motion.div
                     key={suggestion._id}
                     className={`
-                      bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg
-                      hover:shadow-xl transition-all transform hover:-translate-y-2
-                      ${suggestion.severity === 'HIGH' ? 'border-l-4 border-red-500' :
-                        suggestion.severity === 'MEDIUM' ? 'border-l-4 border-blue-500' :
-                        'border-l-4 border-teal-500'}
+                      bg-secondary backdrop-blur-sm rounded-xl p-6 border border-border
+                      hover:bg-muted transition-all transform hover:-translate-y-2
+                      ${suggestion.severity === 'HIGH' ? 'border-l-4 border-l-red-500' :
+                        suggestion.severity === 'MEDIUM' ? 'border-l-4 border-l-blue-500' :
+                        'border-l-4 border-l-primary'}
                     `}
                     variants={fadeInUp}
                     transition={{ delay: index * 0.1 }}
@@ -477,22 +477,22 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                       </motion.div>
                       <div className="flex-1">
                         <div className="flex justify-between items-center mb-4">
-                          <h3 className="font-bold text-gray-800 text-lg">{suggestion.metadata.title}</h3>
+                          <h3 className="font-bold text-foreground text-lg">{suggestion.metadata.title}</h3>
                           <motion.button
                             onClick={() => onResolve(suggestion._id)}
-                            className="text-gray-400 hover:text-gray-600 bg-white/50 p-2 rounded-full hover:bg-white/70 transition-all"
+                            className="text-muted-foreground hover:text-foreground bg-muted p-2 rounded-full hover:bg-secondary transition-all"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}
                           >
                             <XMarkIcon className="h-5 w-5" />
                           </motion.button>
                         </div>
-                        <p className="text-sm text-gray-700 mb-4 bg-white/50 p-4 rounded-lg border border-white/20">
+                        <p className="text-sm text-muted-foreground mb-4 bg-card p-4 rounded-lg border border-border">
                           {suggestion.message}
                         </p>
-                        <div className="mb-6 p-4 rounded-lg bg-indigo-50/50 border border-indigo-200/50">
-                          <p className="text-sm font-semibold text-indigo-600 mb-2">Suggested Action:</p>
-                          <p className="text-sm text-gray-700">{suggestion.metadata.suggestedAction}</p>
+                        <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/30">
+                          <p className="text-sm font-semibold text-primary mb-2">Suggested Action:</p>
+                          <p className="text-sm text-muted-foreground">{suggestion.metadata.suggestedAction}</p>
                         </div>
                         <div className="flex flex-wrap gap-3">
                           {suggestion.metadata.remediationType === 'AI_TUTOR_SESSION' && (
@@ -501,7 +501,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                                 suggestion.metadata.aiPrompt,
                                 suggestion.relatedTopic?.name || suggestion.metadata.title
                               )}
-                              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white text-sm rounded-lg font-medium shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1"
+                              className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:brightness-110 transition-all"
                               whileHover={hoverScale}
                               whileTap={{ scale: 0.95 }}
                             >
@@ -515,7 +515,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                                   `I need help reviewing the topic ${suggestion.relatedTopic?.name || suggestion.metadata.title}. Can you explain the key concepts and provide some practice questions?`,
                                   suggestion.relatedTopic?.name || suggestion.metadata.title
                                 )}
-                                className="inline-flex items-center px-4 py-2 bg-white/70 text-gray-800 text-sm rounded-lg font-medium shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 border border-white/20"
+                                className="inline-flex items-center px-4 py-2 border border-border text-foreground text-sm rounded-lg font-medium hover:bg-muted transition-all"
                                 whileHover={hoverScale}
                                 whileTap={{ scale: 0.95 }}
                               >
@@ -529,7 +529,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                                     }
                                   }}
                                   disabled={isScheduling[suggestion._id]}
-                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white text-sm rounded-lg font-medium shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 disabled:opacity-50"
+                                  className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50"
                                   whileHover={hoverScale}
                                   whileTap={{ scale: 0.95 }}
                                 >
@@ -551,7 +551,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                               )}
                               {suggestion.metadata.scheduledTaskId && (
                                 <motion.div
-                                  className="inline-flex items-center px-4 py-2 bg-green-100 text-green-600 text-sm rounded-lg font-medium"
+                                  className="inline-flex items-center px-4 py-2 bg-green-500/15 text-green-400 border border-green-500/30 text-sm rounded-lg font-medium"
                                   initial={{ scale: 0 }}
                                   animate={{ scale: 1 }}
                                   transition={{ type: "spring", stiffness: 500 }}

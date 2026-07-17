@@ -2,6 +2,11 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthUser } from '@/types';
+import { installAuthFetch } from '@/lib/authFetch';
+
+// Attach the JWT to all /api requests as soon as this client module loads, so the now
+// auth-guarded API routes receive the token (closes IDOR without touching ~135 fetch calls).
+installAuthFetch();
 
 interface UserContextType {
   user: User | null;

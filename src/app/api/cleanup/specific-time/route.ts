@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Task, StudyPlan, Alert } from '@/models';
+import { requireAdmin } from '@/lib/api-auth';
 
 /**
  * API endpoint for cleaning up tasks at a specific time
@@ -8,6 +9,11 @@ import { Task, StudyPlan, Alert } from '@/models';
  */
 export async function POST(req: NextRequest) {
   try {
+    // Admin-only destructive operation
+    const auth = requireAdmin(req);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to the database
     await dbConnect();
 
@@ -15,18 +21,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // Validate required fields
-    if (!body.userId || !body.time) {
+    if (!body.time) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Missing required fields: userId and time'
+          message: 'Missing required field: time'
         },
         { status: 400 }
       );
     }
 
     // Get user's study plan
-    const studyPlan = await StudyPlan.findOne({ user: body.userId });
+    const studyPlan = await StudyPlan.findOne({ user: userId });
     if (!studyPlan) {
       return NextResponse.json(
         {

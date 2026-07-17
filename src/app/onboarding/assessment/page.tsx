@@ -34,16 +34,16 @@ export default function AssessmentPage() {
   return (
     <OnboardingLayout>
       <motion.div
-        className="text-center mb-8"
+        className="text-center mb-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h1 className="text-5xl font-bold gradient-text mb-6">
-          NCLEX Diagnostic Assessment
+        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-4">
+          Diagnostic Assessment
         </h1>
-        <p className="text-xl text-white/80 max-w-2xl mx-auto mb-8 glassmorphic p-4 rounded-xl backdrop-blur-xl">
-          Answer the following questions to help us personalize your study plan.
+        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+          Answer a few questions across Physics, Chemistry, Biology &amp; Mathematics so we can build a study plan tailored to your NEET / JEE goals.
         </p>
 
         <OnboardingProgressBar currentStep="assessment" />

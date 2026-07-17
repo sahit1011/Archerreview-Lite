@@ -1,27 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../../../lib/db';
+import { requireAuth } from '@/lib/api-auth';
 import { User, StudyPlan, PlanVersion } from '../../../../models';
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to database
     await dbConnect();
-
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
-    console.log('Received request for plan versions with userId:', userId);
-
-    // Validate user ID
-    if (!userId) {
-      console.warn('No userId provided in request');
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'User ID is required'
-        },
-        { status: 400 }
-      );
-    }
 
     // Get user and study plan
     console.log('Looking up user with ID:', userId);

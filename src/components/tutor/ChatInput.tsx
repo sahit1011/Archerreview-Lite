@@ -43,15 +43,15 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex items-end w-full bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+        <div className="flex items-end w-full bg-card backdrop-blur-md rounded-2xl border border-border shadow-sm overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-ring transition-colors">
           <div className="flex-grow relative">
             <textarea
               ref={textareaRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask your AI tutor anything about NCLEX..."
-              className="w-full px-6 py-4 bg-transparent focus:outline-none resize-none min-h-[56px] max-h-32 text-white placeholder-gray-400 text-base leading-relaxed"
+              placeholder="Ask your AI tutor anything about NEET/JEE..."
+              className="w-full px-6 py-4 bg-transparent focus:outline-none resize-none min-h-[56px] max-h-32 text-foreground placeholder:text-muted-foreground text-base leading-relaxed"
               rows={1}
               disabled={isLoading}
             />
@@ -59,7 +59,7 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
             <div className="absolute right-4 bottom-4 flex items-center space-x-3">
               <button
                 type="button"
-                className="p-2 text-gray-400 rounded-full hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
+                className="p-2 text-muted-foreground rounded-full hover:bg-accent hover:text-foreground transition-all disabled:opacity-50"
                 disabled={isLoading}
                 title="Voice input (coming soon)"
               >
@@ -68,7 +68,7 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
 
               <button
                 type="button"
-                className="p-2 text-gray-400 rounded-full hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
+                className="p-2 text-muted-foreground rounded-full hover:bg-accent hover:text-foreground transition-all disabled:opacity-50"
                 disabled={isLoading}
                 title="Attach image (coming soon)"
               >
@@ -79,8 +79,8 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
                 type="submit"
                 className={`p-3 rounded-full transition-all duration-200 ${
                   message.trim() && !isLoading
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 shadow-lg hover:shadow-xl transform hover:scale-105'
-                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    ? 'brand-gradient text-white shadow-button hover:brightness-110 transform hover:scale-105'
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
                 }`}
                 disabled={!message.trim() || isLoading}
               >
@@ -96,8 +96,8 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
       </form>
 
       <div className="flex items-center justify-center mt-3">
-        <div className="text-xs text-gray-400 flex items-center bg-white/5 px-3 py-1 rounded-full backdrop-blur-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-2 flex-shrink-0 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+        <div className="text-xs text-muted-foreground flex items-center bg-secondary px-3 py-1 rounded-full backdrop-blur-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-2 flex-shrink-0 text-warning" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
           <span>AI responses may contain inaccuracies</span>

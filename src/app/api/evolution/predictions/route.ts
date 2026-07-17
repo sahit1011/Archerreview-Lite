@@ -1,27 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../../../lib/db';
+import { requireAuth } from '@/lib/api-auth';
 import { User, StudyPlan, Performance } from '../../../../models';
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to database
     await dbConnect();
-
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
-    console.log('Received request for predictions with userId:', userId);
-
-    // Validate user ID
-    if (!userId) {
-      console.warn('No userId provided in request');
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'User ID is required'
-        },
-        { status: 400 }
-      );
-    }
 
     // Get user and study plan
     console.log('Looking up user with ID:', userId);
@@ -76,7 +65,7 @@ async function generatePredictions(userId: string) {
       : 68; // Default if no performance data
     
     // Calculate exam date and days until exam
-    const examDate = studyPlan.targetDate || new Date(Date.now() + 45 * 24 * 60 * 60 * 1000);
+    const examDate = (studyPlan as any).targetDate || new Date(Date.now() + 45 * 24 * 60 * 60 * 1000);
     const daysUntilExam = Math.round((examDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
     
     // Generate mock prediction data
@@ -100,14 +89,10 @@ async function generatePredictions(userId: string) {
         { week: 6, date: new Date(today.getTime() + 42 * 24 * 60 * 60 * 1000).toISOString(), projected: Math.min(95, currentReadiness + 17) }
       ],
       categoryProjections: [
-        { category: 'MANAGEMENT_OF_CARE', current: Math.max(50, currentReadiness - 3), projected: Math.min(95, currentReadiness + 17) },
-        { category: 'SAFETY_AND_INFECTION_CONTROL', current: Math.max(50, currentReadiness + 2), projected: Math.min(95, currentReadiness + 15) },
-        { category: 'HEALTH_PROMOTION', current: Math.max(50, currentReadiness + 7), projected: Math.min(95, currentReadiness + 13) },
-        { category: 'PSYCHOSOCIAL_INTEGRITY', current: Math.max(50, currentReadiness - 8), projected: Math.min(95, currentReadiness + 18) },
-        { category: 'BASIC_CARE_AND_COMFORT', current: Math.max(50, currentReadiness + 4), projected: Math.min(95, currentReadiness + 14) },
-        { category: 'PHARMACOLOGICAL_THERAPIES', current: Math.max(50, currentReadiness - 6), projected: Math.min(95, currentReadiness + 18) },
-        { category: 'REDUCTION_OF_RISK_POTENTIAL', current: Math.max(50, currentReadiness), projected: Math.min(95, currentReadiness + 16) },
-        { category: 'PHYSIOLOGICAL_ADAPTATION', current: Math.max(50, currentReadiness + 2), projected: Math.min(95, currentReadiness + 16) }
+        { category: 'PHYSICS', current: Math.max(50, currentReadiness - 3), projected: Math.min(95, currentReadiness + 17) },
+        { category: 'CHEMISTRY', current: Math.max(50, currentReadiness + 2), projected: Math.min(95, currentReadiness + 15) },
+        { category: 'BIOLOGY', current: Math.max(50, currentReadiness - 6), projected: Math.min(95, currentReadiness + 18) },
+        { category: 'MATHEMATICS', current: Math.max(50, currentReadiness), projected: Math.min(95, currentReadiness + 16) }
       ],
       scenarios: [
         {

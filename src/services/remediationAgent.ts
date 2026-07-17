@@ -11,6 +11,7 @@ import {
 } from '../models/index'; // Changed to relative
 import { generateRemediationSuggestions as generateServiceSuggestions, RemediationType } from './remediationService'; // Added .js
 import { findOptimalReviewTime } from './schedulerUtils'; // Added .js
+import { findContentForTopic } from '../lib/contentLookup';
 import { generateTopicTutorResponse } from './generativeAI'; // Added .js
 
 /**
@@ -130,7 +131,7 @@ export async function runRemediationAgent(userId: string): Promise<RemediationAg
     // Run remediation processes
     await Promise.all([
       generateAgentSuggestions(userId, result),
-      scheduleReviewSessions(userId, studyPlan._id, existingSuggestions, scheduledReviews, result),
+      scheduleReviewSessions(userId, studyPlan._id as mongoose.Types.ObjectId, existingSuggestions, scheduledReviews, result),
       prepareAITutorSessions(userId, existingSuggestions, result)
     ]);
 
@@ -257,7 +258,8 @@ async function scheduleReviewSessions(
       // Find optimal time for review
       const scheduledTime = await findOptimalReviewTime(userId, planId.toString());
 
-      // Create review task
+      // Create review task, linked to startable content for the topic
+      const reviewContent = await findContentForTopic(suggestion.relatedTopic._id, 'REVIEW');
       const task = new Task({
         plan: planId,
         title: `Review: ${suggestion.relatedTopic.name}`,
@@ -268,6 +270,7 @@ async function scheduleReviewSessions(
         endTime: scheduledTime.endTime,
         duration: scheduledTime.duration,
         topic: suggestion.relatedTopic._id,
+        content: reviewContent || undefined,
         difficulty: suggestion.relatedTopic.difficulty || 'MEDIUM',
         metadata: {
           source: 'REMEDIATION_AGENT',

@@ -251,7 +251,7 @@ export default function ContentForm() {
             {isNew ? 'Create New Content' : 'Edit Content'}
           </h1>
           <p className="text-gray-600">
-            {isNew ? 'Add new content for NCLEX topics' : 'Update existing content'}
+            {isNew ? 'Add new content for NEET/JEE topics' : 'Update existing content'}
           </p>
         </div>
         <Link

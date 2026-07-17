@@ -12,6 +12,8 @@ import Adaptation, { IAdaptation } from './Adaptation';
 import Feedback, { IFeedback } from './Feedback';
 import TrendAnalysis, { ITrendAnalysis } from './TrendAnalysis';
 import PlanVersion, { IPlanVersion } from './PlanVersion';
+import ScheduledJob, { IScheduledJob } from './ScheduledJob';
+import Note, { INote } from './Note';
 
 // Export values (models)
 export {
@@ -28,7 +30,9 @@ export {
   Adaptation,
   Feedback,
   TrendAnalysis,
-  PlanVersion
+  PlanVersion,
+  ScheduledJob,
+  Note
 };
 
 // Export types (interfaces)
@@ -46,5 +50,7 @@ export type {
   IAdaptation,
   IFeedback,
   ITrendAnalysis,
-  IPlanVersion
+  IPlanVersion,
+  IScheduledJob,
+  INote
 };

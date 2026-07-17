@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
 // Define the onboarding steps
@@ -22,6 +22,11 @@ export interface DiagnosticQuestion {
   correctAnswer: number;
   category: string;
   explanation: string;
+  // Content-backed questions also carry topic provenance so weak-area signal can be
+  // attributed to specific Topics (not just subject categories). Optional to preserve the
+  // existing public shape and keep the hardcoded fallback set valid.
+  topicId?: string;
+  topicName?: string;
 }
 
 // Define the answer type
@@ -38,6 +43,14 @@ export interface CategoryScore {
   score: number; // 0-100 percentage
 }
 
+// Define the per-topic score type (finer-grained weak-area signal than category)
+export interface TopicScore {
+  topicId: string;
+  topicName: string;
+  category: string;
+  score: number; // 0-100 percentage
+}
+
 // Define the onboarding context type
 interface OnboardingContextType {
   currentStep: OnboardingStep;
@@ -46,6 +59,7 @@ interface OnboardingContextType {
   email: string;
   password: string;
   // Exam and preferences
+  examType: 'NEET' | 'JEE' | null;
   examDate: Date | null;
   diagnosticCompleted: boolean;
   diagnosticSkipped: boolean;
@@ -57,12 +71,14 @@ interface OnboardingContextType {
   diagnosticQuestions: DiagnosticQuestion[];
   diagnosticAnswers: DiagnosticAnswer[];
   categoryScores: CategoryScore[];
+  topicScores: TopicScore[];
   overallScore: number;
   // Account creation setters
   setName: (name: string) => void;
   setEmail: (email: string) => void;
   setPassword: (password: string) => void;
   // Exam and preferences setters
+  setExamType: (type: 'NEET' | 'JEE') => void;
   setExamDate: (date: Date) => void;
   setDiagnosticCompleted: (completed: boolean) => void;
   setDiagnosticSkipped: (skipped: boolean) => void;
@@ -79,7 +95,7 @@ interface OnboardingContextType {
   answerQuestion: (questionId: number, selectedOption: number, timeSpent: number) => void;
   calculateResults: () => void;
   // Data saving
-  saveOnboardingData: () => Promise<void>;
+  saveOnboardingData: () => Promise<any>;
   saveDiagnosticResults: () => Promise<void>;
   registerUser: () => Promise<void>;
 }
@@ -92,137 +108,114 @@ interface OnboardingProviderProps {
   children: ReactNode;
 }
 
-// Sample diagnostic questions
+// Fallback diagnostic question bank — NEET/JEE, tagged by subject.
+// The runner filters this by the chosen exam (NEET: Phy/Chem/Bio, JEE: Phy/Chem/Maths).
 const sampleQuestions: DiagnosticQuestion[] = [
   {
     id: 1,
-    question: "A client with chronic kidney disease is receiving hemodialysis. Which of the following assessment findings should the nurse report to the healthcare provider immediately?",
-    options: [
-      "Blood pressure of 110/70 mmHg",
-      "Potassium level of 6.5 mEq/L",
-      "Respiratory rate of 18 breaths per minute",
-      "Body temperature of 98.6°F (37°C)"
-    ],
+    question: "A body starts from rest and moves with uniform acceleration. The ratio of distances covered in the 1st, 2nd and 3rd seconds is:",
+    options: ["1 : 2 : 3", "1 : 3 : 5", "1 : 4 : 9", "1 : 1 : 1"],
     correctAnswer: 1,
-    category: "PHYSIOLOGICAL_ADAPTATION",
-    explanation: "A potassium level of 6.5 mEq/L is significantly elevated (normal range is 3.5-5.0 mEq/L) and can lead to cardiac arrhythmias and cardiac arrest. This is especially concerning in a client with chronic kidney disease on hemodialysis, as the kidneys are the primary regulators of potassium balance."
+    category: "PHYSICS",
+    explanation: "Distance covered in the nth second is s\u2099 = u + a(2n \u2212 1)/2. With u = 0, the distances in successive seconds are proportional to the odd numbers 1, 3, 5 — Galileo's odd-number rule."
   },
   {
     id: 2,
-    question: "A nurse is caring for a client who is receiving a blood transfusion. Which of the following symptoms would indicate a transfusion reaction requiring immediate intervention?",
-    options: [
-      "Slight increase in body temperature of 0.5°F",
-      "Urticaria and chills",
-      "Decreased heart rate",
-      "Increased blood pressure"
-    ],
-    correctAnswer: 1,
-    category: "REDUCTION_OF_RISK_POTENTIAL",
-    explanation: "Urticaria (hives) and chills are signs of a transfusion reaction. Other signs include fever, back pain, hypotension, tachycardia, dyspnea, and flushing. If these occur, the transfusion should be stopped immediately and the healthcare provider notified."
+    question: "Two resistors of 4 \u03a9 and 12 \u03a9 are connected in parallel. The equivalent resistance is:",
+    options: ["16 \u03a9", "8 \u03a9", "3 \u03a9", "0.33 \u03a9"],
+    correctAnswer: 2,
+    category: "PHYSICS",
+    explanation: "For parallel resistors, 1/R = 1/4 + 1/12 = 3/12 + 1/12 = 4/12, so R = 3 \u03a9. The parallel equivalent is always smaller than the smallest branch."
   },
   {
     id: 3,
-    question: "A nurse is administering medications to a client with heart failure. Which medication requires the nurse to assess the client's potassium level before administration?",
-    options: [
-      "Furosemide (Lasix)",
-      "Metoprolol (Lopressor)",
-      "Atorvastatin (Lipitor)",
-      "Aspirin"
-    ],
-    correctAnswer: 0,
-    category: "PHARMACOLOGICAL_THERAPIES",
-    explanation: "Furosemide (Lasix) is a loop diuretic that causes increased excretion of potassium, which can lead to hypokalemia. The nurse should assess the client's potassium level before administering this medication to prevent dangerous electrolyte imbalances."
+    question: "A convex lens of focal length 20 cm forms a real, inverted image the same size as the object. The object distance is:",
+    options: ["10 cm", "20 cm", "40 cm", "60 cm"],
+    correctAnswer: 2,
+    category: "PHYSICS",
+    explanation: "A same-size real image forms when the object is at 2f. With f = 20 cm, the object must be at 40 cm; the image also forms at 40 cm on the other side."
   },
   {
     id: 4,
-    question: "A nurse is teaching a client about warfarin (Coumadin) therapy. Which of the following foods should the nurse instruct the client to limit in their diet?",
-    options: [
-      "Citrus fruits",
-      "Dairy products",
-      "Leafy green vegetables",
-      "Lean proteins"
-    ],
-    correctAnswer: 2,
-    category: "PHARMACOLOGICAL_THERAPIES",
-    explanation: "Leafy green vegetables are high in vitamin K, which can counteract the anticoagulant effects of warfarin. Clients on warfarin therapy should maintain a consistent intake of vitamin K-rich foods rather than completely avoiding them, as sudden changes can affect INR levels."
+    question: "The dimensional formula of Planck's constant is the same as that of:",
+    options: ["Energy", "Angular momentum", "Linear momentum", "Power"],
+    correctAnswer: 1,
+    category: "PHYSICS",
+    explanation: "E = h\u03bd gives h = E/\u03bd with dimensions [ML\u00b2T\u207b\u00b9] — identical to angular momentum (mvr). This equivalence underlies Bohr's quantization condition."
   },
   {
     id: 5,
-    question: "A nurse is caring for a client who has just returned from surgery with a nasogastric tube. Which of the following interventions should the nurse perform first?",
-    options: [
-      "Irrigate the tube with normal saline",
-      "Connect the tube to suction",
-      "Verify tube placement",
-      "Administer prescribed medications through the tube"
-    ],
+    question: "Which of the following has the maximum number of atoms?",
+    options: ["1 g of Mg (24 u)", "1 g of O\u2082 (32 u)", "1 g of Li (7 u)", "1 g of Ag (108 u)"],
     correctAnswer: 2,
-    category: "BASIC_CARE_AND_COMFORT",
-    explanation: "Before any other interventions, the nurse must verify proper placement of the nasogastric tube to ensure it is in the stomach and not in the lungs. This is typically done by aspirating gastric contents and checking the pH, or by obtaining an X-ray confirmation."
+    category: "CHEMISTRY",
+    explanation: "Number of atoms = (mass/atomic mass) \u00d7 N\u2090. Lithium has the smallest atomic mass (7 u), so 1 g of Li contains the most atoms (\u2248 8.6 \u00d7 10\u00b2\u00b2)."
   },
   {
     id: 6,
-    question: "A nurse is caring for a client with a pressure ulcer on the sacrum. Which of the following would be the most appropriate position for this client?",
-    options: [
-      "Supine position",
-      "Prone position",
-      "Lateral position",
-      "Semi-Fowler's position"
-    ],
+    question: "The IUPAC name of CH\u2083\u2013CH(CH\u2083)\u2013CH\u2082\u2013CHO is:",
+    options: ["2-methylbutanal", "3-methylbutanal", "2-methylbutan-4-al", "Pentanal"],
     correctAnswer: 1,
-    category: "BASIC_CARE_AND_COMFORT",
-    explanation: "The prone position (lying on the stomach) would be most appropriate for a client with a sacral pressure ulcer as it completely relieves pressure on the sacrum. However, this position may not be tolerated by all clients and should be used as part of a comprehensive repositioning schedule."
+    category: "CHEMISTRY",
+    explanation: "Number from the CHO carbon (C1). The methyl branch falls on C3 of a four-carbon aldehyde chain, giving 3-methylbutanal."
   },
   {
     id: 7,
-    question: "A nurse is teaching a client about insulin administration. Which of the following statements by the client indicates a need for further teaching?",
+    question: "In the reaction Zn + Cu\u00b2\u207a \u2192 Zn\u00b2\u207a + Cu, which statement is correct?",
     options: [
-      "I should rotate my injection sites.",
-      "I can mix my NPH and Regular insulin in the same syringe.",
-      "I should inject my insulin at a 90-degree angle.",
-      "I should store my unopened insulin vials in the freezer."
+      "Zinc is reduced",
+      "Copper ion is oxidized",
+      "Zinc is the reducing agent",
+      "No electron transfer occurs"
     ],
-    correctAnswer: 3,
-    category: "PHARMACOLOGICAL_THERAPIES",
-    explanation: "Insulin should never be frozen as this can alter its effectiveness. Unopened insulin vials should be stored in the refrigerator (36-46°F or 2-8°C), and opened vials can be kept at room temperature (below 86°F or 30°C) for up to 28 days."
+    correctAnswer: 2,
+    category: "CHEMISTRY",
+    explanation: "Zn loses electrons (0 \u2192 +2), so it is oxidized and therefore acts as the reducing agent, driving the reduction of Cu\u00b2\u207a to Cu."
   },
   {
     id: 8,
-    question: "A nurse is assessing a client who has been diagnosed with tuberculosis. Which of the following findings would the nurse expect to observe?",
+    question: "Which quantum number determines the shape of an orbital?",
     options: [
-      "Productive cough with purulent sputum",
-      "Fever only in the morning",
-      "Weight gain",
-      "Increased appetite"
+      "Principal quantum number (n)",
+      "Azimuthal quantum number (l)",
+      "Magnetic quantum number (m)",
+      "Spin quantum number (s)"
     ],
-    correctAnswer: 0,
-    category: "PHYSIOLOGICAL_ADAPTATION",
-    explanation: "A productive cough with purulent or blood-tinged sputum is a classic symptom of tuberculosis. Other symptoms include night sweats, evening low-grade fever, fatigue, weight loss, and decreased appetite."
+    correctAnswer: 1,
+    category: "CHEMISTRY",
+    explanation: "The azimuthal (angular momentum) quantum number l defines orbital shape: l = 0 (s, spherical), 1 (p, dumbbell), 2 (d), 3 (f). n sets size/energy and m sets orientation."
   },
   {
     id: 9,
-    question: "A nurse is caring for a client who is at risk for developing deep vein thrombosis (DVT). Which of the following interventions would be most effective in preventing DVT?",
-    options: [
-      "Encouraging the client to remain on bed rest",
-      "Applying warm compresses to the legs",
-      "Encouraging the client to cross their legs while sitting",
-      "Early ambulation and sequential compression devices when in bed"
-    ],
-    correctAnswer: 3,
-    category: "REDUCTION_OF_RISK_POTENTIAL",
-    explanation: "Early ambulation and the use of sequential compression devices when the client is in bed are effective interventions for preventing DVT. These measures promote venous return and prevent venous stasis, which is a risk factor for DVT formation."
+    question: "During which phase of mitosis do sister chromatids separate and move to opposite poles?",
+    options: ["Prophase", "Metaphase", "Anaphase", "Telophase"],
+    correctAnswer: 2,
+    category: "BIOLOGY",
+    explanation: "In anaphase, centromeres split and spindle fibres pull the sister chromatids to opposite poles, ensuring each daughter cell receives an identical chromosome set."
   },
   {
     id: 10,
-    question: "A nurse is teaching a client about the signs and symptoms of hypoglycemia. Which of the following should the nurse include as early signs of hypoglycemia?",
-    options: [
-      "Polyuria and polydipsia",
-      "Shakiness, sweating, and tachycardia",
-      "Kussmaul respirations",
-      "Fruity breath odor"
-    ],
+    question: "In a dihybrid cross between two heterozygous parents (AaBb \u00d7 AaBb), the phenotypic ratio in the offspring is:",
+    options: ["3 : 1", "1 : 2 : 1", "9 : 3 : 3 : 1", "1 : 1 : 1 : 1"],
+    correctAnswer: 2,
+    category: "BIOLOGY",
+    explanation: "Independent assortment of two heterozygous gene pairs gives the classic Mendelian dihybrid phenotypic ratio 9 : 3 : 3 : 1 (9 double-dominant, two 3s single-dominant, 1 double-recessive)."
+  },
+  {
+    id: 11,
+    question: "If f(x) = x\u00b3 \u2212 6x\u00b2 + 9x + 2, the function is decreasing on the interval:",
+    options: ["(\u2212\u221e, 1)", "(1, 3)", "(3, \u221e)", "It is never decreasing"],
     correctAnswer: 1,
-    category: "PHYSIOLOGICAL_ADAPTATION",
-    explanation: "Early signs of hypoglycemia include shakiness, sweating, tachycardia, hunger, anxiety, and irritability. These are adrenergic symptoms that occur as the body tries to raise blood glucose levels. The other options are signs of hyperglycemia or diabetic ketoacidosis."
+    category: "MATHEMATICS",
+    explanation: "f\u2032(x) = 3x\u00b2 \u2212 12x + 9 = 3(x \u2212 1)(x \u2212 3), which is negative between the roots. So f decreases exactly on (1, 3)."
+  },
+  {
+    id: 12,
+    question: "The number of ways to arrange the letters of the word 'EXAM' taken all at a time is:",
+    options: ["12", "16", "24", "256"],
+    correctAnswer: 2,
+    category: "MATHEMATICS",
+    explanation: "EXAM has 4 distinct letters, so the arrangements are 4! = 24. No repeated letters means no division by repetition factorials."
   }
 ];
 
@@ -239,6 +232,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   const [password, setPassword] = useState<string>('');
 
   // Exam and preferences state
+  const [examType, setExamType] = useState<'NEET' | 'JEE' | null>(null);
   const [examDate, setExamDate] = useState<Date | null>(null);
   const [diagnosticCompleted, setDiagnosticCompleted] = useState<boolean>(false);
   const [diagnosticSkipped, setDiagnosticSkipped] = useState<boolean>(false);
@@ -246,12 +240,64 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   const [studyHoursPerDay, setStudyHoursPerDay] = useState<number>(2);
   const [preferredStudyTime, setPreferredStudyTime] = useState<'morning' | 'afternoon' | 'evening'>('morning');
 
-  // Diagnostic assessment state
+  // Diagnostic assessment state.
+  // sourceQuestions is the unfiltered pool (fallback bank or content-backed from the API);
+  // diagnosticQuestions is that pool narrowed to the chosen exam's subjects
+  // (NEET: Physics/Chemistry/Biology — JEE: Physics/Chemistry/Mathematics).
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
-  const [diagnosticQuestions, setDiagnosticQuestions] = useState<DiagnosticQuestion[]>(sampleQuestions);
+  const [sourceQuestions, setSourceQuestions] = useState<DiagnosticQuestion[]>(sampleQuestions);
+  const diagnosticQuestions = useMemo(() => {
+    const subjects: string[] =
+      examType === 'JEE'
+        ? ['PHYSICS', 'CHEMISTRY', 'MATHEMATICS']
+        : examType === 'NEET'
+          ? ['PHYSICS', 'CHEMISTRY', 'BIOLOGY']
+          : ['PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS'];
+    const filtered = sourceQuestions.filter((q) => subjects.includes(q.category));
+    return filtered.length > 0 ? filtered : sourceQuestions;
+  }, [sourceQuestions, examType]);
+  // Changing the exam changes the question set — restart from the first question.
+  useEffect(() => {
+    setCurrentQuestionIndex(0);
+  }, [examType]);
   const [diagnosticAnswers, setDiagnosticAnswers] = useState<DiagnosticAnswer[]>([]);
   const [categoryScores, setCategoryScores] = useState<CategoryScore[]>([]);
+  const [topicScores, setTopicScores] = useState<TopicScore[]>([]);
   const [overallScore, setOverallScore] = useState<number>(0);
+
+  // Fetch content-backed diagnostic questions once on mount. The auth token is attached
+  // automatically by the client-side fetch shim (src/lib/authFetch.ts) for /api/* calls.
+  // If the DB has too few questions (or the request fails), we keep the hardcoded
+  // sampleQuestions so onboarding never breaks.
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadQuestions = async () => {
+      try {
+        const response = await fetch('/api/diagnostic/questions');
+        if (!response.ok) return; // keep fallback sampleQuestions
+        const data = await response.json();
+        if (
+          !cancelled &&
+          data?.success &&
+          data?.sufficient &&
+          Array.isArray(data.questions) &&
+          data.questions.length > 0
+        ) {
+          setSourceQuestions(data.questions as DiagnosticQuestion[]);
+        }
+        // If not "sufficient", we deliberately leave the hardcoded fallback in place.
+      } catch (error) {
+        // Never let a fetch failure break onboarding — fall back to sampleQuestions.
+        console.error('Error loading diagnostic questions, using fallback set:', error);
+      }
+    };
+
+    loadQuestions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Define the step order
   const stepOrder = [
@@ -382,7 +428,39 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
       ? (totalCorrect / diagnosticQuestions.length) * 100
       : 0;
 
+    // Calculate finer-grained per-topic scores (only meaningful for content-backed
+    // questions, which carry topicId/topicName). This gives plan generation a precise
+    // weak-area signal beyond the subject categories.
+    const topicsMap = new Map<string, { topicName: string; category: string; questions: DiagnosticQuestion[] }>();
+    diagnosticQuestions.forEach(question => {
+      if (!question.topicId) return; // hardcoded fallback questions have no topic provenance
+      if (!topicsMap.has(question.topicId)) {
+        topicsMap.set(question.topicId, {
+          topicName: question.topicName || 'General',
+          category: question.category,
+          questions: [],
+        });
+      }
+      topicsMap.get(question.topicId)?.questions.push(question);
+    });
+
+    const newTopicScores: TopicScore[] = [];
+    topicsMap.forEach((value, topicId) => {
+      const topicQuestionIds = value.questions.map(q => q.id);
+      const topicAnswers = diagnosticAnswers.filter(a => topicQuestionIds.includes(a.questionId));
+      const correctAnswers = topicAnswers.filter(a => a.isCorrect).length;
+      const totalQuestions = value.questions.length;
+      const score = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+      newTopicScores.push({
+        topicId,
+        topicName: value.topicName,
+        category: value.category,
+        score,
+      });
+    });
+
     setCategoryScores(scores);
+    setTopicScores(newTopicScores);
     setOverallScore(overallScoreValue);
     setDiagnosticCompleted(true);
   };
@@ -396,23 +474,45 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
         throw new Error('User ID not found');
       }
 
-      // Prepare the answers data
-      const answersData = diagnosticAnswers.map(answer => {
-        const question = diagnosticQuestions.find(q => q.id === answer.questionId);
-        return {
-          question: question?.question || '',
-          topic: question?.id || '',
-          category: question?.category || '',
-          selectedOption: answer.selectedOption,
-          correctOption: question?.correctAnswer || 0,
-          isCorrect: answer.isCorrect
-        };
-      });
+      // Prepare the answers data. The DiagnosticResult schema requires a real Topic ObjectId
+      // for each answer, so we only persist answers tied to content-backed questions (which
+      // carry question.topicId). Hardcoded fallback questions have no topic provenance, so
+      // including them would fail Mongoose ObjectId casting — we omit those answers but still
+      // persist the category-level scores below, keeping onboarding working end to end.
+      const answersData = diagnosticAnswers
+        .map(answer => {
+          const question = diagnosticQuestions.find(q => q.id === answer.questionId);
+          if (!question || !question.topicId) return null;
+          return {
+            question: question.question || '',
+            topic: question.topicId,
+            category: question.category || '',
+            selectedOption: answer.selectedOption,
+            correctOption: question.correctAnswer || 0,
+            isCorrect: answer.isCorrect
+          };
+        })
+        .filter((a): a is NonNullable<typeof a> => a !== null);
 
       // Prepare weak areas (categories with score < 70%)
       const weakAreas = categoryScores
         .filter(cs => cs.score < 70)
         .map(cs => cs.category);
+
+      // Per-topic scores carry the trusted Topic ObjectId so plan generation can target
+      // weak topics directly (finer than the subject categories).
+      const topicScoresData = topicScores.map(ts => ({
+        topic: ts.topicId,
+        topicName: ts.topicName,
+        category: ts.category,
+        score: ts.score,
+      }));
+
+      // Recommended focus = weak topics (score < 70%) as Topic IDs, which is the field
+      // plan generation reads to personalize the study plan.
+      const recommendedFocus = topicScores
+        .filter(ts => ts.score < 70)
+        .map(ts => ts.topicId);
 
       // Create diagnostic result
       const response = await fetch('/api/diagnostic', {
@@ -426,8 +526,10 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
           skipped: false,
           score: overallScore,
           categoryScores,
+          topicScores: topicScoresData,
           answers: answersData,
-          weakAreas
+          weakAreas,
+          recommendedFocus,
         }),
       });
 
@@ -456,6 +558,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
           name,
           email,
           password,
+          examType: examType || undefined,
           examDate: examDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // Default to 90 days from now
         }),
       });
@@ -515,6 +618,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
         },
         body: JSON.stringify({
           examDate,
+          examType: examType || undefined,
           preferences: {
             availableDays,
             studyHoursPerDay,
@@ -603,6 +707,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     email,
     password,
     // Exam and preferences
+    examType,
     examDate,
     diagnosticCompleted,
     diagnosticSkipped,
@@ -614,12 +719,14 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     diagnosticQuestions,
     diagnosticAnswers,
     categoryScores,
+    topicScores,
     overallScore,
     // Account creation setters
     setName,
     setEmail,
     setPassword,
     // Exam and preferences setters
+    setExamType,
     setExamDate,
     setDiagnosticCompleted,
     setDiagnosticSkipped,

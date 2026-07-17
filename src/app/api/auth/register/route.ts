@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     // Parse the request body
     const body = await req.json();
-    const { name, email, password, examDate } = body;
+    const { name, email, password, examDate, examType } = body;
 
     // Validate required fields
     if (!name || !email || !password || !examDate) {
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
       email: email.toLowerCase(),
       password,
       examDate,
+      ...(examType === 'NEET' || examType === 'JEE' ? { examType } : {}),
       isEmailVerified: true, // For simplicity in the prototype, we'll auto-verify
       lastLogin: new Date()
     });
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest) {
       id: user._id,
       name: user.name,
       email: user.email,
+      examType: user.examType,
       examDate: user.examDate,
       preferences: user.preferences,
       role: user.role,

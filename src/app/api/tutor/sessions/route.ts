@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { User, Topic, Performance } from '@/models';
+import { Topic, Performance } from '@/models';
 import mongoose from 'mongoose';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
  * API endpoint for tracking AI Tutor sessions
@@ -9,6 +10,11 @@ import mongoose from 'mongoose';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
@@ -16,25 +22,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate required fields
-    if (!body.userId || !body.topicId) {
+    if (!body.topicId) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Missing required fields: userId and topicId'
+          message: 'Missing required field: topicId'
         },
         { status: 400 }
-      );
-    }
-
-    // Check if user exists
-    const user = await User.findById(body.userId);
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'User not found'
-        },
-        { status: 404 }
       );
     }
 
@@ -52,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Create a performance record for the tutor session
     const performance = new Performance({
-      user: body.userId,
+      user: userId,
       topic: body.topicId,
       timeSpent: body.duration || 10, // Default to 10 minutes if not provided
       completed: body.completed || true,
@@ -72,7 +66,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Tutor session recorded successfully',
-      sessionId: performance.metadata.sessionId
+      sessionId: (performance as any).metadata.sessionId
     });
   } catch (error) {
     console.error('Error recording tutor session:', error);
@@ -95,22 +89,16 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
+    // Get topic filter from query params (userId comes from the token)
     const topicId = request.nextUrl.searchParams.get('topicId');
-
-    // Validate required fields
-    if (!userId || userId === 'undefined' || userId === 'null') {
-      return NextResponse.json(
-        {
-          success: true,
-          sessions: [] // Return empty array instead of error for better UX
-        }
-      );
-    }
 
     // Validate that userId is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -140,16 +128,19 @@ export async function GET(request: NextRequest) {
       .limit(20);
 
     // Format sessions for response
-    const formattedSessions = sessions.map(session => ({
-      id: session._id,
-      topicId: session.topic._id,
-      topicName: session.topic.name,
-      duration: session.timeSpent,
-      completed: session.completed,
-      confidence: session.confidence,
-      messageCount: session.metadata?.messageCount || 0,
-      timestamp: session.createdAt
-    }));
+    const formattedSessions = sessions.map(session => {
+      const topic = session.topic as any;
+      return {
+        id: session._id,
+        topicId: topic._id,
+        topicName: topic.name,
+        duration: session.timeSpent,
+        completed: session.completed,
+        confidence: session.confidence,
+        messageCount: (session as any).metadata?.messageCount || 0,
+        timestamp: session.createdAt
+      };
+    });
 
     // Return success response
     return NextResponse.json({

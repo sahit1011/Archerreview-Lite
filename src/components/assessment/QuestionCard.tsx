@@ -66,7 +66,7 @@ export default function QuestionCard({
 
   return (
     <motion.div
-      className="bg-card-background-dark rounded-xl shadow-card p-6 w-full border border-archer-dark-teal/30"
+      className="bg-card rounded-xl shadow-card p-6 w-full border border-border"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -74,13 +74,13 @@ export default function QuestionCard({
     >
       {/* Progress bar */}
       <div className="mb-6">
-        <div className="flex justify-between text-sm text-archer-light-text mb-1">
+        <div className="flex justify-between text-sm text-muted-foreground mb-1">
           <span>Question {currentIndex + 1} of {totalQuestions}</span>
           <span>{Math.round(progressPercentage)}% Complete</span>
         </div>
-        <div className="w-full bg-archer-dark-teal/30 rounded-full h-2.5">
+        <div className="w-full bg-muted rounded-full h-2.5">
           <div
-            className="bg-archer-bright-teal h-2.5 rounded-full transition-all duration-300 ease-in-out"
+            className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-in-out"
             style={{ width: `${progressPercentage}%` }}
           ></div>
         </div>
@@ -88,7 +88,7 @@ export default function QuestionCard({
 
       {/* Question */}
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-archer-white mb-4">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
           {question.question}
         </h2>
       </div>
@@ -101,11 +101,11 @@ export default function QuestionCard({
             className={`border rounded-lg p-4 cursor-pointer transition-colors ${
               selectedOption === index
                 ? selectedOption === question.correctAnswer
-                  ? 'border-green-500 bg-green-500/20'
-                  : 'border-red-500 bg-red-500/20'
+                  ? 'border-success bg-success/10'
+                  : 'border-destructive bg-destructive/10'
                 : selectedOption !== null && index === question.correctAnswer
-                ? 'border-green-500 bg-green-500/20'
-                : 'border-archer-dark-teal/50 hover:bg-archer-dark-teal/20'
+                ? 'border-success bg-success/10'
+                : 'border-border hover:bg-muted'
             }`}
             whileHover={selectedOption === null ? { scale: 1.01 } : {}}
             onClick={() => handleOptionSelect(index)}
@@ -114,11 +114,11 @@ export default function QuestionCard({
               <div className={`flex-shrink-0 h-5 w-5 mr-2 rounded-full border ${
                 selectedOption === index
                   ? selectedOption === question.correctAnswer
-                    ? 'border-green-500 bg-green-500'
-                    : 'border-red-500 bg-red-500'
+                    ? 'border-success bg-success'
+                    : 'border-destructive bg-destructive'
                   : selectedOption !== null && index === question.correctAnswer
-                  ? 'border-green-500 bg-green-500'
-                  : 'border-gray-300'
+                  ? 'border-success bg-success'
+                  : 'border-border'
               } flex items-center justify-center`}>
                 {selectedOption === index && (
                   <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -134,11 +134,11 @@ export default function QuestionCard({
               <span className={`${
                 selectedOption === index
                   ? selectedOption === question.correctAnswer
-                    ? 'text-green-400'
-                    : 'text-red-400'
+                    ? 'text-success'
+                    : 'text-destructive'
                   : selectedOption !== null && index === question.correctAnswer
-                  ? 'text-green-400'
-                  : 'text-archer-light-text'
+                  ? 'text-success'
+                  : 'text-foreground'
               }`}>
                 {option}
               </span>
@@ -151,14 +151,14 @@ export default function QuestionCard({
       <AnimatePresence>
         {showExplanation && (
           <motion.div
-            className="bg-archer-dark-teal/30 border border-archer-dark-teal/50 rounded-lg p-4 mb-6"
+            className="bg-muted border border-border rounded-lg p-4 mb-6"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h3 className="font-medium text-archer-bright-teal mb-2">Explanation</h3>
-            <p className="text-archer-light-text text-sm">{question.explanation}</p>
+            <h3 className="font-medium text-primary mb-2">Explanation</h3>
+            <p className="text-muted-foreground text-sm">{question.explanation}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -170,8 +170,8 @@ export default function QuestionCard({
           disabled={isFirst}
           className={`px-4 py-2 rounded-lg font-medium shadow-button ${
             isFirst
-              ? 'bg-archer-dark-teal/30 text-archer-light-text/50 cursor-not-allowed'
-              : 'bg-archer-dark-teal text-archer-light-text hover:bg-archer-dark-teal/80'
+              ? 'bg-muted text-muted-foreground cursor-not-allowed'
+              : 'bg-secondary text-foreground hover:bg-muted'
           }`}
         >
           Previous
@@ -181,8 +181,8 @@ export default function QuestionCard({
           disabled={selectedOption === null}
           className={`px-4 py-2 rounded-lg font-medium shadow-button ${
             selectedOption === null
-              ? 'bg-archer-bright-teal/30 text-archer-dark-bg cursor-not-allowed'
-              : 'bg-archer-bright-teal text-archer-dark-bg hover:bg-archer-bright-teal/90'
+              ? 'bg-primary/30 text-primary-foreground cursor-not-allowed'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90'
           }`}
         >
           {isLast ? 'Finish' : 'Next'}

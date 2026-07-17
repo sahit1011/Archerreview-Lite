@@ -6,11 +6,12 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password?: string; // Optional for OAuth users
+  examType: 'NEET' | 'JEE';
   examDate: Date;
   preferences: {
     availableDays: string[];
     studyHoursPerDay: number;
-    preferredStudyTime: 'morning' | 'afternoon' | 'evening';
+    preferredStudyTime: 'morning' | 'afternoon' | 'evening' | 'night';
     notifications: boolean;
   };
   role: 'user' | 'admin';
@@ -29,13 +30,18 @@ const UserSchema: Schema = new Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String },
+    // NEET (medical: Phy/Chem/Bio) or JEE (engineering: Phy/Chem/Maths).
+    // Default NEET so pre-migration users keep working.
+    examType: { type: String, enum: ['NEET', 'JEE'], default: 'NEET' },
     examDate: { type: Date, required: true },
     preferences: {
       availableDays: { type: [String], default: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] },
       studyHoursPerDay: { type: Number, default: 2 },
       preferredStudyTime: {
         type: String,
-        enum: ['morning', 'afternoon', 'evening'],
+        // 'night' is written by the adaptation agent when a student's actual
+        // completion times cluster after 9pm — must be a valid stored value.
+        enum: ['morning', 'afternoon', 'evening', 'night'],
         default: 'morning'
       },
       notifications: { type: Boolean, default: true }
@@ -81,4 +87,4 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
 };
 
 // Create and export the User model
-export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+export default (mongoose.models.User as mongoose.Model<IUser>) || mongoose.model<IUser>('User', UserSchema);

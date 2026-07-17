@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Alert } from '@/models';
+import { requireAdmin } from '@/lib/api-auth';
 
 /**
  * API endpoint for cleaning up excessive alerts
@@ -8,26 +9,17 @@ import { Alert } from '@/models';
  */
 export async function POST(req: NextRequest) {
   try {
+    // Admin-only destructive operation
+    const auth = requireAdmin(req);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to the database
     await dbConnect();
 
-    // Parse request body
-    const body = await req.json();
-
-    // Validate required fields
-    if (!body.userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required field: userId'
-        },
-        { status: 400 }
-      );
-    }
-
     // Get all remediation alerts for this user
     const remediationAlerts = await Alert.find({
-      user: body.userId,
+      user: userId,
       type: 'REMEDIATION',
       isResolved: false
     }).populate('relatedTopic');

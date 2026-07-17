@@ -62,4 +62,4 @@ const AdaptationSchema: Schema = new Schema(
 );
 
 // Create and export the Adaptation model
-export default mongoose.models.Adaptation || mongoose.model<IAdaptation>('Adaptation', AdaptationSchema);
+export default (mongoose.models.Adaptation as mongoose.Model<IAdaptation>) || mongoose.model<IAdaptation>('Adaptation', AdaptationSchema);

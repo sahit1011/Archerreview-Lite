@@ -81,45 +81,45 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
     switch (type) {
       case 'VIDEO':
         return {
-          bg: 'from-blue-500/20 to-blue-600/20',
+          bg: 'from-blue-500/15 to-blue-600/10',
           border: 'border-blue-500/30',
-          icon: 'bg-blue-100 text-blue-600',
+          icon: 'bg-blue-500/15 text-blue-400',
           accent: 'bg-blue-500'
         };
       case 'QUIZ':
         return {
-          bg: 'from-purple-500/20 to-purple-600/20',
-          border: 'border-purple-500/30',
-          icon: 'bg-purple-100 text-purple-600',
-          accent: 'bg-purple-500'
+          bg: 'from-primary/15 to-primary/10',
+          border: 'border-primary/30',
+          icon: 'bg-primary/15 text-primary',
+          accent: 'bg-primary'
         };
       case 'READING':
         return {
-          bg: 'from-green-500/20 to-green-600/20',
+          bg: 'from-green-500/15 to-green-600/10',
           border: 'border-green-500/30',
-          icon: 'bg-green-100 text-green-600',
+          icon: 'bg-green-500/15 text-green-400',
           accent: 'bg-green-500'
         };
       case 'PRACTICE':
         return {
-          bg: 'from-amber-500/20 to-amber-600/20',
+          bg: 'from-amber-500/15 to-amber-600/10',
           border: 'border-amber-500/30',
-          icon: 'bg-amber-100 text-amber-600',
+          icon: 'bg-amber-500/15 text-amber-400',
           accent: 'bg-amber-500'
         };
       case 'REVIEW':
         return {
-          bg: 'from-red-500/20 to-red-600/20',
+          bg: 'from-red-500/15 to-red-600/10',
           border: 'border-red-500/30',
-          icon: 'bg-red-100 text-red-600',
+          icon: 'bg-red-500/15 text-red-400',
           accent: 'bg-red-500'
         };
       default:
         return {
-          bg: 'from-gray-500/20 to-gray-600/20',
-          border: 'border-gray-500/30',
-          icon: 'bg-gray-100 text-gray-600',
-          accent: 'bg-gray-500'
+          bg: 'from-muted to-muted/50',
+          border: 'border-border',
+          icon: 'bg-muted text-muted-foreground',
+          accent: 'bg-muted-foreground/40'
         };
     }
   };
@@ -207,29 +207,29 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
 
           {/* Task Content */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-base mb-1 truncate">
+            <h3 className="font-semibold text-foreground text-base mb-1 truncate">
               {task.title}
             </h3>
-            <p className="text-gray-600 text-sm mb-2 line-clamp-1">
+            <p className="text-muted-foreground text-sm mb-2 line-clamp-1">
               {task.type === 'QUIZ' ? `${task.description} • ${task.duration} min` : task.description}
             </p>
-            
+
             {/* Time and Status */}
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-1">
-                <svg className="h-3 w-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-3 w-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-xs font-medium text-gray-700">
+                <span className="text-xs font-medium text-muted-foreground">
                   {format(new Date(task.startTime), 'h:mm a')}
                 </span>
               </div>
-              
+
               {task.status === 'COMPLETED' && (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="flex items-center space-x-1 text-green-600"
+                  className="flex items-center space-x-1 text-green-400"
                 >
                   <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -248,17 +248,16 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
             disabled={isCompleting}
             className={`
               flex-shrink-0 w-8 h-8 rounded-full
-              bg-green-100 text-green-600 hover:bg-green-200
+              bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/30
               flex items-center justify-center transition-all
               disabled:opacity-50 disabled:cursor-not-allowed
-              shadow-sm hover:shadow-md
             `}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
             {isCompleting ? (
               <motion.div
-                className="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full"
+                className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
@@ -273,10 +272,10 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
 
       {/* Progress indicator for quiz tasks */}
       {task.type === 'QUIZ' && (
-        <div className="mt-3 pt-3 border-t border-gray-200/50">
+        <div className="mt-3 pt-3 border-t border-border">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-600 font-medium">Click to start quiz</span>
-            <div className="flex items-center space-x-1 text-purple-600">
+            <span className="text-muted-foreground font-medium">Click to start quiz</span>
+            <div className="flex items-center space-x-1 text-primary">
               <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>

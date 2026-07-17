@@ -1,6 +1,7 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
+import { JWT_SECRET } from '@/utils/auth';
 
 export const authOptions = {
   providers: [
@@ -57,5 +58,5 @@ export const authOptions = {
     signIn: '/auth/login',
     error: '/auth/error',
   },
-  secret: process.env.JWT_SECRET || 'your-secret-key',
+  secret: JWT_SECRET,
 };

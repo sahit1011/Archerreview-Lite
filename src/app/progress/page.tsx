@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layouts/AppLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useUser } from '@/context/UserContext';
@@ -10,20 +10,25 @@ import TopicBreakdown from '@/components/progress/TopicBreakdown';
 import ReadinessDetails from '@/components/progress/ReadinessDetails';
 import PlanAdaptations from '@/components/progress/PlanAdaptations';
 import MonitorInsights from '@/components/dashboard/MonitorInsights';
+import { Reveal } from '@/components/ui/reveal';
 import {
-  LongTermTrends,
-  PlanVersionManagement,
-  PredictivePerformance,
-  PlanReviewOptimization
-} from '@/components/evolution';
+  LineChart,
+  ShieldCheck,
+  CheckCircle2,
+  Zap,
+  TrendingUp,
+  GitBranch,
+  Target,
+  AlertTriangle,
+} from 'lucide-react';
 
 export default function ProgressPage() {
   const { user: authUser, isLoading: authLoading } = useUser();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeMainTab, setActiveMainTab] = useState<'overview' | 'performance' | 'readiness' | 'adaptations' | 'evolution'>('overview');
   const [activeSubTab, setActiveSubTab] = useState('overall'); // Default for performance tab
-  const [evolutionSubTab, setEvolutionSubTab] = useState('trends'); // Separate state for evolution tab
 
   // Readiness score data
   const [readinessScore, setReadinessScore] = useState({
@@ -41,16 +46,9 @@ export default function ProgressPage() {
     byType: [] as { type: string; total: number; completed: number }[]
   });
 
-  // Performance history data
-  const [performanceHistory, setPerformanceHistory] = useState([
-    { date: '2023-04-01', score: 55 },
-    { date: '2023-04-08', score: 58 },
-    { date: '2023-04-15', score: 62 },
-    { date: '2023-04-22', score: 65 },
-    { date: '2023-04-29', score: 68 },
-    { date: '2023-05-06', score: 72 },
-    { date: '2023-05-13', score: 75 }
-  ]);
+  // Performance history data — PerformanceCharts fetches the real series itself;
+  // this is only the empty fallback (never fabricate a fake trend).
+  const [performanceHistory, setPerformanceHistory] = useState<{ date: string; score: number }[]>([]);
 
   // Topic breakdown data
   const [topics, setTopics] = useState<Array<{
@@ -118,17 +116,25 @@ export default function ProgressPage() {
       try {
         setLoading(true);
 
-        // Use the authenticated user
-        if (authLoading) {
+        // Resolve the user the same resilient way the dashboard does: prefer the
+        // ?userId= the dashboard link passes, then the authenticated user from
+        // context, then localStorage. This avoids a hard "must be logged in" failure
+        // when UserContext hasn't hydrated yet but we clearly have a user id.
+        const urlUserId = searchParams.get('userId');
+        const localUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+        const userId = urlUserId || authUser?.id || localUserId;
+
+        // Only wait on auth if we have no id from any source yet.
+        if (!userId && authLoading) {
           return; // Wait for auth to complete
         }
 
-        if (!authUser) {
+        if (!userId) {
           throw new Error('You must be logged in to view this page.');
         }
 
         // Fetch actual readiness score data from API
-        const readinessResponse = await fetch(`/api/readiness-score?userId=${authUser.id}`);
+        const readinessResponse = await fetch(`/api/readiness-score?userId=${userId}`);
         const readinessData = await readinessResponse.json();
 
         if (readinessData.success && readinessData.readinessScore) {
@@ -145,7 +151,7 @@ export default function ProgressPage() {
         }
 
         // Get user's study plan
-        const planResponse = await fetch(`/api/study-plans?userId=${authUser.id}`);
+        const planResponse = await fetch(`/api/study-plans?userId=${userId}`);
         const planData = await planResponse.json();
 
         if (planData.success && planData.studyPlan) {
@@ -160,99 +166,62 @@ export default function ProgressPage() {
           }
         }
 
-        // Mock performance history data
-        setPerformanceHistory([
-          { date: '2023-04-01', score: 55 },
-          { date: '2023-04-08', score: 58 },
-          { date: '2023-04-15', score: 62 },
-          { date: '2023-04-22', score: 65 },
-          { date: '2023-04-29', score: 68 },
-          { date: '2023-05-06', score: 72 },
-          { date: '2023-05-13', score: 75 }
-        ]);
+        // Real topic performance: the exam's topic catalog from /api/topics, with
+        // per-topic scores computed by averaging the student's real Performance
+        // records for each topic. Topics not yet attempted show as "not attempted".
+        try {
+          const [topicsRes, perfRes] = await Promise.all([
+            fetch('/api/topics'),
+            fetch('/api/performance'),
+          ]);
+          const topicsData = await topicsRes.json();
+          const perfData = await perfRes.json();
 
-        // Mock topic data
-        setTopics([
-          {
-            _id: '1',
-            name: 'Pharmacology',
-            category: 'PHARMACOLOGICAL_THERAPIES',
-            score: 65,
-            subtopics: [
-              { _id: '1-1', name: 'Anticoagulants', category: 'PHARMACOLOGICAL_THERAPIES', score: 60 },
-              { _id: '1-2', name: 'Pain Management', category: 'PHARMACOLOGICAL_THERAPIES', score: 70 }
-            ]
-          },
-          {
-            _id: '2',
-            name: 'Cardiovascular',
-            category: 'PHYSIOLOGICAL_ADAPTATION',
-            score: 68,
-            subtopics: [
-              { _id: '2-1', name: 'Heart Failure', category: 'PHYSIOLOGICAL_ADAPTATION', score: 65 },
-              { _id: '2-2', name: 'Arrhythmias', category: 'PHYSIOLOGICAL_ADAPTATION', score: 70 }
-            ]
-          },
-          {
-            _id: '3',
-            name: 'Health Promotion',
-            category: 'HEALTH_PROMOTION',
-            score: 85,
-            subtopics: [
-              { _id: '3-1', name: 'Immunizations', category: 'HEALTH_PROMOTION', score: 80 },
-              { _id: '3-2', name: 'Nutrition', category: 'HEALTH_PROMOTION', score: 90 }
-            ]
+          // Average real scores per topic id
+          const scoreAgg: Record<string, { sum: number; n: number }> = {};
+          for (const p of (perfData?.performances || [])) {
+            const tid = p.topic?._id || p.topic;
+            if (!tid || typeof p.score !== 'number') continue;
+            const key = String(tid);
+            if (!scoreAgg[key]) scoreAgg[key] = { sum: 0, n: 0 };
+            scoreAgg[key].sum += p.score;
+            scoreAgg[key].n += 1;
           }
-        ]);
 
-        // Mock adaptations data
-        setAdaptations([
-          {
-            _id: '1',
-            type: 'RESCHEDULE',
-            description: 'Rescheduled Pharmacology quiz to allow more study time',
-            reason: 'Low performance on practice questions',
-            date: '2023-05-01',
-            topicId: '1',
-            topicName: 'Pharmacology',
-            taskId: '101',
-            taskTitle: 'Pharmacology Quiz'
-          },
-          {
-            _id: '2',
-            type: 'CONTENT_ADDITION',
-            description: 'Added additional practice questions on Cardiovascular topics',
-            reason: 'Performance below target threshold',
-            date: '2023-05-03',
-            topicId: '2',
-            topicName: 'Cardiovascular'
-          },
-          {
-            _id: '3',
-            type: 'DIFFICULTY_ADJUSTMENT',
-            description: 'Adjusted difficulty of Anticoagulants content',
-            reason: 'Multiple incorrect answers on assessment',
-            date: '2023-05-05',
-            topicId: '1-1',
-            topicName: 'Anticoagulants'
-          },
-          {
-            _id: '4',
-            type: 'PLAN_REBALANCE',
-            description: 'Rebalanced study plan to focus more on Pharmacology',
-            reason: 'Performance gap identified in this area',
-            date: '2023-05-10'
-          },
-          {
-            _id: '5',
-            type: 'REMEDIAL_CONTENT',
-            description: 'Added remedial content for Heart Failure',
-            reason: 'Failed assessment on this topic',
-            date: '2023-05-12',
-            topicId: '2-1',
-            topicName: 'Heart Failure'
+          // Only show subjects that belong to this student's exam
+          const examSubjects = authUser?.examType === 'JEE'
+            ? ['PHYSICS', 'CHEMISTRY', 'MATHEMATICS']
+            : ['PHYSICS', 'CHEMISTRY', 'BIOLOGY'];
+
+          if (topicsData.success && Array.isArray(topicsData.topics)) {
+            setTopics(
+              topicsData.topics
+                .filter((t: any) => examSubjects.includes(t.category))
+                .map((t: any) => {
+                  const agg = scoreAgg[String(t._id)];
+                  return {
+                    _id: t._id,
+                    name: t.name,
+                    category: t.category,
+                    score: agg ? Math.round(agg.sum / agg.n) : undefined,
+                  };
+                })
+            );
           }
-        ]);
+        } catch (topicsErr) {
+          console.error('Error loading topic performance:', topicsErr);
+        }
+
+        // Real adaptation log written by the adaptation agent.
+        try {
+          const adaptationsRes = await fetch('/api/plan-adaptations');
+          const adaptationsData = await adaptationsRes.json();
+          if (adaptationsData.success && Array.isArray(adaptationsData.adaptations)) {
+            setAdaptations(adaptationsData.adaptations);
+          }
+        } catch (adaptErr) {
+          console.error('Error loading plan adaptations:', adaptErr);
+        }
 
         setLoading(false);
       } catch (err) {
@@ -263,7 +232,7 @@ export default function ProgressPage() {
     };
 
     fetchProgressData();
-  }, [authUser, authLoading]);
+  }, [authUser, authLoading, searchParams]);
   // Get category score color based on score
   const getCategoryScoreColor = (score: number) => {
     if (score >= 80) return 'bg-green-500';
@@ -295,370 +264,200 @@ export default function ProgressPage() {
     ? Math.ceil((new Date(authUser.examDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : 30;
 
+  // Same resolution order as the data fetch: URL param → auth context → localStorage
+  const resolvedUserId =
+    searchParams.get('userId') ||
+    authUser?.id ||
+    (typeof window !== 'undefined' ? localStorage.getItem('userId') : null) ||
+    '';
+
+  const taskCompletionPct = completedTasks.total > 0
+    ? Math.round((completedTasks.completed / completedTasks.total) * 100)
+    : 0;
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: LineChart },
+    { id: 'performance', label: 'Performance by Topic', icon: TrendingUp },
+    { id: 'readiness', label: 'Readiness Details', icon: ShieldCheck },
+    { id: 'adaptations', label: 'Plan Adaptations', icon: Zap },
+    { id: 'evolution', label: 'Long-Term Evolution', icon: GitBranch },
+  ] as const;
+
   return (
     <ProtectedRoute>
       <AppLayout>
-        <div className="mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex items-center mb-4"
-          >
-            <motion.svg
-              className="w-10 h-10 mr-4 text-archer-bright-teal"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              animate={{
-                scale: [1, 1.1, 1],
-                color: ["rgba(20, 184, 166, 1)", "rgba(34, 197, 94, 1)", "rgba(20, 184, 166, 1)"]
-              }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </motion.svg>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-archer-bright-teal via-blue-400 to-purple-400 bg-clip-text text-transparent tracking-tight">
-              Progress Tracking
+        {/* Header */}
+        <Reveal className="mb-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12 text-primary">
+              <LineChart className="h-6 w-6" />
+            </div>
+            <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+              <span className="gradient-text">Progress Tracking</span>
             </h1>
-          </motion.div>
-          <motion.p
-            className="text-lg text-archer-light-text/80 max-w-2xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            Monitor your NCLEX preparation progress and readiness with detailed analytics and insights.
-          </motion.p>
-        </div>
+          </div>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Monitor your {authUser?.examType || 'NEET/JEE'} preparation progress and readiness with detailed analytics and insights.
+          </p>
+        </Reveal>
 
         {/* Main Tabs */}
-        <motion.div
-          className="mb-8 glassmorphic-card rounded-xl p-2 shadow-lg"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-        >
-          <nav className="flex -mb-px overflow-x-auto">
-            <motion.button
-              className={`mr-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
-                activeMainTab === 'overview'
-                  ? 'bg-archer-bright-teal text-white shadow-lg transform scale-105'
-                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
-              }`}
-              onClick={() => setActiveMainTab('overview')}
-              whileHover={{ scale: activeMainTab === 'overview' ? 1.05 : 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.span
-                animate={{
-                  color: activeMainTab === 'overview' ? '#ffffff' : undefined
-                }}
-                transition={{ duration: 0.3 }}
-              >
-                Overview
-              </motion.span>
-            </motion.button>
-            <motion.button
-              className={`mr-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
-                activeMainTab === 'performance'
-                  ? 'bg-archer-bright-teal text-archer-dark-bg shadow-lg transform scale-105'
-                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
-              }`}
-              onClick={() => setActiveMainTab('performance')}
-              whileHover={{ scale: activeMainTab === 'performance' ? 1.05 : 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.span
-                animate={{
-                  color: activeMainTab === 'performance' ? '#0f172a' : undefined
-                }}
-                transition={{ duration: 0.3 }}
-              >
-                Performance by Topic
-              </motion.span>
-            </motion.button>
-            <motion.button
-              className={`mr-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
-                activeMainTab === 'readiness'
-                  ? 'bg-archer-bright-teal text-archer-dark-bg shadow-lg transform scale-105'
-                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
-              }`}
-              onClick={() => setActiveMainTab('readiness')}
-              whileHover={{ scale: activeMainTab === 'readiness' ? 1.05 : 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.span
-                animate={{
-                  color: activeMainTab === 'readiness' ? '#0f172a' : undefined
-                }}
-                transition={{ duration: 0.3 }}
-              >
-                Readiness Details
-              </motion.span>
-            </motion.button>
-            <motion.button
-              className={`mr-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
-                activeMainTab === 'adaptations'
-                  ? 'bg-archer-bright-teal text-archer-bright-teal shadow-lg transform scale-105'
-                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
-              }`}
-              onClick={() => setActiveMainTab('adaptations')}
-              whileHover={{ scale: activeMainTab === 'adaptations' ? 1.05 : 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.span
-                animate={{
-                  color: activeMainTab === 'adaptations' ? '#0f172a' : undefined
-                }}
-                transition={{ duration: 0.3 }}
-              >
-                Plan Adaptations
-              </motion.span>
-            </motion.button>
-            <motion.button
-              className={`py-3 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${
-                activeMainTab === 'evolution'
-                  ? 'bg-archer-bright-teal text-archer-dark-bg shadow-lg transform scale-105'
-                  : 'text-archer-light-text/70 hover:text-archer-light-text hover:bg-archer-dark-teal/30 hover:shadow-md'
-              }`}
-              onClick={() => setActiveMainTab('evolution')}
-              whileHover={{ scale: activeMainTab === 'evolution' ? 1.05 : 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.span
-                animate={{
-                  color: activeMainTab === 'evolution' ? '#0f172a' : undefined
-                }}
-                transition={{ duration: 0.3 }}
-              >
-                Long-Term Evolution
-              </motion.span>
-            </motion.button>
-          </nav>
-        </motion.div>
+        <Reveal delay={0.05} className="mb-8">
+          <div className="rounded-2xl border border-border bg-card p-1.5 shadow-sm">
+            <nav className="flex gap-1 overflow-x-auto">
+              {tabs.map((tab) => {
+                const active = activeMainTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveMainTab(tab.id)}
+                    className={`press flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
+                      active
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    }`}
+                  >
+                    <tab.icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </Reveal>
 
         {/* Tab Content */}
         {loading ? (
-          <motion.div
-            className="flex flex-col items-center justify-center h-64 glassmorphic-card rounded-xl p-8"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <motion.div
-              className="w-16 h-16 border-t-4 border-archer-bright-teal border-solid rounded-full"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            ></motion.div>
-            <motion.p
-              className="mt-4 text-archer-light-text text-lg"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              Loading your progress data...
-            </motion.p>
-          </motion.div>
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-12 shadow-sm">
+            <div className="h-12 w-12 animate-spin rounded-full border-2 border-border border-t-primary" />
+            <p className="mt-4 text-muted-foreground">Loading your progress data...</p>
+          </div>
         ) : error ? (
-          <motion.div
-            className="glassmorphic-card p-8 text-center text-red-400 rounded-xl mb-6"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            whileHover={{
-              scale: 1.02,
-              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15), 0 0 5px rgba(239, 68, 68, 0.3)",
-              transition: { duration: 0.3 }
-            }}
-          >
-            <motion.div
-              className="flex items-center justify-center mb-4"
-              animate={{
-                scale: [1, 1.1, 1],
-                color: ["rgba(248, 113, 113, 1)", "rgba(239, 68, 68, 1)", "rgba(248, 113, 113, 1)"]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <svg className="w-8 h-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              <span className="text-xl font-semibold">Error Loading Progress</span>
-            </motion.div>
-            <p className="text-archer-light-text/80 mb-4">{error}</p>
-            <motion.button
-              className="px-6 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg font-medium transition-all shadow-button"
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
+          <div className="mx-auto max-w-lg rounded-2xl border border-destructive/30 bg-destructive/10 p-8 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/15 text-destructive">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <h2 className="text-xl font-semibold text-foreground">Error Loading Progress</h2>
+            <p className="mt-2 text-muted-foreground">{error}</p>
+            <button
+              className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"
               onClick={() => window.location.reload()}
             >
               Try Again
-            </motion.button>
-          </motion.div>
+            </button>
+          </div>
         ) : (
           <>
             {/* Overview Tab */}
             {activeMainTab === 'overview' && (
               <div>
-                <motion.div
-                  className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6, duration: 0.6 }}
-                >
+                <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
                   {/* Readiness Score */}
-                  <motion.div
-                    className="glassmorphic-card rounded-xl shadow-lg border border-border-color-dark p-6"
-                    whileHover={{
-                      scale: 1.02,
-                      boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(20, 184, 166, 0.2)",
-                      transition: { duration: 0.4 }
-                    }}
-                  >
-                    <motion.div
-                      className="flex items-center mb-6"
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <motion.svg
-                        className="w-8 h-8 mr-3 text-archer-bright-teal"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        animate={{
-                          scale: [1, 1.1, 1],
-                          color: ["rgba(20, 184, 166, 1)", "rgba(34, 197, 94, 1)", "rgba(20, 184, 166, 1)"]
-                        }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </motion.svg>
-                      <h2 className="text-xl font-semibold text-archer-white">NCLEX Readiness Score</h2>
-                    </motion.div>
-                    <div className="flex justify-center mb-6">
-                      <div className="relative h-48 w-48">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="text-5xl font-bold text-archer-bright-teal">{readinessScore.overallScore}%</div>
-                            <div className="text-archer-light-text/70">Ready</div>
-                          </div>
+                  <Reveal>
+                    <div className="card-hover group relative h-full overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
+                      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
+                      <div className="mb-6 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
+                          <ShieldCheck className="h-5 w-5" />
                         </div>
-                        <svg className="h-full w-full" viewBox="0 0 36 36">
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="var(--border-color-dark)"
-                            strokeWidth="3"
-                            strokeDasharray="100, 100"
-                          />
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="var(--archer-bright-teal)"
-                            strokeWidth="3"
-                            strokeDasharray={`${readinessScore.overallScore}, 100`}
-                          />
-                        </svg>
+                        <h2 className="text-lg font-semibold text-foreground">Exam Readiness Score</h2>
+                      </div>
+                      <div className="mb-6 flex justify-center">
+                        <div className="relative h-48 w-48">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="font-display text-5xl font-bold text-primary">{readinessScore.overallScore}%</div>
+                              <div className="text-sm text-muted-foreground">Ready</div>
+                            </div>
+                          </div>
+                          <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                            <path
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              fill="none"
+                              stroke="var(--border)"
+                              strokeWidth="3"
+                              strokeDasharray="100, 100"
+                            />
+                            <path
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              fill="none"
+                              stroke="var(--primary)"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeDasharray={`${readinessScore.overallScore}, 100`}
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 rounded-xl border border-border bg-secondary/40 p-4 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          Your exam is in <span className="font-semibold text-foreground">{daysUntilExam} days</span>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Projected score: <span className="font-semibold text-foreground">{readinessScore.projectedScore}%</span>
+                        </p>
                       </div>
                     </div>
-                    <motion.div
-                      className="text-center"
-                      initial={{ opacity: 0.8 }}
-                      whileHover={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <p className="text-sm text-archer-light-text/80 mb-2">
-                        Your exam is in <span className="font-medium text-archer-light-text">{daysUntilExam} days</span>
-                      </p>
-                      <p className="text-sm text-archer-light-text/80">
-                        Projected score: <span className="font-medium text-archer-light-text">{readinessScore.projectedScore}%</span>
-                      </p>
-                    </motion.div>
-                  </motion.div>
+                  </Reveal>
 
                   {/* Task Completion */}
-                  <motion.div
-                    className="glassmorphic-card rounded-xl shadow-lg border border-border-color-dark p-6"
-                    whileHover={{
-                      scale: 1.02,
-                      boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(59, 130, 246, 0.2)",
-                      transition: { duration: 0.4 }
-                    }}
-                  >
-                    <motion.div
-                      className="flex items-center mb-6"
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <motion.svg
-                        className="w-8 h-8 mr-3 text-blue-400"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        animate={{
-                          scale: [1, 1.1, 1],
-                          color: ["rgba(96, 165, 250, 1)", "rgba(59, 130, 246, 1)", "rgba(96, 165, 250, 1)"]
-                        }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </motion.svg>
-                      <h2 className="text-xl font-semibold text-archer-white">Task Completion</h2>
-                    </motion.div>
-                    <div className="flex justify-center mb-6">
-                      <div className="relative h-40 w-40">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="text-3xl font-bold text-archer-bright-teal">{Math.round((completedTasks.completed / completedTasks.total) * 100)}%</div>
-                            <div className="text-sm text-archer-light-text/70">Completed</div>
-                            <div className="text-xs text-archer-light-text/50 mt-1">{completedTasks.completed} of {completedTasks.total} tasks</div>
-                          </div>
+                  <Reveal delay={0.08}>
+                    <div className="card-hover group relative h-full overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
+                      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-sky-500/10 blur-2xl" />
+                      <div className="mb-6 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/12 text-sky-600 dark:text-sky-400">
+                          <CheckCircle2 className="h-5 w-5" />
                         </div>
-                        <svg className="h-full w-full" viewBox="0 0 36 36">
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="var(--border-color-dark)"
-                            strokeWidth="3"
-                            strokeDasharray="100, 100"
-                          />
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="var(--archer-bright-teal)"
-                            strokeWidth="3"
-                            strokeDasharray={`${Math.round((completedTasks.completed / completedTasks.total) * 100)}, 100`}
-                          />
-                        </svg>
+                        <h2 className="text-lg font-semibold text-foreground">Task Completion</h2>
+                      </div>
+                      <div className="mb-6 flex justify-center">
+                        <div className="relative h-40 w-40">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="font-display text-3xl font-bold text-primary">{taskCompletionPct}%</div>
+                              <div className="text-sm text-muted-foreground">Completed</div>
+                              <div className="mt-1 text-xs text-muted-foreground">{completedTasks.completed} of {completedTasks.total} tasks</div>
+                            </div>
+                          </div>
+                          <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                            <path
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              fill="none"
+                              stroke="var(--border)"
+                              strokeWidth="3"
+                              strokeDasharray="100, 100"
+                            />
+                            <path
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              fill="none"
+                              stroke="var(--primary)"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeDasharray={`${taskCompletionPct}, 100`}
+                            />
+                          </svg>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {completedTasks.byType.map((type) => (
+                          <div key={type.type}>
+                            <div className="mb-1 flex justify-between text-sm">
+                              <span className="text-muted-foreground">{type.type.charAt(0) + type.type.slice(1).toLowerCase()}</span>
+                              <span className="font-medium text-foreground">{type.completed} of {type.total}</span>
+                            </div>
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                              <div
+                                className={`${getTaskTypeColor(type.type)} h-2 rounded-full`}
+                                style={{ width: `${(type.completed / type.total) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-
-                    <div className="space-y-3">
-                      {completedTasks.byType.map((type) => (
-                        <div key={type.type}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-archer-light-text/80">{type.type.charAt(0) + type.type.slice(1).toLowerCase()}</span>
-                            <span className="font-medium text-archer-light-text">{type.completed} of {type.total}</span>
-                          </div>
-                          <div className="w-full bg-archer-dark-teal rounded-full h-2">
-                            <div
-                              className={`${getTaskTypeColor(type.type)} h-2 rounded-full`}
-                              style={{ width: `${(type.completed / type.total) * 100}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                </motion.div>
+                  </Reveal>
+                </div>
 
                 {/* Performance Charts */}
                 <PerformanceCharts
@@ -668,96 +467,67 @@ export default function ProgressPage() {
                 />
 
                 {/* Strengths & Weaknesses */}
-                <motion.div
-                  className="glassmorphic-card rounded-xl shadow-lg border border-border-color-dark p-6 mb-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8, duration: 0.6 }}
-                  whileHover={{
-                    scale: 1.01,
-                    boxShadow: "0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(34, 197, 94, 0.2)",
-                    transition: { duration: 0.4 }
-                  }}
-                >
-                  <motion.div
-                    className="flex items-center mb-6"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <motion.svg
-                      className="w-8 h-8 mr-3 text-green-400"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      animate={{
-                        scale: [1, 1.1, 1],
-                        color: ["rgba(34, 197, 94, 1)", "rgba(20, 184, 166, 1)", "rgba(34, 197, 94, 1)"]
-                      }}
-                      transition={{ duration: 3, repeat: Infinity }}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </motion.svg>
-                    <h2 className="text-xl font-semibold text-archer-white">Strengths & Weaknesses</h2>
-                  </motion.div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-md font-medium text-archer-light-text mb-3">Areas to Improve</h3>
-                      <div className="space-y-4">
-                        {readinessScore.weakAreas.map((area, index) => (
-                          <div key={index} className="bg-card-background-lighter rounded-lg p-4 shadow-card">
-                            <div className="flex justify-between items-center mb-2">
-                              <div className="flex items-center">
-                                <div className="h-10 w-10 rounded-full bg-card-background-dark flex items-center justify-center mr-3 shadow-sm">
-                                  <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
-                                <h4 className="font-medium text-archer-light-text">{area.name}</h4>
-                              </div>
-                              <span className="text-sm font-medium text-archer-light-text">
-                                {area.score}%
-                              </span>
-                            </div>
-                            <p className="text-sm text-archer-light-text/70 ml-13 pl-1">
-                              Focus on improving your knowledge in this area. Consider reviewing related content and taking more practice quizzes.
-                            </p>
-                          </div>
-                        ))}
+                <Reveal>
+                  <div className="mb-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+                    <div className="mb-6 flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600 dark:text-emerald-400">
+                        <Zap className="h-5 w-5" />
                       </div>
+                      <h2 className="text-lg font-semibold text-foreground">Strengths &amp; Weaknesses</h2>
                     </div>
 
-                    <div>
-                      <h3 className="text-md font-medium text-archer-light-text mb-3">Strong Areas</h3>
-                      <div className="space-y-4">
-                        {readinessScore.strongAreas.map((area, index) => (
-                          <div key={index} className="bg-card-background-lighter rounded-lg p-4 shadow-card">
-                            <div className="flex justify-between items-center mb-2">
-                              <div className="flex items-center">
-                                <div className="h-10 w-10 rounded-full bg-card-background-dark flex items-center justify-center mr-3 shadow-sm">
-                                  <svg className="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
-                                <h4 className="font-medium text-archer-light-text">{area.name}</h4>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <div>
+                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                          <Target className="h-4 w-4 text-destructive" /> Areas to Improve
+                        </h3>
+                        <div className="space-y-3">
+                          {readinessScore.weakAreas.map((area, index) => (
+                            <div key={index} className="rounded-xl border border-border border-l-4 border-l-destructive/60 bg-secondary/40 p-4">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-foreground">{area.name || area}</h4>
+                                {typeof area.score === 'number' && (
+                                  <span className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-sm font-semibold text-destructive">
+                                    {area.score}%
+                                  </span>
+                                )}
                               </div>
-                              <span className="text-sm font-medium text-archer-light-text">
-                                {area.score}%
-                              </span>
+                              <p className="mt-2 text-sm text-muted-foreground">
+                                Focus on improving your knowledge in this area. Consider reviewing related content and taking more practice quizzes.
+                              </p>
                             </div>
-                            <p className="text-sm text-archer-light-text/70 ml-13 pl-1">
-                              You're doing well in this area! Continue to maintain your knowledge with periodic review.
-                            </p>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                          <CheckCircle2 className="h-4 w-4 text-success" /> Strong Areas
+                        </h3>
+                        <div className="space-y-3">
+                          {readinessScore.strongAreas.map((area, index) => (
+                            <div key={index} className="rounded-xl border border-border border-l-4 border-l-success/60 bg-secondary/40 p-4">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-foreground">{area.name || area}</h4>
+                                {typeof area.score === 'number' && (
+                                  <span className="rounded-lg border border-success/30 bg-success/10 px-2.5 py-1 text-sm font-semibold text-success">
+                                    {area.score}%
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-2 text-sm text-muted-foreground">
+                                You're doing well in this area! Continue to maintain your knowledge with periodic review.
+                              </p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </Reveal>
 
                 {/* Monitor Agent Insights */}
-                <MonitorInsights userId="6818ed80539a47f3e1d5b9ab" />
+                {resolvedUserId && <MonitorInsights userId={resolvedUserId} />}
               </div>
             )}
 
@@ -782,72 +552,45 @@ export default function ProgressPage() {
               <PlanAdaptations adaptations={adaptations} />
             )}
 
-            {/* Evolution Tab */}
+            {/* Long-Term Evolution Tab — honestly gated: these analytics need weeks of
+                real study history to be meaningful, so we show progress toward unlocking
+                rather than fabricating trends/predictions for a brand-new account. */}
             {activeMainTab === 'evolution' && (
-              <div>
-                {/* Evolution Tab Navigation */}
-                <div className="mb-6 bg-card-background-dark rounded-lg p-4 shadow-card">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => setEvolutionSubTab('trends')}
-                      className={`px-4 py-2 rounded-lg text-sm shadow-button ${
-                        evolutionSubTab === 'trends'
-                          ? 'bg-archer-bright-teal text-archer-dark-bg'
-                          : 'bg-archer-dark-teal/50 text-archer-light-text/70 hover:bg-archer-dark-teal/70'
-                      }`}
-                    >
-                      Long-Term Trends
-                    </button>
-                    <button
-                      onClick={() => setEvolutionSubTab('versions')}
-                      className={`px-4 py-2 rounded-lg text-sm shadow-button ${
-                        evolutionSubTab === 'versions'
-                          ? 'bg-archer-bright-teal text-archer-dark-bg'
-                          : 'bg-archer-dark-teal/50 text-archer-light-text/70 hover:bg-archer-dark-teal/70'
-                      }`}
-                    >
-                      Plan Versions
-                    </button>
-                    <button
-                      onClick={() => setEvolutionSubTab('predictions')}
-                      className={`px-4 py-2 rounded-lg text-sm shadow-button ${
-                        evolutionSubTab === 'predictions'
-                          ? 'bg-archer-bright-teal text-archer-dark-bg'
-                          : 'bg-archer-dark-teal/50 text-archer-light-text/70 hover:bg-archer-dark-teal/70'
-                      }`}
-                    >
-                      Predictive Performance
-                    </button>
-                    <button
-                      onClick={() => setEvolutionSubTab('reviews')}
-                      className={`px-4 py-2 rounded-lg text-sm shadow-button ${
-                        evolutionSubTab === 'reviews'
-                          ? 'bg-archer-bright-teal text-archer-dark-bg'
-                          : 'bg-archer-dark-teal/50 text-archer-light-text/70 hover:bg-archer-dark-teal/70'
-                      }`}
-                    >
-                      Plan Reviews
-                    </button>
-                  </div>
-                </div>
-
-                {/* Evolution Tab Content */}
-                {evolutionSubTab === 'trends' && (
-                  <LongTermTrends userId={authUser?.id || localStorage.getItem('userId') || '6818ed80539a47f3e1d5b9ab'} />
-                )}
-
-                {evolutionSubTab === 'versions' && (
-                  <PlanVersionManagement userId={authUser?.id || localStorage.getItem('userId') || '6818ed80539a47f3e1d5b9ab'} />
-                )}
-
-                {evolutionSubTab === 'predictions' && (
-                  <PredictivePerformance userId={authUser?.id || localStorage.getItem('userId') || '6818ed80539a47f3e1d5b9ab'} />
-                )}
-
-                {evolutionSubTab === 'reviews' && (
-                  <PlanReviewOptimization userId={authUser?.id || localStorage.getItem('userId') || '6818ed80539a47f3e1d5b9ab'} />
-                )}
-              </div>
+              <Reveal>
+                {(() => {
+                  const EVOLUTION_MIN_TASKS = 20;
+                  const done = completedTasks.completed;
+                  const pct = Math.min(100, Math.round((done / EVOLUTION_MIN_TASKS) * 100));
+                  const unlocked = done >= EVOLUTION_MIN_TASKS;
+                  return (
+                    <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+                      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <GitBranch className="h-7 w-7" />
+                      </div>
+                      <h2 className="font-display text-xl font-bold">Long-Term Evolution</h2>
+                      <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
+                        {unlocked
+                          ? 'You have enough study history — long-term trend analysis and predictive readiness are being generated from your real activity.'
+                          : 'Trend analysis, plan-version history and predictive readiness build from your real study data. Keep completing tasks and this unlocks automatically — no made-up numbers before then.'}
+                      </p>
+                      <div className="mx-auto mt-6 max-w-sm">
+                        <div className="mb-1.5 flex justify-between text-xs font-medium">
+                          <span className="text-muted-foreground">Completed tasks</span>
+                          <span className="text-foreground">{done} / {EVOLUTION_MIN_TASKS}</span>
+                        </div>
+                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+                          <div className="h-full rounded-full brand-gradient transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                      <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+                        {['Performance trends', 'Plan versions', 'Predictive readiness', 'Plan reviews'].map((f) => (
+                          <span key={f} className="rounded-lg border border-border px-2.5 py-1">{f}</span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </Reveal>
             )}
           </>
         )}

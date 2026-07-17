@@ -19,12 +19,12 @@ const Step = ({ label, isActive, isCompleted }: { label: string; isActive: boole
     <div className="flex flex-col items-center group">
       <div className="relative">
         <div
-          className={`w-12 h-12 rounded-lg flex items-center justify-center transform transition-all duration-300 shadow-lg ${
+          className={`w-12 h-12 rounded-xl flex items-center justify-center transform transition-all duration-300 ${
             isActive
-              ? 'bg-gradient-to-br from-[#00A99D] to-[#42B0E8] shadow-[#00A99D]/30'
+              ? 'brand-gradient shadow-lg shadow-primary/30'
               : isCompleted
-              ? 'bg-gradient-to-br from-[#00A99D] to-[#42B0E8] shadow-[#00A99D]/20'
-              : 'bg-white/10 shadow-md'
+              ? 'brand-gradient opacity-90 shadow-md shadow-primary/20'
+              : 'bg-muted shadow-sm'
           }`}
         >
           {isCompleted ? (
@@ -32,14 +32,14 @@ const Step = ({ label, isActive, isCompleted }: { label: string; isActive: boole
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           ) : (
-            <div className={`w-3 h-3 rounded-full transition-all duration-300 ${isActive ? 'bg-white' : 'bg-white/30'}`}></div>
+            <div className={`w-3 h-3 rounded-full transition-all duration-300 ${isActive ? 'bg-white' : 'bg-muted-foreground/40'}`}></div>
           )}
         </div>
         {isActive && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#42B0E8] border-2 border-gray-800 animate-pulse"></div>
+          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary border-2 border-card animate-pulse"></div>
         )}
       </div>
-      <span className={`mt-2 text-sm font-medium transition-colors ${isActive || isCompleted ? 'text-white/90' : 'text-white/50'}`}>
+      <span className={`mt-2 text-sm font-medium transition-colors ${isActive || isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
         {label}
       </span>
     </div>
@@ -49,9 +49,9 @@ const Step = ({ label, isActive, isCompleted }: { label: string; isActive: boole
 const Connector = ({ isCompleted }: { isCompleted: boolean }) => {
   return (
     <div className="w-16 md:w-24 flex items-center justify-center">
-      <div className="w-full h-1 rounded-full bg-white/10">
+      <div className="w-full h-1 rounded-full bg-border">
         <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-[#00A99D] to-[#42B0E8]"
+          className="h-full rounded-full brand-gradient"
           initial={{ width: '0%' }}
           animate={{ width: isCompleted ? '100%' : '0%' }}
           transition={{ duration: 0.5, ease: 'easeInOut' }}

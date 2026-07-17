@@ -10,6 +10,12 @@ export interface IDiagnosticResult extends Document {
     category: string;
     score: number; // 0-100 percentage
   }[];
+  topicScores: {
+    topic: mongoose.Types.ObjectId;
+    topicName: string;
+    category: string;
+    score: number; // 0-100 percentage
+  }[];
   answers: {
     question: string;
     topic: mongoose.Types.ObjectId;
@@ -52,20 +58,30 @@ const DiagnosticResultSchema: Schema = new Schema(
         type: String, 
         required: true,
         enum: [
-          'MANAGEMENT_OF_CARE',
-          'SAFETY_AND_INFECTION_CONTROL',
-          'HEALTH_PROMOTION',
-          'PSYCHOSOCIAL_INTEGRITY',
-          'BASIC_CARE_AND_COMFORT',
-          'PHARMACOLOGICAL_THERAPIES',
-          'REDUCTION_OF_RISK_POTENTIAL',
-          'PHYSIOLOGICAL_ADAPTATION'
+          'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS'
         ]
       },
-      score: { 
-        type: Number, 
+      score: {
+        type: Number,
         required: true,
-        min: 0, 
+        min: 0,
+        max: 100
+      }
+    }],
+    // Finer-grained per-topic scores (content-backed diagnostic). Optional so legacy
+    // category-only results and the hardcoded fallback set still save cleanly.
+    topicScores: [{
+      topic: {
+        type: Schema.Types.ObjectId,
+        ref: 'Topic',
+        required: true
+      },
+      topicName: { type: String },
+      category: { type: String },
+      score: {
+        type: Number,
+        required: true,
+        min: 0,
         max: 100
       }
     }],
@@ -80,14 +96,7 @@ const DiagnosticResultSchema: Schema = new Schema(
         type: String, 
         required: true,
         enum: [
-          'MANAGEMENT_OF_CARE',
-          'SAFETY_AND_INFECTION_CONTROL',
-          'HEALTH_PROMOTION',
-          'PSYCHOSOCIAL_INTEGRITY',
-          'BASIC_CARE_AND_COMFORT',
-          'PHARMACOLOGICAL_THERAPIES',
-          'REDUCTION_OF_RISK_POTENTIAL',
-          'PHYSIOLOGICAL_ADAPTATION'
+          'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS'
         ]
       },
       selectedOption: { type: Number, required: true },
@@ -97,14 +106,7 @@ const DiagnosticResultSchema: Schema = new Schema(
     weakAreas: [{ 
       type: String,
       enum: [
-        'MANAGEMENT_OF_CARE',
-        'SAFETY_AND_INFECTION_CONTROL',
-        'HEALTH_PROMOTION',
-        'PSYCHOSOCIAL_INTEGRITY',
-        'BASIC_CARE_AND_COMFORT',
-        'PHARMACOLOGICAL_THERAPIES',
-        'REDUCTION_OF_RISK_POTENTIAL',
-        'PHYSIOLOGICAL_ADAPTATION'
+        'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS'
       ]
     }],
     recommendedFocus: [{ 
@@ -116,4 +118,4 @@ const DiagnosticResultSchema: Schema = new Schema(
 );
 
 // Create and export the DiagnosticResult model
-export default mongoose.models.DiagnosticResult || mongoose.model<IDiagnosticResult>('DiagnosticResult', DiagnosticResultSchema);
+export default (mongoose.models.DiagnosticResult as mongoose.Model<IDiagnosticResult>) || mongoose.model<IDiagnosticResult>('DiagnosticResult', DiagnosticResultSchema);

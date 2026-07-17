@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Task, Performance, StudyPlan } from '@/models';
 import { calculateReadinessScore } from '@/lib/dbUtils';
+import { requireAuth } from '@/lib/api-auth';
+import { runAdaptivityLoop } from '@/services/adaptivityLoop';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate the request; userId is token-derived and trusted.
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const authUserId = auth.user.id;
+    const { id } = await params;
+
     // Connect to the database
     await dbConnect();
 
@@ -37,9 +45,33 @@ export async function PUT(
       );
     }
 
-    // Find and update task
+    // Load the existing task first to verify ownership before mutating it.
+    const existingTask = await Task.findById(id);
+    if (!existingTask) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Task not found'
+        },
+        { status: 404 }
+      );
+    }
+
+    // Ownership check: the task's plan must belong to the authenticated user
+    const ownerPlan = await StudyPlan.findById(existingTask.plan);
+    if (!ownerPlan || ownerPlan.user.toString() !== authUserId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Forbidden'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Update task now that ownership is confirmed
     const task = await Task.findByIdAndUpdate(
-      params.id,
+      id,
       { status: body.status },
       { new: true }
     ).populate({
@@ -61,29 +93,8 @@ export async function PUT(
     }
 
     let readinessScore = null;
-    let userId = null;
-
-    // First try to get userId from the populated plan
-    if (task.plan) {
-      if (typeof task.plan.user === 'object' && task.plan.user !== null && task.plan.user._id) {
-        userId = task.plan.user._id.toString();
-      } else if (task.plan.user) {
-        // If user is just an ID and not populated
-        userId = task.plan.user.toString();
-      }
-    }
-
-    // If we couldn't get userId from the plan, try to get it directly from the database
-    if (!userId) {
-      try {
-        const studyPlan = await StudyPlan.findById(task.plan).populate('user');
-        if (studyPlan && studyPlan.user) {
-          userId = typeof studyPlan.user === 'object' ? studyPlan.user._id.toString() : studyPlan.user.toString();
-        }
-      } catch (error) {
-        console.error('Error fetching study plan:', error);
-      }
-    }
+    // Use the trusted, token-derived user id (ownership already verified above).
+    const userId = authUserId;
 
     if (userId) {
       try {
@@ -135,12 +146,21 @@ export async function PUT(
       console.warn('Could not determine user ID for task:', task._id);
     }
 
+    // Completing a task (from the dashboard/calendar checkbox) is the same student
+    // event as finishing a quiz — run the adaptive loop so the plan rebalances
+    // regardless of which UI path marked it done.
+    let adaptation = null;
+    if (body.status === 'COMPLETED' && userId) {
+      adaptation = await runAdaptivityLoop(userId);
+    }
+
     // Return success response
     return NextResponse.json({
       success: true,
       message: 'Task status updated successfully',
       task,
-      readinessScore
+      readinessScore,
+      adaptation
     });
   } catch (error) {
     console.error('Error updating task status:', error);

@@ -65,17 +65,17 @@ export default function ChatSidebar({
 
       {/* Desktop sidebar - collapsible */}
       <div
-        className={`hidden md:flex flex-col h-full transition-all duration-300 overflow-hidden bg-gray-900/50 backdrop-blur-sm border-r border-white/10 ${isCollapsed ? 'w-16' : 'w-72'}`}
+        className={`hidden md:flex flex-col h-full transition-all duration-300 overflow-hidden bg-card/60 backdrop-blur-sm border-r border-border ${isCollapsed ? 'w-16' : 'w-72'}`}
       >
         {/* Sidebar header - always visible */}
-        <div className={`p-5 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-white/10 sticky top-0 z-10 glassmorphic`}>
+        <div className={`p-5 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-border sticky top-0 z-10 bg-card/60 backdrop-blur-sm`}>
           {isCollapsed ? (
-            <SparklesSolidIcon className="h-6 w-6 text-archer-bright-teal" />
+            <SparklesSolidIcon className="h-6 w-6 text-primary" />
           ) : (
             <>
               <div className="flex items-center">
-                <SparklesSolidIcon className="h-6 w-6 mr-2 text-indigo-400" />
-                <h2 className="font-bold text-lg bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">AI Tutor</h2>
+                <SparklesSolidIcon className="h-6 w-6 mr-2 text-primary" />
+                <h2 className="font-bold text-lg text-foreground">AI Tutor</h2>
               </div>
             </>
           )}
@@ -85,16 +85,16 @@ export default function ChatSidebar({
         <div className="px-4 py-4 mt-4">
           <div
             onClick={onNewChat}
-            className={`flex items-center gap-3 py-3 px-4 rounded-lg transition-all w-full cursor-pointer bg-indigo-500/20 hover:bg-indigo-500/30 transform hover:-translate-y-1 ${isCollapsed ? 'justify-center' : 'justify-start'}`}
+            className={`flex items-center gap-3 py-3 px-4 rounded-xl transition-all w-full cursor-pointer brand-gradient text-white font-semibold shadow-button hover:brightness-110 transform hover:-translate-y-0.5 ${isCollapsed ? 'justify-center' : 'justify-start'}`}
           >
-            <PlusIcon className="h-5 w-5 text-indigo-400" />
-            {!isCollapsed && <span className="font-semibold text-white">New chat</span>}
+            <PlusIcon className="h-5 w-5" />
+            {!isCollapsed && <span className="font-semibold">New chat</span>}
           </div>
         </div>
 
         {/* Recent label - with more spacing */}
         {!isCollapsed && (
-          <div className="px-5 py-4 mt-6 text-sm font-semibold text-gray-300">
+          <div className="px-5 py-4 mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Recent
           </div>
         )}
@@ -107,7 +107,7 @@ export default function ChatSidebar({
                 <div key={conversation.id} className="relative group mb-3">
                   <div
                     onClick={() => onSelectConversation(conversation.id)}
-                    className={`w-full text-left py-3 px-4 rounded-lg transition-all flex items-center justify-between cursor-pointer hover:bg-white/10 transform hover:-translate-y-1 ${activeConversationId === conversation.id ? 'text-indigo-300 font-semibold bg-indigo-500/30' : 'text-white'} ${isCollapsed ? 'justify-center' : ''}`}
+                    className={`w-full text-left py-3 px-4 rounded-xl transition-all flex items-center justify-between cursor-pointer hover:bg-accent transform hover:-translate-y-0.5 ${activeConversationId === conversation.id ? 'text-primary font-semibold bg-primary/15 border border-primary/30' : 'text-muted-foreground border border-transparent'} ${isCollapsed ? 'justify-center' : ''}`}
                   >
                     {isCollapsed ? (
                       <ChatBubbleLeftRightIcon className="h-5 w-5" />
@@ -125,9 +125,9 @@ export default function ChatSidebar({
                                 }
                               }
                             }}
-                            className="opacity-100 p-1 rounded-full hover:bg-archer-bright-teal/20 cursor-pointer mr-1"
+                            className="opacity-100 p-1 rounded-full hover:bg-primary/20 cursor-pointer mr-1"
                           >
-                            <TrashIcon className="h-5 w-5 text-red-400" />
+                            <TrashIcon className="h-5 w-5 text-destructive" />
                           </div>
                           <div
                             onClick={(e) => {
@@ -135,9 +135,9 @@ export default function ChatSidebar({
                               console.log('Menu button clicked for conversation:', conversation.id);
                               setActiveMenuId(activeMenuId === conversation.id ? null : conversation.id);
                             }}
-                            className="opacity-100 p-1 rounded-full hover:bg-archer-bright-teal/20 cursor-pointer"
+                            className="opacity-100 p-1 rounded-full hover:bg-primary/20 cursor-pointer"
                           >
-                            <EllipsisHorizontalIcon className="h-5 w-5 text-archer-light-blue" />
+                            <EllipsisHorizontalIcon className="h-5 w-5 text-primary" />
                           </div>
                         </div>
                       </>
@@ -148,33 +148,33 @@ export default function ChatSidebar({
                   {activeMenuId === conversation.id && !isCollapsed && (
                     <div
                       ref={menuRef}
-                      className="absolute right-2 top-12 z-10 glassmorphic-strong rounded-lg shadow-xl w-48 overflow-hidden border border-white/20"
+                      className="absolute right-2 top-12 z-10 bg-popover backdrop-blur-md rounded-xl shadow-lg w-48 overflow-hidden border border-border"
                     >
                       <div className="py-1">
                         <button
-                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10"
+                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             // Rename logic would go here
                             setActiveMenuId(null);
                           }}
                         >
-                          <PencilIcon className="h-4 w-4 text-indigo-400" />
+                          <PencilIcon className="h-4 w-4 text-primary" />
                           Rename
                         </button>
                         <button
-                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10"
+                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             // Share logic would go here
                             setActiveMenuId(null);
                           }}
                         >
-                          <ArrowUpOnSquareIcon className="h-4 w-4 text-indigo-400" />
+                          <ArrowUpOnSquareIcon className="h-4 w-4 text-primary" />
                           Share
                         </button>
                         <button
-                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/10"
+                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             console.log('Delete button clicked for conversation:', conversation.id);
@@ -205,7 +205,7 @@ export default function ChatSidebar({
               {!isCollapsed && conversations.length > 5 && (
                 <div
                   onClick={() => setShowLess(!showLess)}
-                  className="flex items-center gap-2 w-full text-left py-2 px-3 text-gray-300 hover:bg-white/10 rounded-lg cursor-pointer mt-3"
+                  className="flex items-center gap-2 w-full text-left py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg cursor-pointer mt-3 transition-colors"
                 >
                   {showLess ? (
                     <>
@@ -222,7 +222,7 @@ export default function ChatSidebar({
               )}
             </div>
           ) : (
-            <div className={`text-center text-gray-400 py-4 ${isCollapsed ? 'hidden' : ''}`}>
+            <div className={`text-center text-muted-foreground text-sm py-6 ${isCollapsed ? 'hidden' : ''}`}>
               No conversations yet
             </div>
           )}
@@ -230,12 +230,12 @@ export default function ChatSidebar({
 
         {/* Settings section */}
         {!isCollapsed && (
-          <div className="mt-auto p-4 border-t border-white/10">
-            <div className="flex items-center gap-3 py-3 px-4 rounded-lg transition-all w-full cursor-pointer hover:bg-white/10">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
+          <div className="mt-auto p-4 border-t border-border">
+            <div className="flex items-center gap-3 py-3 px-4 rounded-xl transition-colors w-full cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
               </svg>
-              <span className="font-semibold text-white">Settings and help</span>
+              <span className="font-semibold">Settings and help</span>
             </div>
           </div>
         )}
@@ -246,27 +246,27 @@ export default function ChatSidebar({
       {/* Mobile sidebar overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black bg-opacity-60 z-40"
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
           onClick={handleToggleMobile}
         />
       )}
 
       {/* Mobile sidebar */}
       <div
-        className={`md:hidden fixed top-0 left-0 h-full w-80 z-50 transform transition-transform duration-300 ease-in-out overflow-hidden glassmorphic-strong ${
+        className={`md:hidden fixed top-0 left-0 h-full w-80 z-50 transform transition-transform duration-300 ease-in-out overflow-hidden bg-card backdrop-blur-md border-r border-border ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar header */}
-          <div className="p-5 flex items-center justify-between border-b border-white/10 sticky top-0 z-10 glassmorphic">
+          <div className="p-5 flex items-center justify-between border-b border-border sticky top-0 z-10 bg-card/60 backdrop-blur-sm">
             <div className="flex items-center">
-              <SparklesSolidIcon className="h-6 w-6 mr-2 text-indigo-400" />
-              <h2 className="font-bold text-lg bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">AI Tutor</h2>
+              <SparklesSolidIcon className="h-6 w-6 mr-2 text-primary" />
+              <h2 className="font-bold text-lg text-foreground">AI Tutor</h2>
             </div>
             <button
               onClick={handleToggleMobile}
-              className="text-gray-300 hover:text-white p-1 transition-colors"
+              className="text-muted-foreground hover:text-foreground p-1 transition-colors"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
@@ -281,15 +281,15 @@ export default function ChatSidebar({
                   handleToggleMobile(); // Close sidebar after creating new chat
                 }
               }}
-              className="flex items-center gap-3 py-3 px-4 rounded-lg transition-all w-full cursor-pointer glassmorphic hover:bg-white/10 transform hover:-translate-y-1"
+              className="flex items-center gap-3 py-3 px-4 rounded-xl transition-all w-full cursor-pointer brand-gradient text-white font-semibold shadow-button hover:brightness-110 transform hover:-translate-y-0.5"
             >
-              <PlusIcon className="h-5 w-5 text-indigo-400" />
-              <span className="font-semibold text-white">New chat</span>
+              <PlusIcon className="h-5 w-5" />
+              <span className="font-semibold">New chat</span>
             </div>
           </div>
 
           {/* Recent label */}
-          <div className="px-5 py-4 mt-6 text-sm font-semibold text-gray-300">
+          <div className="px-5 py-4 mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Recent
           </div>
 
@@ -304,10 +304,10 @@ export default function ChatSidebar({
                         onSelectConversation(conversation.id);
                         handleToggleMobile(); // Close sidebar after selection on mobile
                       }}
-                      className={`w-full text-left py-3 px-4 rounded-lg transition-all flex items-center justify-between cursor-pointer glassmorphic hover:bg-white/10 transform hover:-translate-y-1 ${
+                      className={`w-full text-left py-3 px-4 rounded-xl transition-all flex items-center justify-between cursor-pointer hover:bg-accent transform hover:-translate-y-0.5 ${
                         activeConversationId === conversation.id
-                          ? 'text-indigo-400 font-semibold bg-indigo-500/20 border border-indigo-400/30'
-                          : 'text-white'
+                          ? 'text-primary font-semibold bg-primary/15 border border-primary/30'
+                          : 'text-muted-foreground border border-transparent'
                       }`}
                     >
                       <div className="truncate pr-6">{conversation.title}</div>
@@ -322,9 +322,9 @@ export default function ChatSidebar({
                               }
                             }
                           }}
-                          className="opacity-100 p-1 rounded-full hover:bg-archer-bright-teal/20 cursor-pointer mr-1"
+                          className="opacity-100 p-1 rounded-full hover:bg-primary/20 cursor-pointer mr-1"
                         >
-                          <TrashIcon className="h-5 w-5 text-red-400" />
+                          <TrashIcon className="h-5 w-5 text-destructive" />
                         </div>
                         <div
                           onClick={(e) => {
@@ -332,9 +332,9 @@ export default function ChatSidebar({
                             console.log('Mobile: Menu button clicked for conversation:', conversation.id);
                             setActiveMenuId(activeMenuId === conversation.id ? null : conversation.id);
                           }}
-                          className="opacity-100 p-1 rounded-full hover:bg-archer-bright-teal/20 cursor-pointer"
+                          className="opacity-100 p-1 rounded-full hover:bg-primary/20 cursor-pointer"
                         >
-                          <EllipsisHorizontalIcon className="h-5 w-5 text-archer-light-blue" />
+                          <EllipsisHorizontalIcon className="h-5 w-5 text-primary" />
                         </div>
                       </div>
                     </div>
@@ -343,33 +343,33 @@ export default function ChatSidebar({
                     {activeMenuId === conversation.id && (
                       <div
                         ref={menuRef}
-                        className="absolute right-2 top-12 z-10 glassmorphic-strong rounded-lg shadow-xl w-48 overflow-hidden border border-white/20"
+                        className="absolute right-2 top-12 z-10 bg-popover backdrop-blur-md rounded-xl shadow-lg w-48 overflow-hidden border border-border"
                       >
                         <div className="py-1">
                           <button
-                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10"
+                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               // Rename logic would go here
                               setActiveMenuId(null);
                             }}
                           >
-                            <PencilIcon className="h-4 w-4 text-indigo-400" />
+                            <PencilIcon className="h-4 w-4 text-primary" />
                             Rename
                           </button>
                           <button
-                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10"
+                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               // Share logic would go here
                               setActiveMenuId(null);
                             }}
                           >
-                            <ArrowUpOnSquareIcon className="h-4 w-4 text-indigo-400" />
+                            <ArrowUpOnSquareIcon className="h-4 w-4 text-primary" />
                             Share
                           </button>
                           <button
-                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/10"
+                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               console.log('Mobile: Delete button clicked for conversation:', conversation.id);
@@ -400,7 +400,7 @@ export default function ChatSidebar({
                 {conversations.length > 5 && (
                   <div
                     onClick={() => setShowLess(!showLess)}
-                    className="flex items-center gap-2 w-full text-left py-2 px-3 text-gray-300 hover:bg-white/10 rounded-lg cursor-pointer mt-3"
+                    className="flex items-center gap-2 w-full text-left py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg cursor-pointer mt-3 transition-colors"
                   >
                     {showLess ? (
                       <>
@@ -417,21 +417,21 @@ export default function ChatSidebar({
                 )}
               </div>
             ) : (
-              <div className="text-center text-gray-400 py-4">
+              <div className="text-center text-muted-foreground text-sm py-6">
                 No conversations yet
               </div>
             )}
           </div>
 
           {/* Settings section */}
-          <div className="mt-auto p-4 border-t border-white/10">
+          <div className="mt-auto p-4 border-t border-border">
             <div
-              className="flex items-center gap-3 py-3 px-4 rounded-lg transition-all w-full cursor-pointer glassmorphic hover:bg-white/10 transform hover:-translate-y-1"
+              className="flex items-center gap-3 py-3 px-4 rounded-xl transition-colors w-full cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
               </svg>
-              <span className="font-semibold text-white">Settings and help</span>
+              <span className="font-semibold">Settings and help</span>
             </div>
           </div>
         </div>

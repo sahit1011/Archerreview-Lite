@@ -4,8 +4,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ITopic extends Document {
   name: string;
   description: string;
-  category: string;
+  category: string; // subject: PHYSICS | CHEMISTRY | BIOLOGY | MATHEMATICS
   subcategory?: string;
+  examTypes: ('NEET' | 'JEE')[]; // which exams this topic belongs to
   prerequisites: mongoose.Types.ObjectId[];
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   importance: number; // 1-10 scale
@@ -19,21 +20,17 @@ const TopicSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
     description: { type: String, required: true },
-    category: { 
-      type: String, 
+    category: {
+      type: String,
       required: true,
-      enum: [
-        'MANAGEMENT_OF_CARE',
-        'SAFETY_AND_INFECTION_CONTROL',
-        'HEALTH_PROMOTION',
-        'PSYCHOSOCIAL_INTEGRITY',
-        'BASIC_CARE_AND_COMFORT',
-        'PHARMACOLOGICAL_THERAPIES',
-        'REDUCTION_OF_RISK_POTENTIAL',
-        'PHYSIOLOGICAL_ADAPTATION'
-      ]
+      enum: ['PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS']
     },
     subcategory: { type: String },
+    examTypes: {
+      type: [String],
+      enum: ['NEET', 'JEE'],
+      default: ['NEET', 'JEE']
+    },
     prerequisites: [{ type: Schema.Types.ObjectId, ref: 'Topic' }],
     difficulty: { 
       type: String, 
@@ -58,4 +55,4 @@ const TopicSchema: Schema = new Schema(
 );
 
 // Create and export the Topic model
-export default mongoose.models.Topic || mongoose.model<ITopic>('Topic', TopicSchema);
+export default (mongoose.models.Topic as mongoose.Model<ITopic>) || mongoose.model<ITopic>('Topic', TopicSchema);

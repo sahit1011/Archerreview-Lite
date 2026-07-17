@@ -21,7 +21,7 @@ interface ParticleBackgroundProps {
 
 const ParticleBackground: React.FC<ParticleBackgroundProps> = ({
   particleCount = 50,
-  colors = ['#6366F1', '#8B5CF6', '#EC4899', '#10B981'],
+  colors = ['#00A99D', '#3B82F6', '#5EEAD4', '#0EA5E9'],
   className = ''
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);

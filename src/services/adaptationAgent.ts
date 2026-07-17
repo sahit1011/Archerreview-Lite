@@ -8,9 +8,11 @@ import {
   Alert,
   ReadinessScore,
   Topic,
-  Content
+  Content,
+  Adaptation
 } from '../models/index'; // Changed to relative
 import { generateLLMAdaptations } from './adaptationAgentLLM'; // Added .js
+import { findContentForTopic } from '../lib/contentLookup';
 
 /**
  * AdaptationAgent - Responsible for dynamic plan adjustments
@@ -122,13 +124,14 @@ export async function runAdaptationAgent(userId: string, monitoringData?: any): 
     }).sort({ createdAt: -1 });
 
     // Run rule-based adaptation processes
+    const planId = studyPlan._id as mongoose.Types.ObjectId;
     await Promise.all([
-      handleMissedTasks(userId, studyPlan._id, tasks, alerts, result),
-      adjustDifficulty(userId, studyPlan._id, tasks, performances, alerts, result),
-      manageSpacedRepetition(userId, studyPlan._id, tasks, performances, result),
-      injectRemedialContent(userId, studyPlan._id, tasks, performances, alerts, result),
-      rebalanceWorkload(userId, studyPlan._id, tasks, result),
-      adaptToStudyPatterns(userId, studyPlan._id, tasks, performances, alerts, result)
+      handleMissedTasks(userId, planId, tasks, alerts, result),
+      adjustDifficulty(userId, planId, tasks, performances, alerts, result),
+      manageSpacedRepetition(userId, planId, tasks, performances, result),
+      injectRemedialContent(userId, planId, tasks, performances, alerts, result),
+      rebalanceWorkload(userId, planId, tasks, result),
+      adaptToStudyPatterns(userId, planId, tasks, performances, alerts, result)
     ]);
 
     // Update summary
@@ -229,12 +232,55 @@ export async function runAdaptationAgent(userId: string, monitoringData?: any): 
       }
     }
 
+    // Persist every adaptation as an Adaptation document so the product has a
+    // durable, user-visible "what the AI changed and why" log (Progress tab +
+    // dashboard feed read this collection). Failures here must never block the
+    // adaptation itself.
+    if (result.adaptations.length > 0) {
+      try {
+        const typeMap: Record<AdaptationActionType, IAdaptationDocType> = {
+          [AdaptationActionType.RESCHEDULE_MISSED_TASK]: 'RESCHEDULE',
+          [AdaptationActionType.ADJUST_DIFFICULTY]: 'DIFFICULTY_ADJUSTMENT',
+          [AdaptationActionType.ADD_REVIEW_SESSION]: 'CONTENT_ADDITION',
+          [AdaptationActionType.ADD_REMEDIAL_CONTENT]: 'REMEDIAL_CONTENT',
+          [AdaptationActionType.REBALANCE_WORKLOAD]: 'PLAN_REBALANCE',
+          [AdaptationActionType.ADJUST_TO_STUDY_PATTERN]: 'PLAN_REBALANCE',
+        };
+        const reasonMap: Record<AdaptationActionType, string> = {
+          [AdaptationActionType.RESCHEDULE_MISSED_TASK]: 'A scheduled task was missed',
+          [AdaptationActionType.ADJUST_DIFFICULTY]: 'Recent quiz performance changed the mastery estimate for this topic',
+          [AdaptationActionType.ADD_REVIEW_SESSION]: 'Spaced-repetition interval reached for a completed topic',
+          [AdaptationActionType.ADD_REMEDIAL_CONTENT]: 'Low performance detected on this topic',
+          [AdaptationActionType.REBALANCE_WORKLOAD]: 'Upcoming days were unevenly loaded',
+          [AdaptationActionType.ADJUST_TO_STUDY_PATTERN]: 'Your actual study times differ from your stated preference',
+        };
+        await Adaptation.insertMany(
+          result.adaptations.map((a) => ({
+            user: userId,
+            plan: studyPlan._id,
+            type: typeMap[a.type] ?? 'PLAN_REBALANCE',
+            description: a.description,
+            reason: (a.metadata?.reason as string) || reasonMap[a.type] || 'Plan adaptation',
+            task: a.affectedTaskIds?.[0],
+            topic: a.metadata?.topicId,
+            metadata: { ...a.metadata, affectedTaskIds: a.affectedTaskIds },
+          })),
+          { ordered: false }
+        );
+      } catch (persistError) {
+        console.error('[AdaptationAgent] Failed to persist adaptation log:', persistError);
+      }
+    }
+
     return result;
   } catch (error) {
     console.error('Error running adaptation agent:', error);
     throw error;
   }
 }
+
+// Adaptation document type union (kept local to avoid importing the model interface)
+type IAdaptationDocType = 'RESCHEDULE' | 'DIFFICULTY_ADJUSTMENT' | 'CONTENT_ADDITION' | 'PLAN_REBALANCE' | 'REMEDIAL_CONTENT';
 
 // Placeholder functions for each adaptation process
 // These will be implemented in subsequent steps
@@ -298,8 +344,8 @@ async function handleMissedTasks(
     ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   // Get preferred study hours or default to 9-17 (9 AM to 5 PM)
-  const preferredStartHour = user.preferences?.startHour || 9;
-  const preferredEndHour = user.preferences?.endHour || 17;
+  const preferredStartHour = (user.preferences as any)?.startHour || 9;
+  const preferredEndHour = (user.preferences as any)?.endHour || 17;
 
   // Track rescheduled tasks
   const rescheduledTaskIds: string[] = [];
@@ -702,8 +748,8 @@ async function manageSpacedRepetition(
     ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   // Get preferred study hours or default to 9-17 (9 AM to 5 PM)
-  const preferredStartHour = user.preferences?.startHour || 9;
-  const preferredEndHour = user.preferences?.endHour || 17;
+  const preferredStartHour = (user.preferences as any)?.startHour || 9;
+  const preferredEndHour = (user.preferences as any)?.endHour || 17;
 
   // Group completed tasks by topic
   const tasksByTopic = new Map<string, any[]>();
@@ -818,7 +864,8 @@ async function manageSpacedRepetition(
     );
 
     if (reviewSlot) {
-      // Create a new review task
+      // Create a new review task, linked to startable content for the topic
+      const reviewContent = await findContentForTopic(performance.topic._id, 'REVIEW');
       const reviewTask = new Task({
         plan: planId,
         title: `Review: ${performance.topic.name}`,
@@ -829,6 +876,7 @@ async function manageSpacedRepetition(
         endTime: reviewSlot.endTime,
         duration: 30, // 30-minute review session
         topic: performance.topic._id,
+        content: reviewContent || undefined,
         difficulty: calculateReviewDifficulty(performance.averageScore)
       });
 
@@ -950,8 +998,8 @@ async function injectRemedialContent(
     ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   // Get preferred study hours or default to 9-17 (9 AM to 5 PM)
-  const preferredStartHour = user.preferences?.startHour || 9;
-  const preferredEndHour = user.preferences?.endHour || 17;
+  const preferredStartHour = (user.preferences as any)?.startHour || 9;
+  const preferredEndHour = (user.preferences as any)?.endHour || 17;
 
   // Group alerts by topic
   const alertsByTopic = new Map<string, any[]>();
@@ -1040,7 +1088,8 @@ async function injectRemedialContent(
     );
 
     if (remedialSlot) {
-      // Create a new remedial task
+      // Create a new remedial task, linked to startable content
+      const remedialContent = await findContentForTopic(topic._id, remedialType);
       const remedialTask = new Task({
         plan: planId,
         title: `Remedial: ${topic.name}`,
@@ -1051,6 +1100,7 @@ async function injectRemedialContent(
         endTime: remedialSlot.endTime,
         duration: 45, // 45-minute remedial session
         topic: topic._id,
+        content: remedialContent || undefined,
         difficulty: 'EASY' // Start with easy difficulty for remedial content
       });
 

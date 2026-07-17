@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { User, Performance } from '@/models';
 import { generateTutorResponse } from '@/services/generativeAI';
 import { formatAIResponse } from '@/utils/responseFormatter';
+import { requireAuth } from '@/lib/api-auth';
 
 /**
  * API endpoint for the AI Tutor
@@ -10,6 +10,11 @@ import { formatAIResponse } from '@/utils/responseFormatter';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate: userId is derived from the verified token, never the client
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await dbConnect();
 
@@ -27,28 +32,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user exists if userId is provided
-    let user = null;
-    if (body.userId) {
-      user = await User.findById(body.userId);
-      if (!user) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: 'User not found'
-          },
-          { status: 404 }
-        );
-      }
-    }
-
     // Get conversation history if provided
     const conversationHistory = body.history || [];
 
     // Generate response using the Generative AI service
     const rawResponse = await generateTutorResponse(
       body.message,
-      body.userId,
+      userId,
       conversationHistory
     );
 

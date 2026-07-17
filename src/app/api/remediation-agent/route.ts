@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import { requireAuth } from '@/lib/api-auth';
 import { User, StudyPlan } from '@/models';
 import { runRemediationAgent, trackRemediationEffectiveness, RemediationActionType } from '@/services/remediationAgent';
 import { findNextAvailableTutorSlot } from '@/services/schedulerUtils';
-import { parseAuthHeader, getUserFromToken } from '@/utils/auth';
 import { isRateLimited, recordRequest } from '@/utils/rateLimiter';
 
 /**
@@ -12,43 +12,12 @@ import { isRateLimited, recordRequest } from '@/utils/rateLimiter';
  */
 export async function GET(req: NextRequest) {
   try {
-    // Get the user from the token
-    const authHeader = req.headers.get('authorization');
-    const token = parseAuthHeader(authHeader);
-
-    // Check if we have a token
-    if (!token) {
-      // Try to get userId from query params as fallback
-      const userId = req.nextUrl.searchParams.get('userId');
-      if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
-      // Check if this request is rate limited
-      if (isRateLimited(userId, 'remediation-agent')) {
-        return NextResponse.json({
-          success: false,
-          message: 'Rate limited. Please try again later.',
-          isRateLimited: true
-        }, { status: 429 });
-      }
-
-      // Record this request for rate limiting
-      recordRequest(userId, 'remediation-agent');
-
-      // Run remediation agent using userId from query
-      const result = await runRemediationAgent(userId);
-      return NextResponse.json({ result });
-    }
-
-    // Verify the token and get the user
-    const user = getUserFromToken(token);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = requireAuth(req);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
 
     // Check if this request is rate limited
-    if (isRateLimited(user.id, 'remediation-agent')) {
+    if (isRateLimited(userId, 'remediation-agent')) {
       return NextResponse.json({
         success: false,
         message: 'Rate limited. Please try again later.',
@@ -57,10 +26,10 @@ export async function GET(req: NextRequest) {
     }
 
     // Record this request for rate limiting
-    recordRequest(user.id, 'remediation-agent');
+    recordRequest(userId, 'remediation-agent');
 
     // Run remediation agent
-    const result = await runRemediationAgent(user.id);
+    const result = await runRemediationAgent(userId);
 
     return NextResponse.json({ result });
   } catch (error) {
@@ -78,6 +47,10 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = requireAuth(req);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
+
     // Connect to the database
     await dbConnect();
 
@@ -85,18 +58,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // Validate required fields
-    if (!body.userId || !body.topicId) {
+    if (!body.topicId) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Missing required fields: userId and topicId'
+          message: 'Missing required field: topicId'
         },
         { status: 400 }
       );
     }
 
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
         {
@@ -108,7 +81,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Run remediation agent with specific action
-    const result = await runRemediationAgent(body.userId);
+    const result = await runRemediationAgent(userId);
 
     // Find the scheduled review for this topic
     const scheduledReview = result.scheduledReviews.find(
@@ -127,7 +100,7 @@ export async function POST(req: NextRequest) {
 
     // Track the effectiveness of this action
     await trackRemediationEffectiveness(
-      body.userId,
+      userId,
       RemediationActionType.SCHEDULE_REVIEW,
       body.topicId,
       {
@@ -164,17 +137,9 @@ export async function POST(req: NextRequest) {
  */
 export async function HEAD(req: NextRequest) {
   try {
-    // Get userId from query params
-    const userId = req.nextUrl.searchParams.get('userId');
-    if (!userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required query parameter: userId'
-        },
-        { status: 400 }
-      );
-    }
+    const auth = requireAuth(req);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
 
     // Find next available tutor slot
     const nextSlot = await findNextAvailableTutorSlot(userId);

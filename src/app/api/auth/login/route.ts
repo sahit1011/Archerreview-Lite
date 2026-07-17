@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       id: user._id,
       name: user.name,
       email: user.email,
+      examType: user.examType,
       examDate: user.examDate,
       preferences: user.preferences,
       role: user.role,

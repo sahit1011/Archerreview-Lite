@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { StudyPlan, User } from '@/models';
+import { requireAuth } from '@/lib/api-auth';
+import { parseBody, errorResponse, dateString, z } from '@/lib/validation';
+
+const createStudyPlanSchema = z.object({
+  examDate: dateString,
+  isPersonalized: z.boolean().optional(),
+  startDate: dateString.optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await connectToDatabase();
 
-    // Parse request body
-    const body = await request.json();
-
-    // Validate required fields
-    if (!body.userId || !body.examDate) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Missing required fields: userId, examDate'
-        },
-        { status: 400 }
-      );
-    }
+    // Validate request body
+    const parsed = await parseBody(request, createStudyPlanSchema);
+    if (parsed.response) return parsed.response;
+    const body = parsed.data;
 
     // Check if user exists
-    const user = await User.findById(body.userId);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
         {
@@ -34,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has a study plan
-    const existingPlan = await StudyPlan.findOne({ user: body.userId });
+    const existingPlan = await StudyPlan.findOne({ user: userId });
     if (existingPlan) {
       return NextResponse.json(
         {
@@ -47,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Create study plan
     const studyPlan = new StudyPlan({
-      user: body.userId,
+      user: userId,
       examDate: new Date(body.examDate),
       isPersonalized: body.isPersonalized || false,
       startDate: body.startDate ? new Date(body.startDate) : new Date(),
@@ -66,65 +70,42 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating study plan:', error);
 
-    // Return error response
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Failed to create study plan',
-        error: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
+    // Return a generic error response (do not leak error.message to clients)
+    return errorResponse('Failed to create study plan', 500);
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate the request and derive the trusted userId from the token
+    const auth = requireAuth(request);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id;
+
     // Connect to the database
     await connectToDatabase();
 
-    // Get user ID from query params
-    const userId = request.nextUrl.searchParams.get('userId');
+    // Get study plan for the authenticated user
+    const studyPlan = await StudyPlan.findOne({ user: userId });
 
-    // If userId is provided, get study plan for that user
-    if (userId) {
-      const studyPlan = await StudyPlan.findOne({ user: userId });
-
-      if (!studyPlan) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: 'Study plan not found for this user'
-          },
-          { status: 404 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        studyPlan
-      });
+    if (!studyPlan) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Study plan not found for this user'
+        },
+        { status: 404 }
+      );
     }
 
-    // Otherwise, get all study plans (limit to 10 for safety)
-    const studyPlans = await StudyPlan.find().limit(10);
-
-    // Return success response
     return NextResponse.json({
       success: true,
-      studyPlans
+      studyPlan
     });
   } catch (error) {
     console.error('Error fetching study plans:', error);
 
-    // Return error response
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Failed to fetch study plans',
-        error: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
+    // Return a generic error response (do not leak error.message to clients)
+    return errorResponse('Failed to fetch study plans', 500);
   }
 }

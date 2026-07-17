@@ -31,8 +31,8 @@ export async function findOptimalReviewTime(userId: string, planId: string) {
   const tomorrowStart = startOfDay(tomorrow);
 
   // Get preferred study hours from user preferences or use defaults
-  const preferredStartHour = user?.preferences?.startHour || 9;
-  const preferredEndHour = user?.preferences?.endHour || 17;
+  const preferredStartHour = (user?.preferences as any)?.startHour || 9;
+  const preferredEndHour = (user?.preferences as any)?.endHour || 17;
 
   // Default times to try based on user preferences
   const defaultTimes = [];

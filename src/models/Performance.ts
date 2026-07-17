@@ -74,4 +74,4 @@ const PerformanceSchema: Schema = new Schema(
 );
 
 // Create and export the Performance model
-export default mongoose.models.Performance || mongoose.model<IPerformance>('Performance', PerformanceSchema);
+export default (mongoose.models.Performance as mongoose.Model<IPerformance>) || mongoose.model<IPerformance>('Performance', PerformanceSchema);

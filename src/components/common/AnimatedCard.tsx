@@ -25,7 +25,7 @@ const AnimatedCard: React.FC<AnimatedCardProps> = ({
 }) => {
   const baseClasses = `
     dashboard-card rounded-xl
-    ${gradient ? 'bg-gradient-to-br from-white/95 to-white/85' : ''}
+    ${gradient ? 'bg-gradient-to-br from-white/10 to-white/5 border border-white/10 backdrop-blur-sm' : ''}
     ${onClick ? 'cursor-pointer' : ''}
     ${className}
   `;

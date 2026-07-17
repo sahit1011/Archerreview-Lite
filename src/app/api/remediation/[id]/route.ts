@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromToken, parseAuthHeader } from '@/utils/auth';
+import { requireAuth } from '@/lib/api-auth';
+import { Alert } from '@/models';
 import { resolveRemediationSuggestion } from '@/services/remediationService';
 
 /**
@@ -8,30 +9,34 @@ import { resolveRemediationSuggestion } from '@/services/remediationService';
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Get the user from the token
-    const authHeader = req.headers.get('authorization');
-    const token = parseAuthHeader(authHeader);
-
-    // For this endpoint, we don't strictly need authentication
-    // since resolving a suggestion doesn't require user verification
-    // but we'll check the token if it's provided for good practice
-
-    if (token) {
-      const user = getUserFromToken(token);
-      if (!user) {
-        return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-      }
-    }
+    const auth = requireAuth(req);
+    if (auth.response) return auth.response;
+    const userId = auth.user.id; // TRUSTED, token-derived
 
     // Get the suggestion ID from the URL
-    const suggestionId = params.id;
+    const { id: suggestionId } = await params;
     if (!suggestionId) {
       return NextResponse.json(
         { error: 'Suggestion ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Load the suggestion and verify it belongs to the authenticated user
+    const existing = await Alert.findById(suggestionId);
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Remediation suggestion not found' },
+        { status: 404 }
+      );
+    }
+    if (existing.user.toString() !== userId) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
       );
     }
 

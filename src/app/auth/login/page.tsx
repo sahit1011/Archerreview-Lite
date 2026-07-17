@@ -4,6 +4,10 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { GraduationCap, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -101,95 +105,102 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-12">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-primary">ArcherReview</h1>
-          <h2 className="mt-2 text-2xl font-semibold text-foreground">Sign in to your account</h2>
-          <p className="mt-2 text-sm text-foreground/80">
-            Or{' '}
-            <Link href="/onboarding/account-creation" className="font-medium text-primary hover:text-primary/90">
-              create a new account
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-6 py-12 aurora-bg">
+      <div aria-hidden className="pointer-events-none absolute inset-0 grid-pattern opacity-60" />
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* Brand */}
+        <Link href="/" className="mb-8 flex items-center justify-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl brand-gradient text-white shadow-button">
+            <GraduationCap className="h-5 w-5" />
+          </div>
+          <span className="font-display text-xl font-bold tracking-tight">StudyArc</span>
+        </Link>
+
+        <div className="mb-7 text-center">
+          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Welcome back
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            New here?{" "}
+            <Link href="/onboarding/account-creation" className="font-semibold text-primary hover:underline">
+              Create a free account
             </Link>
           </p>
         </div>
 
-        <div className="bg-card shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+        <div className="rounded-2xl border border-border bg-card p-7 shadow-lg shadow-primary/5">
           {error && (
-            <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-600 px-4 py-3 rounded-md" role="alert">
+            <div
+              className="mb-5 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              role="alert"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <p>{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-foreground text-sm font-medium mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none border border-border rounded-md w-full py-2 px-3 text-foreground leading-tight focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div className="mb-6">
-              <label htmlFor="password" className="block text-foreground text-sm font-medium mb-2">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none border border-border rounded-md w-full py-2 px-3 text-foreground leading-tight focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email address</Label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="pl-9"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
-                  Remember me
-                </label>
               </div>
+            </div>
 
-              <div className="text-sm">
-                <Link href="/auth/forgot-password" className="font-medium text-primary hover:text-primary/90">
-                  Forgot your password?
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link href="/auth/forgot-password" className="text-xs font-medium text-primary hover:underline">
+                  Forgot password?
                 </Link>
               </div>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-9"
+                />
+              </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
-              >
-                {isLoading ? 'Signing in...' : 'Sign in'}
-              </button>
-            </div>
+            <label htmlFor="remember-me" className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
+              />
+              Remember me
+            </label>
+
+            <Button type="submit" variant="brand" size="lg" disabled={isLoading} className="shine w-full">
+              {isLoading ? "Signing in…" : "Sign in"}
+              {!isLoading && <ArrowRight className="h-4 w-4" />}
+            </Button>
           </form>
         </div>
 
-        <div className="text-center mt-4">
-          <Link href="/" className="text-sm font-medium text-primary hover:text-primary/90">
+        <div className="mt-6 text-center">
+          <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground">
             ← Back to home
           </Link>
         </div>

@@ -61,13 +61,13 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'HIGH':
-        return 'bg-red-100 text-red-600';
+        return 'bg-red-500/15 text-red-400';
       case 'MEDIUM':
-        return 'bg-orange-100 text-orange-600';
+        return 'bg-amber-500/15 text-amber-400';
       case 'LOW':
-        return 'bg-blue-100 text-blue-600';
+        return 'bg-blue-500/15 text-blue-400';
       default:
-        return 'bg-gray-100 text-gray-600';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -137,39 +137,39 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
     <AnimatePresence>
       <motion.div
         ref={popupRef}
-        className={`absolute ${getPositionClasses()} w-80 bg-white rounded-xl shadow-2xl overflow-hidden z-[100] border border-gray-200`}
+        className={`absolute ${getPositionClasses()} w-80 bg-card rounded-xl shadow-2xl overflow-hidden z-[100] border border-border backdrop-blur-sm`}
         initial={{ opacity: 0, y: -10, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -10, scale: 0.95 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-600 to-purple-600">
-          <h3 className="font-semibold text-white">Notifications</h3>
+        <div className="flex items-center justify-between p-4 border-b border-border bg-primary">
+          <h3 className="font-semibold text-primary-foreground">Notifications</h3>
           <button
             onClick={onClose}
-            className="text-white/80 hover:text-white transition-colors"
+            className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="p-3 border-b border-gray-200 bg-gray-50">
+        <div className="p-3 border-b border-border bg-secondary">
           <div className="flex space-x-1 text-xs">
             <button
               onClick={() => setFilter('all')}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${filter === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${filter === 'all' ? 'bg-primary text-primary-foreground font-semibold' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
             >
               All
             </button>
             <button
               onClick={() => setFilter('MISSED_TASK')}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${filter === 'MISSED_TASK' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${filter === 'MISSED_TASK' ? 'bg-primary text-primary-foreground font-semibold' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
             >
               Missed Tasks
             </button>
             <button
               onClick={() => setFilter('LOW_PERFORMANCE')}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${filter === 'LOW_PERFORMANCE' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${filter === 'LOW_PERFORMANCE' ? 'bg-primary text-primary-foreground font-semibold' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
             >
               Performance
             </button>
@@ -179,32 +179,32 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
         <div className="max-h-80 overflow-y-auto">
           {loading ? (
             <div className="p-6 flex flex-col items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              <p className="mt-2 text-sm text-gray-600">Loading alerts...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-2 text-sm text-muted-foreground">Loading alerts...</p>
             </div>
           ) : error ? (
-            <div className="p-4 text-center text-red-600">
+            <div className="p-4 text-center text-destructive">
               <p>{error}</p>
             </div>
           ) : filteredAlerts.length === 0 ? (
             <div className="p-8 flex flex-col items-center justify-center text-center">
-              <CheckCircleIcon className="h-12 w-12 text-green-500 mb-3" />
-              <p className="text-gray-600 font-medium">
+              <CheckCircleIcon className="h-12 w-12 text-success mb-3" />
+              <p className="text-muted-foreground font-medium">
                 {filter === 'all'
                   ? 'No alerts at this time'
                   : `No ${filter.toLowerCase().replace('_', ' ')} alerts`}
               </p>
-              <p className="text-sm text-gray-500 mt-1">You're all caught up!</p>
+              <p className="text-sm text-muted-foreground mt-1">You're all caught up!</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-border">
               {filteredAlerts.map((alert) => (
                 <motion.div
                   key={alert._id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="p-4 hover:bg-gray-50 transition-colors"
+                  className="p-4 hover:bg-muted transition-colors"
                 >
                   <div className="flex items-start">
                     <div className={`flex-shrink-0 rounded-full p-2 ${getSeverityColor(alert.severity)}`}>
@@ -212,15 +212,15 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
                     </div>
                     <div className="ml-3 flex-1">
                       <div className="flex justify-between items-start">
-                        <p className="text-sm font-medium text-gray-900">{alert.message}</p>
+                        <p className="text-sm font-medium text-foreground">{alert.message}</p>
                         <button
                           onClick={() => onResolve(alert._id)}
-                          className="ml-2 text-xs text-gray-500 hover:text-indigo-600 transition-colors font-medium"
+                          className="ml-2 text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
                         >
                           Dismiss
                         </button>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">{formatDate(alert.createdAt)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{formatDate(alert.createdAt)}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -230,10 +230,10 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
         </div>
 
         {alerts.length > 0 && (
-          <div className="p-3 border-t border-gray-200 bg-gray-50 text-center">
+          <div className="p-3 border-t border-border bg-secondary text-center">
             <button
               onClick={() => alerts.forEach(alert => onResolve(alert._id))}
-              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+              className="text-sm text-primary hover:brightness-110 font-medium transition-colors"
             >
               Mark all as read
             </button>
