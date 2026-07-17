@@ -25,7 +25,10 @@ const geminiModelName = process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pr
 
 // Initialize OpenRouter configuration
 const openRouterApiKey = process.env.OPENROUTER_API_KEY || '';
-const openRouterModel = process.env.OPENROUTER_MODEL || 'qwen/qwen3-coder:free';
+// DeepSeek V3 — strong STEM reasoning + step-by-step explanation, ideal for a
+// NEET/JEE tutor (physics/chem/bio/maths), with a free OpenRouter tier. Override
+// via OPENROUTER_MODEL (e.g. a paid tier if free rate limits bite).
+const openRouterModel = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat-v3-0324:free';
 
 console.log('Gemini API Key:', geminiApiKey ? 'API key is set' : 'API key is not set');
 console.log('Gemini Model Name:', geminiModelName);
