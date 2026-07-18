@@ -118,8 +118,16 @@ const hasRealOpenRouterKey = /^sk-or-/.test(openRouterApiKey);
 // OpenRouter. Override via OPENROUTER_MODEL.
 const openRouterModel = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat-v3-0324:free';
 
+// Groq — PREFERRED LLM provider (OpenAI-compatible, very fast, generous free tier).
+// A valid key looks like `gsk_...`. When set, agents call Groq first and fall back
+// to OpenRouter, then to their rule-based path.
+const groqApiKey = process.env.GROQ_API_KEY || '';
+const hasGroqKey = /^gsk_/.test(groqApiKey);
+const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+
 console.log('AgentAI - Gemini API Key:', geminiApiKey ? 'API key is set' : 'API key is not set');
 console.log('AgentAI - OpenRouter API Key:', hasRealOpenRouterKey ? 'API key is set' : 'API key is not set (rule-based fallback)');
+console.log('AgentAI - Groq API Key:', hasGroqKey ? 'API key is set' : 'API key is not set');
 
 // Create Gemini client (only if API key is available)
 const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
@@ -170,50 +178,78 @@ let lastHourReset = Date.now();
 export type AgentType = 'monitor' | 'adaptation' | 'feedback' | 'remediation' | 'scheduler';
 
 /**
- * Call OpenRouter API as fallback
+ * Call the chat LLM. Preferred provider is Groq (fast + generous free tier), with
+ * OpenRouter as fallback. Named callOpenRouter for call-site compatibility. Throws
+ * when no provider succeeds so the agent drops to its rule-based path.
  */
 async function callOpenRouter(prompt: string): Promise<string> {
-  try {
-    if (!hasRealOpenRouterKey) {
-      throw new Error('OpenRouter API key not configured');
+  const providers: Array<[string, () => Promise<string>]> = [];
+  if (hasGroqKey) providers.push(['Groq', () => callGroq(prompt)]);
+  if (hasRealOpenRouterKey) providers.push(['OpenRouter', () => callOpenRouterRaw(prompt)]);
+  if (providers.length === 0) throw new Error('No LLM provider configured');
+
+  let lastErr: unknown;
+  for (const [name, fn] of providers) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastErr = error;
+      console.error(`Error calling ${name}:`, error);
     }
-
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openRouterApiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-        'X-Title': 'StudyArc AI Agent'
-      },
-      body: JSON.stringify({
-        model: openRouterModel,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2048
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response from OpenRouter API');
-    }
-
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('Error calling OpenRouter:', error);
-    throw error;
   }
+  throw lastErr instanceof Error ? lastErr : new Error('All LLM providers failed');
+}
+
+/** Groq chat completion (OpenAI-compatible endpoint). */
+async function callGroq(prompt: string): Promise<string> {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${groqApiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: groqModel,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 2048
+    })
+  });
+  if (!response.ok) {
+    throw new Error(`Groq API error: ${response.status} ${response.statusText}`);
+  }
+  const data = await response.json();
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error('Invalid response from Groq API');
+  }
+  return data.choices[0].message.content;
+}
+
+/** OpenRouter chat completion (fallback provider). */
+async function callOpenRouterRaw(prompt: string): Promise<string> {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openRouterApiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+      'X-Title': 'StudyArc AI Agent'
+    },
+    body: JSON.stringify({
+      model: openRouterModel,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 2048
+    })
+  });
+  if (!response.ok) {
+    throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+  }
+  const data = await response.json();
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error('Invalid response from OpenRouter API');
+  }
+  return data.choices[0].message.content;
 }
 
 /**

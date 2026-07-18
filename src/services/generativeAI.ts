@@ -25,15 +25,21 @@ const geminiModelName = process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pr
 
 // Initialize OpenRouter configuration
 const openRouterApiKey = process.env.OPENROUTER_API_KEY || '';
+const hasRealOpenRouterKey = /^sk-or-/.test(openRouterApiKey);
 // DeepSeek V3 — strong STEM reasoning + step-by-step explanation, ideal for a
 // NEET/JEE tutor (physics/chem/bio/maths), with a free OpenRouter tier. Override
 // via OPENROUTER_MODEL (e.g. a paid tier if free rate limits bite).
 const openRouterModel = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat-v3-0324:free';
 
+// Groq — PREFERRED tutor provider (OpenAI-compatible, fast, generous free tier).
+// Valid key looks like `gsk_...`. Tutor calls Groq first, then OpenRouter.
+const groqApiKey = process.env.GROQ_API_KEY || '';
+const hasGroqKey = /^gsk_/.test(groqApiKey);
+const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+
 console.log('Gemini API Key:', geminiApiKey ? 'API key is set' : 'API key is not set');
-console.log('Gemini Model Name:', geminiModelName);
-console.log('OpenRouter API Key:', openRouterApiKey ? 'API key is set' : 'API key is not set');
-console.log('OpenRouter Model:', openRouterModel);
+console.log('OpenRouter API Key:', hasRealOpenRouterKey ? 'API key is set' : 'API key is not set');
+console.log('Groq API Key:', hasGroqKey ? 'API key is set' : 'API key is not set');
 
 // Create Gemini client (only if API key is available)
 const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
@@ -66,50 +72,77 @@ const safetySettings = [
  * @returns AI-generated response
  */
 /**
- * Call OpenRouter API as fallback
+ * Call the tutor LLM. Preferred provider is Groq (fast + generous free tier), with
+ * OpenRouter as fallback. Named callOpenRouter for call-site compatibility.
  */
 async function callOpenRouter(prompt: string): Promise<string> {
-  try {
-    if (!openRouterApiKey) {
-      throw new Error('OpenRouter API key not configured');
+  const providers: Array<[string, () => Promise<string>]> = [];
+  if (hasGroqKey) providers.push(['Groq', () => callGroqTutor(prompt)]);
+  if (hasRealOpenRouterKey) providers.push(['OpenRouter', () => callOpenRouterTutor(prompt)]);
+  if (providers.length === 0) throw new Error('No LLM provider configured');
+
+  let lastErr: unknown;
+  for (const [name, fn] of providers) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastErr = error;
+      console.error(`Error calling ${name}:`, error);
     }
-
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openRouterApiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-        'X-Title': 'StudyArc AI Tutor'
-      },
-      body: JSON.stringify({
-        model: openRouterModel,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1024
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response from OpenRouter API');
-    }
-
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('Error calling OpenRouter:', error);
-    throw error;
   }
+  throw lastErr instanceof Error ? lastErr : new Error('All LLM providers failed');
+}
+
+/** Groq chat completion for the tutor (OpenAI-compatible). */
+async function callGroqTutor(prompt: string): Promise<string> {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${groqApiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: groqModel,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 1024
+    })
+  });
+  if (!response.ok) {
+    throw new Error(`Groq API error: ${response.status} ${response.statusText}`);
+  }
+  const data = await response.json();
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error('Invalid response from Groq API');
+  }
+  return data.choices[0].message.content;
+}
+
+/** OpenRouter chat completion for the tutor (fallback provider). */
+async function callOpenRouterTutor(prompt: string): Promise<string> {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openRouterApiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+      'X-Title': 'StudyArc AI Tutor'
+    },
+    body: JSON.stringify({
+      model: openRouterModel,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 1024
+    })
+  });
+  if (!response.ok) {
+    throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+  }
+  const data = await response.json();
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error('Invalid response from OpenRouter API');
+  }
+  return data.choices[0].message.content;
 }
 
 export async function generateTutorResponse(
