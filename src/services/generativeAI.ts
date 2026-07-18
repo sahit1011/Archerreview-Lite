@@ -154,49 +154,16 @@ export async function generateTutorResponse(
     // Match the coaching persona to the student's exam (NEET vs JEE).
     const examType = await getUserExamType(userId);
 
-    // Try Google Gemini first
-    if (genAI && geminiApiKey) {
-      try {
-        // Get the model with concise generation config
-        const model = genAI.getGenerativeModel({
-          model: geminiModelName,
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.8,
-            topK: 40,
-            maxOutputTokens: 1024, // Limit response length for conciseness
-          }
-        });
+    // Thread the recent conversation so follow-ups ("who is it named after?")
+    // keep context. Cap to the last 8 turns to bound the prompt size.
+    const historyBlock = conversationHistory.length
+      ? "\n\nConversation so far (context for the new question, which may refer back to it):\n" +
+        conversationHistory
+          .slice(-8)
+          .map((m) => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.content}`)
+          .join("\n")
+      : "";
 
-        // Enhanced prompt with concise instructions
-        const conciseInstructions = `
-IMPORTANT: Keep your response CONCISE and focused. Guidelines:
-- Limit to 2-3 key points maximum per explanation
-- Use bullet points or numbered lists when appropriate
-- Provide direct answers without lengthy introductions
-- If giving examples, limit to 1-2 relevant ones
-- Prioritize clarity and brevity over comprehensive coverage
-- End with a brief summary or key takeaway
-
-User Question: ${message}`;
-
-        const prompt = getTutorPrompt(examType, userId) + "\n\n" + conciseInstructions;
-
-        // Generate content directly without chat history for simplicity
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-
-        return text;
-      } catch (geminiError) {
-        console.warn('Gemini API failed, falling back to OpenRouter:', geminiError);
-        // Fall through to OpenRouter
-      }
-    }
-
-    // Fallback to OpenRouter
-    console.log('Using OpenRouter fallback for tutor response');
-
-    // Enhanced prompt with concise instructions for OpenRouter
     const conciseInstructions = `
 IMPORTANT: Keep your response CONCISE and focused. Guidelines:
 - Limit to 2-3 key points maximum per explanation
@@ -205,12 +172,33 @@ IMPORTANT: Keep your response CONCISE and focused. Guidelines:
 - If giving examples, limit to 1-2 relevant ones
 - Prioritize clarity and brevity over comprehensive coverage
 - End with a brief summary or key takeaway
+${historyBlock}
 
-User Question: ${message}`;
+User's new question: ${message}`;
 
     const prompt = getTutorPrompt(examType, userId) + "\n\n" + conciseInstructions;
-    return await callOpenRouter(prompt);
 
+    // Prefer Gemini if configured; otherwise the chat LLM (Groq -> OpenRouter).
+    if (genAI && geminiApiKey) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: geminiModelName,
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.8,
+            topK: 40,
+            maxOutputTokens: 1024,
+          }
+        });
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      } catch (geminiError) {
+        console.warn('Gemini API failed, falling back to Groq/OpenRouter:', geminiError);
+      }
+    }
+
+    console.log('Using Groq/OpenRouter for tutor response');
+    return await callOpenRouter(prompt);
   } catch (error) {
     console.error('Error generating AI tutor response:', error);
     return getFallbackResponse(message);
