@@ -275,6 +275,10 @@ export default function DashboardPage() {
   const daysToExam = user?.examDate
     ? Math.max(0, Math.ceil((new Date(user.examDate).getTime() - Date.now()) / 86400000))
     : null;
+  // Horizon framing (weeks + approx months) — the exam date is derived from the
+  // student's chosen timeline window, so we show a horizon, not a specific date.
+  const weeksToExam = daysToExam !== null ? Math.max(0, Math.ceil(daysToExam / 7)) : null;
+  const monthsToExam = daysToExam !== null ? Math.max(1, Math.round(daysToExam / 30.44)) : null;
   const firstName = (user?.name || 'there').split(' ')[0];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -359,7 +363,7 @@ export default function DashboardPage() {
                 { label: 'Exam readiness', value: readinessScore.overallScore, suffix: '%', icon: TrendingUp, color: 'text-primary', dash: false },
                 { label: "Today's tasks", value: todaysTasks.length, suffix: '', icon: ListTodo, color: 'text-muted-foreground', dash: false },
                 { label: 'Completed', value: completedToday, suffix: '', icon: CheckCircle2, color: 'text-success', dash: false },
-                { label: 'Days to exam', value: daysToExam ?? 0, suffix: '', icon: CalendarDays, color: 'text-muted-foreground', dash: daysToExam === null },
+                { label: 'Weeks to exam', value: weeksToExam ?? 0, suffix: '', icon: CalendarDays, color: 'text-muted-foreground', dash: weeksToExam === null },
               ].map((kpi) => (
                 <div key={kpi.label} className="flex flex-col gap-2 p-5 sm:p-6">
                   <div className="flex items-center justify-between">
@@ -558,13 +562,14 @@ export default function DashboardPage() {
                     </div>
                     <h2 className="font-display text-lg font-semibold">Exam countdown</h2>
                   </div>
-                  {daysToExam !== null ? (
+                  {weeksToExam !== null ? (
                     <div className="text-center">
-                      <div className="flex justify-center font-display text-5xl font-bold text-foreground">
-                        <AnimateNumber value={daysToExam} duration={420} blur={14} />
+                      <div className="flex items-baseline justify-center gap-1.5 font-display text-5xl font-bold text-foreground">
+                        <AnimateNumber value={weeksToExam} duration={420} blur={14} />
+                        <span className="text-2xl text-muted-foreground">wks</span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        days to go · {format(new Date(user.examDate), 'MMM d, yyyy')}
+                        ~{monthsToExam} month{monthsToExam === 1 ? '' : 's'} to exam
                       </p>
                     </div>
                   ) : (

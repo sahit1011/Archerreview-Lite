@@ -238,10 +238,10 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
           >
             <div className="text-sm font-semibold text-muted-foreground mb-2">Exam Countdown</div>
             <div className="text-4xl font-bold text-primary">
-              {stats.daysUntilExam}
+              {Math.max(0, Math.ceil(stats.daysUntilExam / 7))}
             </div>
             <div className="text-xs font-medium text-muted-foreground mt-2">
-              days remaining
+              weeks remaining
             </div>
           </motion.div>
         </motion.div>

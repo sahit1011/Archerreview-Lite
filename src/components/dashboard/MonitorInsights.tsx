@@ -517,10 +517,10 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
             {stats.examDate && (
               <div className="mb-4">
                 <div className="bg-card rounded-lg p-5 text-center border border-border">
-                  <div className="text-sm text-primary mb-2">Exam Date</div>
-                  <div className="text-xl font-bold text-foreground">{new Date(stats.examDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                  <div className="text-sm text-primary mb-2">Exam timeline</div>
+                  <div className="text-xl font-bold text-foreground">~{Math.max(1, Math.round(stats.daysUntilExam / 30.44))} months to exam</div>
                   <div className="mt-3 inline-block bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-lg border border-primary/30">
-                    {stats.daysUntilExam} days remaining
+                    {Math.max(0, Math.ceil(stats.daysUntilExam / 7))} weeks remaining
                   </div>
                 </div>
               </div>

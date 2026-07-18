@@ -57,6 +57,7 @@ export default function PlanOverview({ examDate, studyHoursPerDay, availableDays
 
   // Calculate weeks until exam
   const weeksUntilExam = Math.ceil(daysUntilExam / 7);
+  const monthsUntilExam = Math.max(1, Math.round(daysUntilExam / 30.44));
 
   // Calculate total study days
   const totalStudyDays = Math.floor(daysUntilExam * (availableDays.length / 7));
@@ -65,7 +66,7 @@ export default function PlanOverview({ examDate, studyHoursPerDay, availableDays
   const totalStudyHours = totalStudyDays * studyHoursPerDay;
 
   const stats = [
-    { value: weeksUntilExam, unit: 'weeks', label: 'Study window', sub: `${daysUntilExam} days until exam` },
+    { value: weeksUntilExam, unit: 'weeks', label: 'Study window', sub: `~${monthsUntilExam} month${monthsUntilExam === 1 ? '' : 's'} to exam` },
     { value: studyHoursPerDay, unit: 'hrs / day', label: 'Daily cadence', sub: `${availableDays.length} days per week` },
     { value: totalStudyHours, unit: 'hours', label: 'Total study hours', sub: `across ${totalStudyDays} study days` },
   ];

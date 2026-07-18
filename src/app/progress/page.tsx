@@ -240,10 +240,12 @@ export default function ProgressPage() {
     fetchProgressData();
   }, [authUser, authLoading, searchParams]);
 
-  // Calculate days until exam
+  // Calculate days until exam (used for agent math); shown to students as a weeks
+  // horizon since the exam date is derived from their chosen timeline window.
   const daysUntilExam = authUser?.examDate
     ? Math.ceil((new Date(authUser.examDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : 30;
+  const weeksUntilExam = Math.max(0, Math.ceil(daysUntilExam / 7));
 
   // Same resolution order as the data fetch: URL param → auth context → localStorage
   const resolvedUserId =
@@ -291,7 +293,7 @@ export default function ProgressPage() {
     { value: readinessScore.overallScore, suffix: '%', label: 'Readiness' },
     { value: readinessScore.projectedScore, suffix: '%', label: 'Projected' },
     { value: taskCompletionPct, suffix: '%', label: 'Tasks done' },
-    { value: daysUntilExam, suffix: 'd', label: 'To exam' },
+    { value: weeksUntilExam, suffix: 'w', label: 'To exam' },
   ];
 
   const tabs = [
@@ -437,8 +439,8 @@ export default function ProgressPage() {
                           <dd className="mt-1.5 font-mono text-lg font-semibold text-foreground">{readinessScore.projectedScore}%</dd>
                         </div>
                         <div className="px-2">
-                          <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Days to exam</dt>
-                          <dd className="mt-1.5 font-mono text-lg font-semibold text-foreground">{daysUntilExam}</dd>
+                          <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Weeks to exam</dt>
+                          <dd className="mt-1.5 font-mono text-lg font-semibold text-foreground">{weeksUntilExam}</dd>
                         </div>
                       </dl>
                     </div>

@@ -57,6 +57,8 @@ export default function ReadinessDetails({
   strongAreas
 }: ReadinessDetailsProps) {
   const reduce = useReducedMotion() === true;
+  const weeksUntilExam = Math.max(0, Math.ceil(daysUntilExam / 7));
+  const monthsUntilExam = Math.max(1, Math.round(daysUntilExam / 30.44));
 
   // Get readiness status text and color (genuine status, single semantic accent).
   const getReadinessStatus = (score: number) => {
@@ -85,7 +87,7 @@ export default function ReadinessDetails({
       Icon: TrendingUp,
       score: projectedScore,
       status: projectedStatus,
-      note: `Estimated readiness on your scheduled exam date, ${daysUntilExam} days from now.`,
+      note: `Estimated readiness by exam time — about ${monthsUntilExam} month${monthsUntilExam === 1 ? '' : 's'} (~${weeksUntilExam} weeks) from now.`,
     },
   ];
 
