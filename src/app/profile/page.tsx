@@ -46,6 +46,30 @@ const formatDateForInput = (date: Date | string | undefined): string => {
   }
 };
 
+// NEET/JEE dates are effectively fixed each year, so users pick how far away the
+// exam is (a window) rather than a specific date. `months` = the planning horizon
+// (lower bound of the window). Mirrors the onboarding Timeline step.
+const TIMELINE_OPTIONS = [
+  { months: 3, label: '3–6 months', sub: 'Intensive sprint' },
+  { months: 6, label: '6–9 months', sub: 'Focused build' },
+  { months: 9, label: '9–15 months', sub: 'Foundations, then depth' },
+  { months: 15, label: '15+ months', sub: 'Long game' },
+];
+
+const monthsToDateString = (months: number): string => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().split('T')[0];
+};
+
+const dateStringToMonths = (s: string): number | null => {
+  if (!s) return null;
+  const monthsUntil = (new Date(s).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30.44);
+  return TIMELINE_OPTIONS.reduce((a, b) =>
+    Math.abs(b.months - monthsUntil) < Math.abs(a.months - monthsUntil) ? b : a
+  ).months;
+};
+
 // Define both abbreviated and full day names for mapping
 const ALL_DAYS_ABBR = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const ALL_DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -70,6 +94,7 @@ export default function ProfilePage() {
   const [examTypeSel, setExamTypeSel] = useState<'NEET' | 'JEE'>('NEET');
   const [email, setEmail] = useState('');
   const [examDate, setExamDate] = useState('');
+  const [selectedMonths, setSelectedMonths] = useState<number | null>(null);
 
   // State for study preferences
   const [availableDays, setAvailableDays] = useState<string[]>([]);
@@ -99,7 +124,9 @@ export default function ProfilePage() {
     if (user) {
       setName(user.name || '');
       setEmail(user.email || '');
-      setExamDate(formatDateForInput(user.examDate));
+      const ds = formatDateForInput(user.examDate);
+      setExamDate(ds);
+      setSelectedMonths(dateStringToMonths(ds));
       if (user.examType === 'NEET' || user.examType === 'JEE') setExamTypeSel(user.examType);
       // Convert full day names from backend to abbreviated for UI
       const userDays = user.preferences?.availableDays || ALL_DAYS_FULL;
@@ -433,17 +460,31 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="exam-date" className="flex items-center gap-1.5 text-muted-foreground">
-                    <CalendarClock className="h-3.5 w-3.5" /> {examTypeSel} Exam Date
+                  <Label className="flex items-center gap-1.5 text-muted-foreground">
+                    <CalendarClock className="h-3.5 w-3.5" /> How far away is your {examTypeSel} exam?
                   </Label>
-                  <Input
-                    type="date"
-                    id="exam-date"
-                    className="[color-scheme:dark]"
-                    value={examDate}
-                    onChange={(e) => setExamDate(e.target.value)}
-                    disabled={isSavingInfo}
-                  />
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {TIMELINE_OPTIONS.map((opt) => {
+                      const selected = selectedMonths === opt.months;
+                      return (
+                        <button
+                          key={opt.months}
+                          type="button"
+                          disabled={isSavingInfo}
+                          onClick={() => { setSelectedMonths(opt.months); setExamDate(monthsToDateString(opt.months)); }}
+                          className={`relative rounded-xl border p-3 text-left transition-colors disabled:opacity-60 ${
+                            selected
+                              ? 'border-primary/40 bg-primary/[0.05]'
+                              : 'border-border bg-card hover:border-primary/30'
+                          }`}
+                        >
+                          {selected && <CheckCircle2 className="absolute right-2.5 top-2.5 h-4 w-4 text-primary" />}
+                          <p className="font-display text-sm font-semibold text-foreground">{opt.label}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{opt.sub}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="pt-1">
                   <Button
