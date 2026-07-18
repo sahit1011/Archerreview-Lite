@@ -403,7 +403,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it works — pinned scroll sequence: your scroll drives the story */}
+      {/* How it works — product-preview journey ledger (4 steps, each shows the real thing) */}
       <HowItWorksCinematic />
 
       {/* CTA band */}
