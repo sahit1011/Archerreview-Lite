@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Pencil } from 'lucide-react';
 import TopicPriorityEditor from './TopicPriorityEditor';
 import { useOnboarding } from '@/context/OnboardingContext';
 
@@ -21,6 +22,15 @@ interface FocusAreasProps {
 const getCategoryDisplayName = (category: string) => {
   const words = category.replace(/_/g, ' ').toLowerCase().split(' ');
   return words.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+// Priority → single-accent bar fill (stepped opacity) + mono label. Focus is a
+// relative emphasis, not a status, so it stays on the one accent rather than
+// borrowing destructive/warning hues.
+const PRIORITY_META: Record<TopicPriority['importance'], { fill: string; pct: number; label: string }> = {
+  High: { fill: 'bg-primary', pct: 100, label: 'High priority' },
+  Medium: { fill: 'bg-primary/60', pct: 66, label: 'Medium priority' },
+  Low: { fill: 'bg-primary/30', pct: 33, label: 'Low priority' },
 };
 
 // Default focus areas when the diagnostic was skipped — the user's exam subjects,
@@ -44,6 +54,7 @@ export default function FocusAreas({
   categoryScores = [],
   onUpdatePriorities
 }: FocusAreasProps) {
+  const reduce = useReducedMotion() === true;
   const [showEditor, setShowEditor] = useState(false);
   const [customizedTopics, setCustomizedTopics] = useState<TopicPriority[]>([]);
   const { examType } = useOnboarding();
@@ -72,6 +83,11 @@ export default function FocusAreas({
   };
 
   const focusAreas = getTopicsToDisplay();
+  const sourceLabel = customizedTopics.length > 0
+    ? 'customized'
+    : diagnosticCompleted && categoryScores.length > 0
+      ? 'from diagnostic'
+      : `${examType || 'NEET/JEE'} weightings`;
 
   // Handle opening the editor
   const handleEditClick = () => {
@@ -91,85 +107,80 @@ export default function FocusAreas({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold text-foreground flex items-center gap-3">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <span>Focus Areas</span>
-        </h2>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Focus areas
+          </p>
+          <h2 className="mt-2 font-display text-xl font-semibold text-foreground">Where your time goes</h2>
+        </div>
         {diagnosticSkipped && (
           <button
             onClick={handleEditClick}
-            className="px-4 py-2 rounded-lg bg-secondary hover:bg-muted text-foreground font-medium text-sm transition-colors flex items-center gap-2"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-primary/[0.04]"
           >
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            Customize Priorities
+            <Pencil className="h-3.5 w-3.5" />
+            Customize
           </button>
         )}
       </div>
 
-      {diagnosticSkipped && (
-        <div className="bg-card p-4 rounded-xl border border-border mb-4 shadow-sm">
-          <div className="flex items-start">
-            <svg className="h-5 w-5 text-primary mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-            </svg>
-            <div>
-              <h3 className="font-medium text-primary">
-                {customizedTopics.length > 0 ? 'Customized Focus Areas' : 'Default Focus Areas'}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {customizedTopics.length > 0
-                  ? 'You have customized your focus areas. You can edit them again using the "Customize Priorities" button.'
-                  : `Since you skipped the diagnostic assessment, we've created a balanced plan based on ${examType || 'NEET/JEE'} exam weightings. You can customize these priorities using the "Customize Priorities" button.`}
-              </p>
-            </div>
-          </div>
+      {/* Focus ledger — hairline rows with a stepped-opacity emphasis bar */}
+      <div className="mt-5 overflow-hidden rounded-xl border border-border bg-secondary/40">
+        <div className="flex items-center justify-between border-b border-border px-5 py-2.5">
+          <span className="font-mono text-[0.7rem] text-muted-foreground">Priority map</span>
+          <span className="font-mono text-[0.7rem] text-muted-foreground">{sourceLabel}</span>
         </div>
-      )}
-
-      <div className="space-y-3">
-        {focusAreas.map((area, index) => {
-          // Determine color and priority based on importance
-          let colorClass, priorityText;
-
-          if (area.importance === 'High') {
-            colorClass = 'border-destructive/30 bg-destructive/10 text-destructive';
-            priorityText = 'High Priority';
-          } else if (area.importance === 'Medium') {
-            colorClass = 'border-warning/30 bg-warning/10 text-warning';
-            priorityText = 'Medium Priority';
-          } else {
-            colorClass = 'border-primary/30 bg-primary/10 text-primary';
-            priorityText = 'Low Priority';
-          }
-
-          return (
-            <motion.div
-              key={area.category}
-              className={`p-3 rounded-lg border flex justify-between items-center transition-colors hover:opacity-90 ${colorClass}`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 + index * 0.05 }}
-            >
-              <div>
-                <div className="font-medium">{getCategoryDisplayName(area.category)}</div>
-                {diagnosticCompleted && categoryScores.length > 0 && (
-                  <div className="text-xs mt-1 opacity-80">
-                    Score: {Math.round(categoryScores.find(s => s.category === area.category)?.score || 0)}%
-                  </div>
-                )}
-              </div>
-              <div className="text-xs font-medium px-2 py-1 rounded-full bg-foreground/5">
-                {priorityText}
-              </div>
-            </motion.div>
-          );
-        })}
+        <ul className="divide-y divide-border">
+          {focusAreas.map((area, index) => {
+            const meta = PRIORITY_META[area.importance];
+            const score = diagnosticCompleted
+              ? Math.round(categoryScores.find(s => s.category === area.category)?.score ?? 0)
+              : null;
+            return (
+              <motion.li
+                key={area.category}
+                className="flex items-center gap-4 px-5 py-3.5"
+                role="img"
+                aria-label={`${getCategoryDisplayName(area.category)} — ${meta.label}`}
+                initial={reduce ? false : { opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={reduce ? { duration: 0 } : { delay: 0.05 * index, duration: 0.35 }}
+              >
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-medium text-foreground">
+                    {getCategoryDisplayName(area.category)}
+                  </span>
+                  {score !== null && (
+                    <span className="ml-2 font-mono text-[0.7rem] text-muted-foreground">{score}%</span>
+                  )}
+                </div>
+                <div className="h-2 w-24 shrink-0 overflow-hidden rounded-full bg-secondary sm:w-32">
+                  <motion.div
+                    className={`h-full origin-left rounded-full ${meta.fill}`}
+                    style={{ width: `${meta.pct}%` }}
+                    initial={reduce ? false : { scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    viewport={{ once: true, margin: '-60px' }}
+                    transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 20, delay: 0.06 * index }}
+                  />
+                </div>
+                <span className="w-24 shrink-0 text-right font-mono text-[0.7rem] uppercase tracking-[0.06em] text-muted-foreground">
+                  {area.importance}
+                </span>
+              </motion.li>
+            );
+          })}
+        </ul>
       </div>
+
+      {diagnosticSkipped && (
+        <p className="mt-3 font-mono text-[0.7rem] leading-relaxed text-muted-foreground">
+          {customizedTopics.length > 0
+            ? 'Priorities customized — edit again anytime with Customize.'
+            : `Balanced from ${examType || 'NEET/JEE'} exam weightings · adjust with Customize.`}
+        </p>
+      )}
 
       {/* Topic Priority Editor Modal */}
       <AnimatePresence>

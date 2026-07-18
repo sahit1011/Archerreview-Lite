@@ -52,33 +52,35 @@ const timeOptions = [
 
 export default function StudyTimePreference({ value, onChange }: StudyTimePreferenceProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {timeOptions.map((option) => {
         const isSelected = value === option.id;
         return (
-          <div
+          <button
             key={option.id}
-            className={`rounded-xl p-4 cursor-pointer border transition-transform hover:-translate-y-0.5 ${
-              isSelected
-                ? 'bg-primary border-primary text-primary-foreground shadow-sm'
-                : 'bg-card border-border hover:bg-secondary'
-            }`}
+            type="button"
+            aria-pressed={isSelected}
             onClick={() => onChange(option.id)}
+            className={`rounded-xl border p-4 text-left transition-colors ${
+              isSelected
+                ? 'border-primary/40 bg-primary/[0.04]'
+                : 'border-border bg-card hover:border-primary/30 hover:bg-primary/[0.02]'
+            }`}
           >
-            <div className="flex items-center">
-              <div className={`mr-4 transition-colors ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+            <div className="flex items-center gap-3">
+              <div className={`transition-colors ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
                 {option.icon}
               </div>
               <div>
-                <div className={`font-semibold text-lg transition-colors ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>
+                <div className="font-display text-base font-semibold text-foreground">
                   {option.label}
                 </div>
-                <div className={`text-sm transition-colors ${isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
+                <div className="mt-0.5 font-mono text-[0.65rem] text-muted-foreground">
                   {option.description}
                 </div>
               </div>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>

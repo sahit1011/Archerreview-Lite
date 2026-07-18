@@ -11,6 +11,8 @@ import ReadinessDetails from '@/components/progress/ReadinessDetails';
 import PlanAdaptations from '@/components/progress/PlanAdaptations';
 import MonitorInsights from '@/components/dashboard/MonitorInsights';
 import { Reveal } from '@/components/ui/reveal';
+import { AnimateNumber } from '@/components/ui/animated-blur-number';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   LineChart,
   ShieldCheck,
@@ -22,9 +24,13 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
+// One accent at stepped opacity — never a rainbow. Used across the telemetry bars.
+const SUBJECT_BAR = ['bg-primary', 'bg-primary/60', 'bg-primary/30'] as const;
+
 export default function ProgressPage() {
   const { user: authUser, isLoading: authLoading } = useUser();
   const searchParams = useSearchParams();
+  const reduceMotion = useReducedMotion() === true;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeMainTab, setActiveMainTab] = useState<'overview' | 'performance' | 'readiness' | 'adaptations' | 'evolution'>('overview');
@@ -233,31 +239,6 @@ export default function ProgressPage() {
 
     fetchProgressData();
   }, [authUser, authLoading, searchParams]);
-  // Get category score color based on score
-  const getCategoryScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-green-500';
-    if (score >= 70) return 'bg-yellow-500';
-    if (score >= 60) return 'bg-orange-500';
-    return 'bg-red-500';
-  };
-
-  // Get task type color
-  const getTaskTypeColor = (type: string) => {
-    switch (type) {
-      case 'VIDEO':
-        return 'bg-blue-500';
-      case 'QUIZ':
-        return 'bg-orange-500';
-      case 'READING':
-        return 'bg-green-500';
-      case 'PRACTICE':
-        return 'bg-purple-500'; // Changed back to standard Tailwind color
-      case 'REVIEW':
-        return 'bg-red-500'; // Changed to red for better visibility
-      default:
-        return 'bg-gray-500';
-    }
-  };
 
   // Calculate days until exam
   const daysUntilExam = authUser?.examDate
@@ -275,6 +256,44 @@ export default function ProgressPage() {
     ? Math.round((completedTasks.completed / completedTasks.total) * 100)
     : 0;
 
+  // Per-subject mastery for the readiness hero telemetry strip. Prefer the real
+  // category scores the readiness engine returns; fall back to averaging the
+  // attempted topics per subject. Only subjects with real data get a bar.
+  const subjectMastery = (() => {
+    const byCategory: Record<string, number> = {};
+    for (const c of readinessScore.categoryScores) {
+      if (typeof c.score === 'number') byCategory[c.category?.toUpperCase?.() ?? ''] = c.score;
+    }
+    if (Object.keys(byCategory).length === 0) {
+      const agg: Record<string, { sum: number; n: number }> = {};
+      for (const t of topics) {
+        if (typeof t.score !== 'number') continue;
+        const key = t.category?.toUpperCase?.() ?? '';
+        if (!agg[key]) agg[key] = { sum: 0, n: 0 };
+        agg[key].sum += t.score;
+        agg[key].n += 1;
+      }
+      for (const [key, { sum, n }] of Object.entries(agg)) byCategory[key] = Math.round(sum / n);
+    }
+    const order = authUser?.examType === 'JEE'
+      ? ['PHYSICS', 'CHEMISTRY', 'MATHEMATICS']
+      : ['PHYSICS', 'CHEMISTRY', 'BIOLOGY'];
+    return order
+      .filter((subject) => subject in byCategory)
+      .map((subject) => ({
+        name: subject.charAt(0) + subject.slice(1).toLowerCase(),
+        pct: byCategory[subject],
+      }));
+  })();
+
+  // Top-level readouts for the AnimateNumber stat band.
+  const overviewStats = [
+    { value: readinessScore.overallScore, suffix: '%', label: 'Readiness' },
+    { value: readinessScore.projectedScore, suffix: '%', label: 'Projected' },
+    { value: taskCompletionPct, suffix: '%', label: 'Tasks done' },
+    { value: daysUntilExam, suffix: 'd', label: 'To exam' },
+  ];
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: LineChart },
     { id: 'performance', label: 'Performance by Topic', icon: TrendingUp },
@@ -288,7 +307,10 @@ export default function ProgressPage() {
       <AppLayout>
         {/* Header */}
         <Reveal className="mb-8">
-          <div className="flex items-center gap-3">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            {authUser?.examType || 'NEET/JEE'} Analytics
+          </p>
+          <div className="mt-2 flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12 text-primary">
               <LineChart className="h-6 w-6" />
             </div>
@@ -351,22 +373,40 @@ export default function ProgressPage() {
             {/* Overview Tab */}
             {activeMainTab === 'overview' && (
               <div>
-                <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  {/* Readiness Score */}
-                  <Reveal>
-                    <div className="card-hover group relative h-full overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
-                      <div className="mb-6 flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
-                          <ShieldCheck className="h-5 w-5" />
+                {/* Stat band — <AnimateNumber> readouts, divider-separated (marketing-grade) */}
+                <Reveal className="mb-6">
+                  <div className="rounded-2xl border border-border bg-card px-2 py-6 shadow-sm">
+                    <dl className="grid grid-cols-2 gap-y-8 sm:grid-cols-4 sm:gap-y-0 sm:divide-x sm:divide-border/60">
+                      {overviewStats.map((s) => (
+                        <div key={s.label} className="flex flex-col items-center px-4 text-center sm:px-6">
+                          <dt className="font-display text-4xl font-bold leading-none tracking-tight text-foreground">
+                            <AnimateNumber value={s.value} suffix={s.suffix} duration={420} blur={14} />
+                          </dt>
+                          <dd className="mt-3 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                            {s.label}
+                          </dd>
                         </div>
-                        <h2 className="text-lg font-semibold text-foreground">Exam Readiness Score</h2>
-                      </div>
-                      <div className="mb-6 flex justify-center">
-                        <div className="relative h-48 w-48">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="font-display text-5xl font-bold text-primary">{readinessScore.overallScore}%</div>
-                              <div className="text-sm text-muted-foreground">Ready</div>
+                      ))}
+                    </dl>
+                  </div>
+                </Reveal>
+
+                {/* Readiness HERO — the instrument: ring + subject-mastery telemetry */}
+                <Reveal className="mb-6">
+                  <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-border bg-border lg:grid-cols-5">
+                    {/* Ring */}
+                    <div className="flex flex-col bg-card p-6 sm:p-7 lg:col-span-2">
+                      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                        Exam readiness
+                      </p>
+                      <div className="mt-6 flex justify-center">
+                        <div className="relative h-44 w-44">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <div className="font-display text-5xl font-bold tracking-tight text-foreground">
+                              <AnimateNumber value={readinessScore.overallScore} suffix="%" duration={500} blur={16} />
+                            </div>
+                            <div className="mt-1 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                              Ready
                             </div>
                           </div>
                           <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
@@ -377,85 +417,112 @@ export default function ProgressPage() {
                               strokeWidth="3"
                               strokeDasharray="100, 100"
                             />
-                            <path
+                            <motion.path
                               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                               fill="none"
                               stroke="var(--primary)"
                               strokeWidth="3"
                               strokeLinecap="round"
                               strokeDasharray={`${readinessScore.overallScore}, 100`}
+                              initial={reduceMotion ? false : { pathLength: 0 }}
+                              animate={{ pathLength: 1 }}
+                              transition={reduceMotion ? { duration: 0 } : { duration: 1, ease: [0.22, 1, 0.36, 1] }}
                             />
                           </svg>
                         </div>
                       </div>
-                      <div className="space-y-1.5 rounded-xl border border-border bg-secondary/40 p-4 text-center">
-                        <p className="text-sm text-muted-foreground">
-                          Your exam is in <span className="font-semibold text-foreground">{daysUntilExam} days</span>
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Projected score: <span className="font-semibold text-foreground">{readinessScore.projectedScore}%</span>
-                        </p>
-                      </div>
+                      <dl className="mt-6 grid grid-cols-2 divide-x divide-border border-t border-border pt-5 text-center">
+                        <div className="px-2">
+                          <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Projected</dt>
+                          <dd className="mt-1.5 font-mono text-lg font-semibold text-foreground">{readinessScore.projectedScore}%</dd>
+                        </div>
+                        <div className="px-2">
+                          <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Days to exam</dt>
+                          <dd className="mt-1.5 font-mono text-lg font-semibold text-foreground">{daysUntilExam}</dd>
+                        </div>
+                      </dl>
                     </div>
-                  </Reveal>
 
-                  {/* Task Completion */}
-                  <Reveal delay={0.08}>
-                    <div className="card-hover group relative h-full overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
-                      <div className="mb-6 flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
-                          <CheckCircle2 className="h-5 w-5" />
-                        </div>
-                        <h2 className="text-lg font-semibold text-foreground">Task Completion</h2>
-                      </div>
-                      <div className="mb-6 flex justify-center">
-                        <div className="relative h-40 w-40">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="font-display text-3xl font-bold text-primary">{taskCompletionPct}%</div>
-                              <div className="text-sm text-muted-foreground">Completed</div>
-                              <div className="mt-1 text-xs text-muted-foreground">{completedTasks.completed} of {completedTasks.total} tasks</div>
-                            </div>
-                          </div>
-                          <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
-                            <path
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                              fill="none"
-                              stroke="var(--border)"
-                              strokeWidth="3"
-                              strokeDasharray="100, 100"
-                            />
-                            <path
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                              fill="none"
-                              stroke="var(--primary)"
-                              strokeWidth="3"
-                              strokeLinecap="round"
-                              strokeDasharray={`${taskCompletionPct}, 100`}
-                            />
-                          </svg>
-                        </div>
+                    {/* Subject-mastery telemetry */}
+                    <div className="flex flex-col bg-card p-6 sm:p-7 lg:col-span-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                          Subject mastery
+                        </p>
+                        <span className="font-mono text-[0.7rem] text-muted-foreground">
+                          {authUser?.examType || 'NEET/JEE'} · live
+                        </span>
                       </div>
 
-                      <div className="space-y-3">
-                        {completedTasks.byType.map((type) => (
-                          <div key={type.type}>
-                            <div className="mb-1 flex justify-between text-sm">
-                              <span className="text-muted-foreground">{type.type.charAt(0) + type.type.slice(1).toLowerCase()}</span>
-                              <span className="font-medium text-foreground">{type.completed} of {type.total}</span>
+                      {subjectMastery.length > 0 ? (
+                        <div className="mt-5 space-y-4">
+                          {subjectMastery.map((row, i) => (
+                            <div
+                              key={row.name}
+                              className="flex items-center gap-3"
+                              role="img"
+                              aria-label={`${row.name} mastery ${row.pct} percent`}
+                            >
+                              <span className="w-24 shrink-0 text-sm text-foreground">{row.name}</span>
+                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+                                <motion.div
+                                  className={`h-full origin-left rounded-full ${SUBJECT_BAR[i % SUBJECT_BAR.length]}`}
+                                  style={{ width: `${row.pct}%` }}
+                                  initial={reduceMotion ? false : { scaleX: 0 }}
+                                  whileInView={{ scaleX: 1 }}
+                                  viewport={{ once: true, margin: '-60px' }}
+                                  transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 20, delay: 0.1 * i }}
+                                />
+                              </div>
+                              <span className="w-10 shrink-0 text-right font-mono text-[0.75rem] text-muted-foreground">{row.pct}%</span>
                             </div>
-                            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                              <div
-                                className={`${getTaskTypeColor(type.type)} h-2 rounded-full`}
-                                style={{ width: `${(type.completed / type.total) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-5 flex flex-1 items-center rounded-xl border border-border bg-secondary/40 p-4 text-sm text-muted-foreground">
+                          Complete a few tasks to map your per-subject mastery — no fabricated scores before then.
+                        </p>
+                      )}
+
+                      {/* Task-type completion — hairline telemetry rows */}
+                      <div className="mt-6 border-t border-border pt-5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                            Task completion
+                          </p>
+                          <span className="font-mono text-[0.7rem] text-muted-foreground">
+                            {completedTasks.completed}/{completedTasks.total} · {taskCompletionPct}%
+                          </span>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                          {completedTasks.byType.map((type, i) => {
+                            const pct = type.total > 0 ? Math.round((type.completed / type.total) * 100) : 0;
+                            return (
+                              <div key={type.type} className="flex items-center gap-3">
+                                <span className="w-24 shrink-0 text-sm text-foreground">
+                                  {type.type.charAt(0) + type.type.slice(1).toLowerCase()}
+                                </span>
+                                <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+                                  <motion.div
+                                    className={`h-full origin-left rounded-full ${SUBJECT_BAR[i % SUBJECT_BAR.length]}`}
+                                    style={{ width: `${pct}%` }}
+                                    initial={reduceMotion ? false : { scaleX: 0 }}
+                                    whileInView={{ scaleX: 1 }}
+                                    viewport={{ once: true, margin: '-60px' }}
+                                    transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 20, delay: 0.06 * i }}
+                                  />
+                                </div>
+                                <span className="w-16 shrink-0 text-right font-mono text-[0.7rem] text-muted-foreground">
+                                  {type.completed}/{type.total}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </Reveal>
-                </div>
+                  </div>
+                </Reveal>
 
                 {/* Performance Charts */}
                 <PerformanceCharts
@@ -464,7 +531,7 @@ export default function ProgressPage() {
                   overallScore={readinessScore.overallScore}
                 />
 
-                {/* Strengths & Weaknesses */}
+                {/* Strengths & Weaknesses — framed telemetry rows, single accent nodes */}
                 <Reveal>
                   <div className="mb-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
                     <div className="mb-6 flex items-center gap-3">
@@ -476,49 +543,53 @@ export default function ProgressPage() {
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <div>
-                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-                          <Target className="h-4 w-4 text-destructive" /> Areas to Improve
-                        </h3>
-                        <div className="space-y-3">
-                          {readinessScore.weakAreas.map((area, index) => (
-                            <div key={index} className="rounded-xl border border-border border-l-4 border-l-destructive/60 bg-secondary/40 p-4">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-medium text-foreground">{area.name || area}</h4>
+                        <p className="mb-4 flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                          <Target className="h-3.5 w-3.5 text-destructive" /> Areas to improve
+                        </p>
+                        {readinessScore.weakAreas.length > 0 ? (
+                          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                            {readinessScore.weakAreas.map((area, index) => (
+                              <li key={index} className="flex items-center justify-between gap-3 bg-secondary/30 px-4 py-3">
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
+                                  <span className="truncate text-sm text-foreground">{area.name || area}</span>
+                                </div>
                                 {typeof area.score === 'number' && (
-                                  <span className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-sm font-semibold text-destructive">
-                                    {area.score}%
-                                  </span>
+                                  <span className="shrink-0 font-mono text-[0.75rem] font-semibold text-destructive">{area.score}%</span>
                                 )}
-                              </div>
-                              <p className="mt-2 text-sm text-muted-foreground">
-                                Focus on improving your knowledge in this area. Consider reviewing related content and taking more practice quizzes.
-                              </p>
-                            </div>
-                          ))}
-                        </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
+                            No specific weak areas identified yet. Keep completing tasks to sharpen the read.
+                          </p>
+                        )}
                       </div>
 
                       <div>
-                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-                          <CheckCircle2 className="h-4 w-4 text-success" /> Strong Areas
-                        </h3>
-                        <div className="space-y-3">
-                          {readinessScore.strongAreas.map((area, index) => (
-                            <div key={index} className="rounded-xl border border-border border-l-4 border-l-success/60 bg-secondary/40 p-4">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-medium text-foreground">{area.name || area}</h4>
+                        <p className="mb-4 flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Strong areas
+                        </p>
+                        {readinessScore.strongAreas.length > 0 ? (
+                          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                            {readinessScore.strongAreas.map((area, index) => (
+                              <li key={index} className="flex items-center justify-between gap-3 bg-secondary/30 px-4 py-3">
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
+                                  <span className="truncate text-sm text-foreground">{area.name || area}</span>
+                                </div>
                                 {typeof area.score === 'number' && (
-                                  <span className="rounded-lg border border-success/30 bg-success/10 px-2.5 py-1 text-sm font-semibold text-success">
-                                    {area.score}%
-                                  </span>
+                                  <span className="shrink-0 font-mono text-[0.75rem] font-semibold text-success">{area.score}%</span>
                                 )}
-                              </div>
-                              <p className="mt-2 text-sm text-muted-foreground">
-                                You're doing well in this area! Continue to maintain your knowledge with periodic review.
-                              </p>
-                            </div>
-                          ))}
-                        </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
+                            No specific strengths identified yet. Keep completing tasks to sharpen the read.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -572,12 +643,19 @@ export default function ProgressPage() {
                           : 'Trend analysis, plan-version history and predictive readiness build from your real study data. Keep completing tasks and this unlocks automatically — no made-up numbers before then.'}
                       </p>
                       <div className="mx-auto mt-6 max-w-sm">
-                        <div className="mb-1.5 flex justify-between text-xs font-medium">
-                          <span className="text-muted-foreground">Completed tasks</span>
-                          <span className="text-foreground">{done} / {EVOLUTION_MIN_TASKS}</span>
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Completed tasks</span>
+                          <span className="font-mono text-[0.75rem] text-muted-foreground">{done} / {EVOLUTION_MIN_TASKS}</span>
                         </div>
-                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary">
-                          <div className="h-full rounded-full brand-gradient transition-all" style={{ width: `${pct}%` }} />
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                          <motion.div
+                            className="h-full origin-left rounded-full bg-primary"
+                            style={{ width: `${pct}%` }}
+                            initial={reduceMotion ? false : { scaleX: 0 }}
+                            whileInView={{ scaleX: 1 }}
+                            viewport={{ once: true, margin: '-60px' }}
+                            transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 20 }}
+                          />
                         </div>
                       </div>
                       <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">

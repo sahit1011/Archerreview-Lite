@@ -40,39 +40,21 @@ export default function PlanAdaptations({ adaptations }: PlanAdaptationsProps) {
     }
   };
 
-  // Get adaptation type color
-  const getAdaptationTypeColor = (type: string) => {
-    switch (type) {
-      case 'RESCHEDULE':
-        return 'bg-primary/15 text-primary border border-primary/30';
-      case 'DIFFICULTY_ADJUSTMENT':
-        return 'bg-sky-500/15 text-sky-400 border border-sky-500/30';
-      case 'CONTENT_ADDITION':
-        return 'bg-success/15 text-success border border-success/30';
-      case 'PLAN_REBALANCE':
-        return 'bg-warning/15 text-warning border border-warning/30';
-      case 'REMEDIAL_CONTENT':
-        return 'bg-destructive/15 text-destructive border border-destructive/30';
-      default:
-        return 'bg-muted text-muted-foreground border border-border';
-    }
-  };
-
-  // Get adaptation icon
+  // Get adaptation icon — single primary accent, no per-type rainbow.
   const getAdaptationIcon = (type: string) => {
     switch (type) {
       case 'RESCHEDULE':
-        return <Calendar className="h-5 w-5 text-primary" />;
+        return <Calendar className="h-4 w-4 text-primary" />;
       case 'DIFFICULTY_ADJUSTMENT':
-        return <Sliders className="h-5 w-5 text-sky-400" />;
+        return <Sliders className="h-4 w-4 text-primary" />;
       case 'CONTENT_ADDITION':
-        return <Plus className="h-5 w-5 text-success" />;
+        return <Plus className="h-4 w-4 text-primary" />;
       case 'PLAN_REBALANCE':
-        return <RefreshCw className="h-5 w-5 text-warning" />;
+        return <RefreshCw className="h-4 w-4 text-primary" />;
       case 'REMEDIAL_CONTENT':
-        return <BookOpen className="h-5 w-5 text-destructive" />;
+        return <BookOpen className="h-4 w-4 text-primary" />;
       default:
-        return <Info className="h-5 w-5 text-muted-foreground" />;
+        return <Info className="h-4 w-4 text-primary" />;
     }
   };
 
@@ -84,6 +66,13 @@ export default function PlanAdaptations({ adaptations }: PlanAdaptationsProps) {
   // Get unique adaptation types
   const adaptationTypes = Array.from(new Set(adaptations.map(a => a.type)));
 
+  const chipBtn = (active: boolean) =>
+    `rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+      active
+        ? 'bg-primary text-primary-foreground shadow-sm'
+        : 'border border-border text-muted-foreground hover:bg-accent hover:text-foreground'
+    }`;
+
   return (
     <div className="mb-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -91,23 +80,19 @@ export default function PlanAdaptations({ adaptations }: PlanAdaptationsProps) {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
             <Zap className="h-5 w-5" />
           </div>
-          <h2 className="text-lg font-semibold text-foreground">Plan Adaptations</h2>
+          <div>
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Change log</p>
+            <h2 className="text-lg font-semibold text-foreground">Plan Adaptations</h2>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${!filter ? 'bg-primary text-primary-foreground shadow-sm' : 'border border-border text-muted-foreground hover:bg-accent hover:text-foreground'}`}
-            onClick={() => setFilter(null)}
-          >
+          <button className={chipBtn(!filter)} onClick={() => setFilter(null)}>
             All
           </button>
 
           {adaptationTypes.map(type => (
-            <button
-              key={type}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${filter === type ? 'bg-primary text-primary-foreground shadow-sm' : 'border border-border text-muted-foreground hover:bg-accent hover:text-foreground'}`}
-              onClick={() => setFilter(type)}
-            >
+            <button key={type} className={chipBtn(filter === type)} onClick={() => setFilter(type)}>
               {getAdaptationTypeName(type)}
             </button>
           ))}
@@ -115,56 +100,54 @@ export default function PlanAdaptations({ adaptations }: PlanAdaptationsProps) {
       </div>
 
       {filteredAdaptations.length > 0 ? (
-        <div className="space-y-4">
-          {filteredAdaptations.map(adaptation => (
-            <div key={adaptation._id} className="rounded-2xl border border-border bg-secondary/30 p-5 transition-all hover:bg-accent">
-              <div className="flex items-start">
-                <div className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-muted">
+        <ol className="relative ml-1 border-l border-border">
+          {filteredAdaptations.map((adaptation) => (
+            <li key={adaptation._id} className="relative pb-7 pl-8 last:pb-0">
+              {/* accent node on the spine */}
+              <span className="absolute -left-[9px] top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-border bg-card">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              </span>
+
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                   {getAdaptationIcon(adaptation.type)}
-                </div>
-
-                <div className="ml-4 flex-1">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className={`rounded-lg px-3 py-1 text-xs font-medium ${getAdaptationTypeColor(adaptation.type)}`}>
-                      {getAdaptationTypeName(adaptation.type)}
-                    </span>
-                    <span className="rounded-lg bg-muted px-3 py-1 text-xs text-muted-foreground">
-                      {new Date(adaptation.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </span>
-                  </div>
-
-                  <p className="mt-3 text-sm text-foreground">{adaptation.description}</p>
-
-                  <div className="mt-3 rounded-xl border border-border bg-card/60 p-3 text-xs text-muted-foreground">
-                    <span className="font-semibold text-primary">Reason:</span> {adaptation.reason}
-
-                    {adaptation.topicName && (
-                      <div className="mt-2">
-                        <span className="font-semibold text-primary">Topic:</span> {adaptation.topicName}
-                      </div>
-                    )}
-
-                    {adaptation.taskTitle && (
-                      <div className="mt-2">
-                        <span className="font-semibold text-primary">Task:</span> {adaptation.taskTitle}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  {getAdaptationTypeName(adaptation.type)}
+                </span>
+                <time className="font-mono text-[0.7rem] text-muted-foreground">
+                  {new Date(adaptation.date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </time>
               </div>
-            </div>
+
+              <p className="mt-2 text-sm text-foreground">{adaptation.description}</p>
+
+              <div className="mt-3 rounded-xl border border-border bg-secondary/40 p-3 text-xs text-muted-foreground">
+                <p>
+                  <span className="font-semibold text-foreground">Reason</span> · {adaptation.reason}
+                </p>
+                {adaptation.topicName && (
+                  <p className="mt-1.5">
+                    <span className="font-semibold text-foreground">Topic</span> · {adaptation.topicName}
+                  </p>
+                )}
+                {adaptation.taskTitle && (
+                  <p className="mt-1.5">
+                    <span className="font-semibold text-foreground">Task</span> · {adaptation.taskTitle}
+                  </p>
+                )}
+              </div>
+            </li>
           ))}
-        </div>
+        </ol>
       ) : (
         <div className="rounded-2xl border border-border bg-secondary/30 py-10 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-            <ClipboardList className="h-8 w-8 text-muted-foreground" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <ClipboardList className="h-7 w-7" />
           </div>
-          <h3 className="text-lg font-semibold text-foreground">No adaptations yet</h3>
+          <h3 className="font-display text-lg font-semibold text-foreground">No adaptations yet</h3>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             Your study plan will adapt automatically as you progress through your studies.
           </p>

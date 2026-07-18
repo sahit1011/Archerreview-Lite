@@ -8,8 +8,16 @@ import ChatInput from './ChatInput';
 import TypingIndicator from './TypingIndicator';
 import ChatSidebar from './ChatSidebar';
 import { useUser } from '@/context/UserContext';
-import { NotebookPen } from 'lucide-react';
+import { NotebookPen, ArrowUpRight, BookOpen, ListChecks, Target, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Quick study-action chips shown on the empty state — each prefills + sends the composer.
+const STUDY_ACTIONS = [
+  { label: 'Explain a concept', prompt: "Explain Newton's laws of motion with examples", Icon: BookOpen },
+  { label: 'Quiz me', prompt: 'Quiz me on Organic Chemistry — 5 questions, one at a time', Icon: ListChecks },
+  { label: 'My weak areas', prompt: 'What are my likely weak areas and how do I fix them?', Icon: Target },
+  { label: 'Plan my week', prompt: 'Help me plan my study week around my target exam date', Icon: CalendarDays },
+] as const;
 
 // Exam-specific empty-state content so a JEE student never sees Biology chips (and vice versa).
 const EXAM_TUTOR_COPY = {
@@ -682,8 +690,8 @@ export default function ChatInterface({
           <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <div className="min-h-full">
               {activeConversation && activeConversation.messages.length > 0 ? (
-                <div className="max-w-4xl mx-auto py-6 px-4 pb-24">
-                  <div className="space-y-4">
+                <div className="max-w-3xl mx-auto py-8 px-4 pb-24">
+                  <div className="space-y-6">
                     {activeConversation.messages.map((message) => (
                       <ChatMessage
                         key={message.id}
@@ -698,26 +706,55 @@ export default function ChatInterface({
                   </div>
                 </div>
               ) : (
-                <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-                  <div className="mx-auto w-full max-w-2xl">
-                    <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
-                      <SparklesIcon className="h-8 w-8 text-primary" />
+                <div className="flex h-full flex-col items-center justify-center p-6">
+                  <div className="mx-auto w-full max-w-2xl text-center">
+                    <div className="mx-auto mb-6 grid h-14 w-14 place-items-center rounded-2xl border border-primary/30 bg-primary/12">
+                      <SparklesIcon className="h-7 w-7 text-primary" />
                     </div>
-                    <h1 className="font-display text-3xl font-bold sm:text-4xl">
-                      Hello, <span className="gradient-text">{authUser?.name?.split(' ')[0] || (userId ? 'Aspirant' : 'Guest')}</span>
+                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      {authUser?.examType ? `${authUser.examType} AI Tutor` : 'AI Tutor'}
+                    </p>
+                    <h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                      Hello,{' '}
+                      <span className="gradient-text">
+                        {authUser?.name?.split(' ')[0] || (userId ? 'Aspirant' : 'Guest')}
+                      </span>
                     </h1>
                     <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{examCopy.intro}</p>
 
-                    <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {examCopy.suggestions.map((suggestion, index) => (
+                    {/* Study-action chips — quick starts that prefill + send the composer */}
+                    <div className="mt-7 flex flex-wrap justify-center gap-2">
+                      {STUDY_ACTIONS.map(({ label, prompt, Icon }) => (
                         <button
-                          key={index}
-                          onClick={() => handleSendMessage(suggestion)}
-                          className="rounded-xl border border-border bg-secondary/60 px-4 py-3 text-left text-sm text-foreground transition-all hover:border-primary/40 hover:bg-accent"
+                          key={label}
+                          onClick={() => handleSendMessage(prompt)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3.5 py-1.5 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-accent"
                         >
-                          {suggestion}
+                          <Icon className="h-3.5 w-3.5 text-primary" />
+                          {label}
                         </button>
                       ))}
+                    </div>
+
+                    {/* Exam-specific starters — a hairline-framed suggestion ledger */}
+                    <div className="mx-auto mt-6 max-w-xl overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm">
+                      <div className="border-b border-border px-4 py-2">
+                        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                          Try asking
+                        </span>
+                      </div>
+                      <div className="divide-y divide-border/60">
+                        {examCopy.suggestions.slice(0, 4).map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            onClick={() => handleSendMessage(suggestion)}
+                            className="group flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm text-foreground transition-colors hover:bg-accent"
+                          >
+                            <span>{suggestion}</span>
+                            <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -728,13 +765,13 @@ export default function ChatInterface({
 
         {/* Fixed Input Area at Bottom */}
         <div className="flex-shrink-0 border-t border-border bg-background/80 backdrop-blur-md">
-          <div className="max-w-4xl mx-auto py-4 px-6">
+          <div className="max-w-3xl mx-auto py-4 px-4 sm:px-6">
             {activeConversation && activeConversation.messages.length >= 2 && (
-              <div className="mb-2 flex justify-end">
+              <div className="mb-2.5 flex justify-end">
                 <button
                   onClick={handleSaveToNotes}
                   disabled={isSavingNote}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
                 >
                   <NotebookPen className="h-3.5 w-3.5" />
                   {isSavingNote ? 'Saving…' : 'Save key points to My Notes'}

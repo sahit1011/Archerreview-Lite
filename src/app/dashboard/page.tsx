@@ -10,8 +10,8 @@ import { useUser } from '@/context/UserContext';
 import { useRemediationAgent } from '@/hooks/useRemediationAgent';
 import PlanUpdatesCard from '@/components/dashboard/PlanUpdatesCard';
 import { toast } from 'sonner';
-import { Reveal, RevealGroup, RevealItem } from '@/components/ui/reveal';
-import { AnimatedCounter } from '@/components/ui/animated-counter';
+import { Reveal } from '@/components/ui/reveal';
+import { AnimateNumber } from '@/components/ui/animated-blur-number';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,9 @@ import {
   NotebookPen,
 } from 'lucide-react';
 
+// One accent at stepped opacity — matches the landing "subject weightage" strip.
+// Never a rainbow: the strongest bar reads solid, weaker categories recede.
+const SUBJECT_BAR = ['bg-primary', 'bg-primary/60', 'bg-primary/30'] as const;
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
@@ -348,27 +351,30 @@ export default function DashboardPage() {
             </p>
           </Reveal>
 
-          {/* KPIs */}
-          <RevealGroup className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {[
-              { label: 'Exam readiness', value: readinessScore.overallScore, suffix: '%', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', dash: false },
-              { label: "Today's tasks", value: todaysTasks.length, suffix: '', icon: ListTodo, color: 'text-muted-foreground', bg: 'bg-secondary', dash: false },
-              { label: 'Completed', value: completedToday, suffix: '', icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10', dash: false },
-              { label: 'Days to exam', value: daysToExam ?? 0, suffix: '', icon: CalendarDays, color: 'text-muted-foreground', bg: 'bg-secondary', dash: daysToExam === null },
-            ].map((kpi) => (
-              <RevealItem key={kpi.label}>
-                <div className="card-hover rounded-2xl border border-border bg-card p-5 shadow-sm">
-                  <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${kpi.bg} ${kpi.color}`}>
-                    <kpi.icon className="h-5 w-5" />
+          {/* KPI stat band — one premium instrument, hairline-divided like the hero
+              stat strip. Numbers are the hero; icons are a quiet mono accent. */}
+          <Reveal>
+            <dl className="grid grid-cols-2 overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:grid-cols-4 sm:divide-x divide-border">
+              {[
+                { label: 'Exam readiness', value: readinessScore.overallScore, suffix: '%', icon: TrendingUp, color: 'text-primary', dash: false },
+                { label: "Today's tasks", value: todaysTasks.length, suffix: '', icon: ListTodo, color: 'text-muted-foreground', dash: false },
+                { label: 'Completed', value: completedToday, suffix: '', icon: CheckCircle2, color: 'text-success', dash: false },
+                { label: 'Days to exam', value: daysToExam ?? 0, suffix: '', icon: CalendarDays, color: 'text-muted-foreground', dash: daysToExam === null },
+              ].map((kpi) => (
+                <div key={kpi.label} className="flex flex-col gap-2 p-5 sm:p-6">
+                  <div className="flex items-center justify-between">
+                    <dt className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                      {kpi.label}
+                    </dt>
+                    <kpi.icon className={`h-4 w-4 shrink-0 ${kpi.color}`} />
                   </div>
-                  <div className="font-display text-3xl font-bold">
-                    {kpi.dash ? '—' : <AnimatedCounter value={kpi.value} suffix={kpi.suffix} />}
-                  </div>
-                  <div className="mt-0.5 text-sm text-muted-foreground">{kpi.label}</div>
+                  <dd className="font-display text-3xl font-bold leading-none tracking-tight text-foreground sm:text-4xl">
+                    {kpi.dash ? '—' : <AnimateNumber value={kpi.value} suffix={kpi.suffix} duration={420} blur={14} />}
+                  </dd>
                 </div>
-              </RevealItem>
-            ))}
-          </RevealGroup>
+              ))}
+            </dl>
+          </Reveal>
 
           {/* Main grid */}
           <div className="grid gap-6 lg:grid-cols-3">
@@ -487,8 +493,8 @@ export default function DashboardPage() {
                         <circle cx="60" cy="60" r="52" fill="none" stroke="var(--secondary)" strokeWidth="10" />
                         {/* ring draws in on mount (ringReady flips post-mount → CSS transition) */}
                         <circle
-                          cx="60" cy="60" r="52" fill="none" stroke="url(#rg)" strokeWidth="10" strokeLinecap="round"
-                          className="ring-draw ring-glow"
+                          cx="60" cy="60" r="52" fill="none" stroke="var(--primary)" strokeWidth="10" strokeLinecap="round"
+                          className="ring-draw"
                           strokeDasharray={2 * Math.PI * 52}
                           strokeDashoffset={
                             ringReady
@@ -496,16 +502,10 @@ export default function DashboardPage() {
                               : 2 * Math.PI * 52
                           }
                         />
-                        <defs>
-                          <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stopColor="var(--brand-from)" />
-                            <stop offset="100%" stopColor="var(--brand-to)" />
-                          </linearGradient>
-                        </defs>
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="font-display text-3xl font-bold">
-                          <AnimatedCounter value={readinessScore.overallScore || 0} />
+                        <span className="flex items-baseline font-display text-3xl font-bold">
+                          <AnimateNumber value={readinessScore.overallScore || 0} duration={420} blur={14} />
                           <span className="text-lg">%</span>
                         </span>
                         <span className="text-xs text-muted-foreground">ready</span>
@@ -513,23 +513,28 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   {readinessScore.categoryScores.length > 0 ? (
-                    <div className="mt-6 space-y-3">
-                      {readinessScore.categoryScores.slice(0, 3).map((c, ci) => (
-                        <div key={c.category}>
-                          <div className="mb-1 flex justify-between text-xs">
-                            <span className="font-medium text-muted-foreground">
-                              {c.category.split('_').map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')}
-                            </span>
-                            <span className="font-semibold">{c.score}%</span>
+                    <div className="mt-6">
+                      <p className="mb-3 text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                        Subject readiness
+                      </p>
+                      <div className="space-y-3">
+                        {readinessScore.categoryScores.slice(0, 3).map((c, ci) => (
+                          <div key={c.category}>
+                            <div className="mb-1 flex justify-between text-xs">
+                              <span className="font-medium text-muted-foreground">
+                                {c.category.split('_').map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')}
+                              </span>
+                              <span className="font-mono font-semibold text-foreground">{c.score}%</span>
+                            </div>
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                              <div
+                                className={`bar-grow h-full rounded-full ${SUBJECT_BAR[ci] ?? 'bg-primary/30'}`}
+                                style={{ width: `${c.score}%`, ['--i' as string]: ci }}
+                              />
+                            </div>
                           </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                            <div
-                              className="bar-grow h-full rounded-full brand-gradient"
-                              style={{ width: `${c.score}%`, ['--i' as string]: ci }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <p className="mt-5 text-center text-sm text-muted-foreground">
@@ -555,7 +560,9 @@ export default function DashboardPage() {
                   </div>
                   {daysToExam !== null ? (
                     <div className="text-center">
-                      <div className="font-display text-5xl font-bold gradient-text">{daysToExam}</div>
+                      <div className="flex justify-center font-display text-5xl font-bold text-foreground">
+                        <AnimateNumber value={daysToExam} duration={420} blur={14} />
+                      </div>
                       <p className="mt-1 text-sm text-muted-foreground">
                         days to go · {format(new Date(user.examDate), 'MMM d, yyyy')}
                       </p>

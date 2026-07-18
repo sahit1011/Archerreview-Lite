@@ -1,8 +1,19 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { PlusIcon, ChatBubbleLeftRightIcon, XMarkIcon, Bars3Icon, SparklesIcon, EllipsisHorizontalIcon, HeartIcon, PencilIcon, TrashIcon, ArrowUpOnSquareIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
-import { SparklesIcon as SparklesSolidIcon } from '@heroicons/react/24/solid';
+import {
+  PlusIcon,
+  ChatBubbleLeftRightIcon,
+  XMarkIcon,
+  SparklesIcon,
+  EllipsisHorizontalIcon,
+  PencilIcon,
+  TrashIcon,
+  ArrowUpOnSquareIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
 
 interface Conversation {
   id: string;
@@ -19,6 +30,19 @@ interface ChatSidebarProps {
   onDeleteConversation?: (id: string) => void;
   isCollapsed?: boolean;
   toggleMobileSidebar?: () => void;
+}
+
+// Compact relative timestamp for the mono readout (e.g. "now", "3h", "2d").
+function formatRelative(date: Date): string {
+  const diffMs = Date.now() - new Date(date).getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return 'now';
+  if (min < 60) return `${min}m`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}d`;
+  return `${Math.floor(day / 7)}w`;
 }
 
 export default function ChatSidebar({
@@ -59,380 +83,321 @@ export default function ChatSidebar({
     };
   }, []);
 
+  const confirmDelete = (id: string) => {
+    if (!onDeleteConversation) return;
+    if (window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+      onDeleteConversation(id);
+    }
+  };
+
+  // Shared dropdown menu (rename / share / delete) — single markup, reused desktop + mobile.
+  const renderMenu = (id: string) => (
+    <div
+      ref={menuRef}
+      className="absolute right-2 top-11 z-20 w-44 overflow-hidden rounded-xl border border-border bg-popover shadow-lg"
+    >
+      <button
+        className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveMenuId(null);
+        }}
+      >
+        <PencilIcon className="h-4 w-4" />
+        Rename
+      </button>
+      <button
+        className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveMenuId(null);
+        }}
+      >
+        <ArrowUpOnSquareIcon className="h-4 w-4" />
+        Share
+      </button>
+      <div className="h-px bg-border" />
+      <button
+        className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10"
+        onClick={(e) => {
+          e.stopPropagation();
+          confirmDelete(id);
+          setActiveMenuId(null);
+        }}
+      >
+        <TrashIcon className="h-4 w-4" />
+        Delete
+      </button>
+    </div>
+  );
+
+  // One conversation row — single-accent active state via left border + tinted surface.
+  const renderRow = (conversation: Conversation, onSelect: () => void) => {
+    const isActive = activeConversationId === conversation.id;
+    return (
+      <div key={conversation.id} className="group relative">
+        <div
+          onClick={onSelect}
+          className={`flex cursor-pointer items-center gap-2 border-l-2 py-2.5 pl-3 pr-2 transition-colors ${
+            isActive
+              ? 'border-primary bg-primary/10'
+              : 'border-transparent hover:border-border hover:bg-accent'
+          }`}
+        >
+          <div className="min-w-0 flex-1">
+            <p
+              className={`truncate text-sm leading-tight ${
+                isActive ? 'font-semibold text-foreground' : 'text-foreground/90'
+              }`}
+            >
+              {conversation.title}
+            </p>
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className="font-mono text-[0.65rem] text-muted-foreground">
+                {formatRelative(conversation.timestamp)}
+              </span>
+              {conversation.lastMessage && (
+                <span className="truncate text-[0.7rem] text-muted-foreground/70">
+                  {conversation.lastMessage}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveMenuId(activeMenuId === conversation.id ? null : conversation.id);
+            }}
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-primary/10 hover:text-primary group-hover:opacity-100"
+            title="Conversation options"
+          >
+            <EllipsisHorizontalIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        {activeMenuId === conversation.id && renderMenu(conversation.id)}
+      </div>
+    );
+  };
+
+  const visibleConversations = showLess ? conversations.slice(0, 5) : conversations;
+
   return (
     <>
-      {/* Desktop sidebar toggle button - removed from here */}
-
-      {/* Desktop sidebar - collapsible */}
+      {/* Desktop sidebar — collapsible */}
       <div
-        className={`hidden md:flex flex-col h-full transition-all duration-300 overflow-hidden bg-card/60 backdrop-blur-sm border-r border-border ${isCollapsed ? 'w-16' : 'w-72'}`}
+        className={`hidden h-full flex-col overflow-hidden border-r border-border bg-secondary/30 transition-all duration-300 md:flex ${
+          isCollapsed ? 'w-16' : 'w-72'
+        }`}
       >
-        {/* Sidebar header - always visible */}
-        <div className={`p-5 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-border sticky top-0 z-10 bg-card/60 backdrop-blur-sm`}>
-          {isCollapsed ? (
-            <SparklesSolidIcon className="h-6 w-6 text-primary" />
-          ) : (
-            <>
-              <div className="flex items-center">
-                <SparklesSolidIcon className="h-6 w-6 mr-2 text-primary" />
-                <h2 className="font-bold text-lg text-foreground">AI Tutor</h2>
-              </div>
-            </>
+        {/* Header */}
+        <div
+          className={`flex h-16 shrink-0 items-center border-b border-border px-4 ${
+            isCollapsed ? 'justify-center' : 'justify-start gap-2.5'
+          }`}
+        >
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-primary/30 bg-primary/12">
+            <SparklesIcon className="h-5 w-5 text-primary" />
+          </div>
+          {!isCollapsed && (
+            <div>
+              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                StudyArc
+              </p>
+              <h2 className="font-display text-base font-bold leading-none tracking-tight text-foreground">
+                AI Tutor
+              </h2>
+            </div>
           )}
         </div>
 
-        {/* New Chat Button - with more spacing */}
-        <div className="px-4 py-4 mt-4">
-          <div
+        {/* New Chat button */}
+        <div className="p-3">
+          <button
             onClick={onNewChat}
-            className={`flex items-center gap-3 py-3 px-4 rounded-xl transition-all w-full cursor-pointer brand-gradient text-white font-semibold shadow-button hover:brightness-110 transform hover:-translate-y-0.5 ${isCollapsed ? 'justify-center' : 'justify-start'}`}
+            className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl brand-gradient px-4 py-2.5 font-semibold text-white shadow-button transition-all hover:brightness-110 ${
+              isCollapsed ? 'justify-center' : 'justify-start'
+            }`}
           >
             <PlusIcon className="h-5 w-5" />
-            {!isCollapsed && <span className="font-semibold">New chat</span>}
-          </div>
+            {!isCollapsed && <span className="text-sm">New chat</span>}
+          </button>
         </div>
 
-        {/* Recent label - with more spacing */}
+        {/* Recent eyebrow */}
         {!isCollapsed && (
-          <div className="px-5 py-4 mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Recent
+          <div className="px-4 pb-2 pt-3">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Recent
+            </span>
           </div>
         )}
 
         {/* Conversations list */}
-        <div className="flex-grow overflow-y-auto px-3 mt-2 pb-4">
+        <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           {conversations.length > 0 ? (
-            <div className="space-y-3">
-              {(showLess ? conversations.slice(0, 5) : conversations).map((conversation) => (
-                <div key={conversation.id} className="relative group mb-3">
-                  <div
-                    onClick={() => onSelectConversation(conversation.id)}
-                    className={`w-full text-left py-3 px-4 rounded-xl transition-colors flex items-center justify-between cursor-pointer hover:bg-accent ${activeConversationId === conversation.id ? 'text-primary font-semibold bg-primary/15 border border-primary/30' : 'text-muted-foreground border border-transparent'} ${isCollapsed ? 'justify-center' : ''}`}
+            isCollapsed ? (
+              <div className="flex flex-col items-center gap-2 py-2">
+                {conversations.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => onSelectConversation(c.id)}
+                    className={`grid h-9 w-9 place-items-center rounded-lg transition-colors ${
+                      activeConversationId === c.id
+                        ? 'bg-primary/12 text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    }`}
+                    title={c.title}
                   >
-                    {isCollapsed ? (
-                      <ChatBubbleLeftRightIcon className="h-5 w-5" />
+                    <ChatBubbleLeftRightIcon className="h-5 w-5" />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="divide-y divide-border/60 px-1">
+                {visibleConversations.map((c) => renderRow(c, () => onSelectConversation(c.id)))}
+
+                {conversations.length > 5 && (
+                  <button
+                    onClick={() => setShowLess(!showLess)}
+                    className="flex w-full items-center justify-center gap-1.5 py-3 font-mono text-[0.7rem] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {showLess ? (
+                      <>
+                        Show all {conversations.length} <ChevronDownIcon className="h-3.5 w-3.5" />
+                      </>
                     ) : (
                       <>
-                        <div className="truncate pr-6">{conversation.title}</div>
-                        <div className="flex items-center">
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('Delete button clicked directly for conversation:', conversation.id);
-                              if (onDeleteConversation) {
-                                if (window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
-                                  onDeleteConversation(conversation.id);
-                                }
-                              }
-                            }}
-                            className="opacity-100 p-1 rounded-full hover:bg-primary/20 cursor-pointer mr-1"
-                          >
-                            <TrashIcon className="h-5 w-5 text-destructive" />
-                          </div>
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('Menu button clicked for conversation:', conversation.id);
-                              setActiveMenuId(activeMenuId === conversation.id ? null : conversation.id);
-                            }}
-                            className="opacity-100 p-1 rounded-full hover:bg-primary/20 cursor-pointer"
-                          >
-                            <EllipsisHorizontalIcon className="h-5 w-5 text-primary" />
-                          </div>
-                        </div>
+                        Show less <ChevronUpIcon className="h-3.5 w-3.5" />
                       </>
                     )}
-                  </div>
-
-                  {/* Dropdown menu for conversation options */}
-                  {activeMenuId === conversation.id && !isCollapsed && (
-                    <div
-                      ref={menuRef}
-                      className="absolute right-2 top-12 z-10 bg-popover backdrop-blur-md rounded-xl shadow-lg w-48 overflow-hidden border border-border"
-                    >
-                      <div className="py-1">
-                        <button
-                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Rename logic would go here
-                            setActiveMenuId(null);
-                          }}
-                        >
-                          <PencilIcon className="h-4 w-4 text-primary" />
-                          Rename
-                        </button>
-                        <button
-                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Share logic would go here
-                            setActiveMenuId(null);
-                          }}
-                        >
-                          <ArrowUpOnSquareIcon className="h-4 w-4 text-primary" />
-                          Share
-                        </button>
-                        <button
-                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log('Delete button clicked for conversation:', conversation.id);
-                            console.log('onDeleteConversation function exists:', !!onDeleteConversation);
-                            if (onDeleteConversation) {
-                              // Confirm before deleting
-                              console.log('Showing confirmation dialog');
-                              const confirmed = window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.');
-                              console.log('User confirmed deletion:', confirmed);
-                              if (confirmed) {
-                                console.log('Calling onDeleteConversation with ID:', conversation.id);
-                                onDeleteConversation(conversation.id);
-                              }
-                            }
-                            setActiveMenuId(null);
-                          }}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* Show more/less button */}
-              {!isCollapsed && conversations.length > 5 && (
-                <div
-                  onClick={() => setShowLess(!showLess)}
-                  className="flex items-center gap-2 w-full text-left py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg cursor-pointer mt-3 transition-colors"
-                >
-                  {showLess ? (
-                    <>
-                      <span>Show more</span>
-                      <ChevronDownIcon className="h-4 w-4" />
-                    </>
-                  ) : (
-                    <>
-                      <span>Show less</span>
-                      <ChevronUpIcon className="h-4 w-4" />
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+                  </button>
+                )}
+              </div>
+            )
           ) : (
-            <div className={`text-center text-muted-foreground text-sm py-6 ${isCollapsed ? 'hidden' : ''}`}>
-              No conversations yet
-            </div>
+            !isCollapsed && (
+              <div className="px-4 py-8 text-center">
+                <p className="font-mono text-[0.7rem] text-muted-foreground">No conversations yet</p>
+              </div>
+            )
           )}
         </div>
 
-        {/* Settings section */}
+        {/* Settings */}
         {!isCollapsed && (
-          <div className="mt-auto p-4 border-t border-border">
-            <div className="flex items-center gap-3 py-3 px-4 rounded-xl transition-colors w-full cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-              </svg>
-              <span className="font-semibold">Settings and help</span>
-            </div>
+          <div className="mt-auto border-t border-border p-3">
+            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+              <Cog6ToothIcon className="h-5 w-5" />
+              Settings and help
+            </button>
           </div>
         )}
       </div>
 
-      {/* Mobile sidebar toggle button - removed from here */}
-
       {/* Mobile sidebar overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={handleToggleMobile}
         />
       )}
 
       {/* Mobile sidebar */}
       <div
-        className={`md:hidden fixed top-0 left-0 h-full w-80 z-50 transform transition-transform duration-300 ease-in-out overflow-hidden bg-card backdrop-blur-md border-r border-border ${
+        className={`fixed left-0 top-0 z-50 h-full w-80 transform overflow-hidden border-r border-border bg-card transition-transform duration-300 ease-in-out md:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex flex-col h-full">
-          {/* Sidebar header */}
-          <div className="p-5 flex items-center justify-between border-b border-border sticky top-0 z-10 bg-card/60 backdrop-blur-sm">
-            <div className="flex items-center">
-              <SparklesSolidIcon className="h-6 w-6 mr-2 text-primary" />
-              <h2 className="font-bold text-lg text-foreground">AI Tutor</h2>
+        <div className="flex h-full flex-col">
+          {/* Header */}
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
+            <div className="flex items-center gap-2.5">
+              <div className="grid h-9 w-9 place-items-center rounded-lg border border-primary/30 bg-primary/12">
+                <SparklesIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  StudyArc
+                </p>
+                <h2 className="font-display text-base font-bold leading-none tracking-tight text-foreground">
+                  AI Tutor
+                </h2>
+              </div>
             </div>
             <button
               onClick={handleToggleMobile}
-              className="text-muted-foreground hover:text-foreground p-1 transition-colors"
+              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
 
-          {/* New Chat Button */}
-          <div className="px-4 py-4 mt-4">
-            <div
+          {/* New Chat button */}
+          <div className="p-3">
+            <button
               onClick={() => {
                 if (onNewChat) {
                   onNewChat();
-                  handleToggleMobile(); // Close sidebar after creating new chat
+                  handleToggleMobile();
                 }
               }}
-              className="flex items-center gap-3 py-3 px-4 rounded-xl transition-all w-full cursor-pointer brand-gradient text-white font-semibold shadow-button hover:brightness-110 transform hover:-translate-y-0.5"
+              className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl brand-gradient px-4 py-2.5 font-semibold text-white shadow-button transition-all hover:brightness-110"
             >
               <PlusIcon className="h-5 w-5" />
-              <span className="font-semibold">New chat</span>
-            </div>
+              <span className="text-sm">New chat</span>
+            </button>
           </div>
 
-          {/* Recent label */}
-          <div className="px-5 py-4 mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Recent
+          {/* Recent eyebrow */}
+          <div className="px-4 pb-2 pt-3">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Recent
+            </span>
           </div>
 
           {/* Conversations list */}
-          <div className="flex-grow overflow-y-auto px-3 mt-2 pb-4">
+          <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             {conversations.length > 0 ? (
-              <div className="space-y-3">
-                {(showLess ? conversations.slice(0, 5) : conversations).map((conversation) => (
-                  <div key={conversation.id} className="relative group mb-3">
-                    <div
-                      onClick={() => {
-                        onSelectConversation(conversation.id);
-                        handleToggleMobile(); // Close sidebar after selection on mobile
-                      }}
-                      className={`w-full text-left py-3 px-4 rounded-xl transition-colors flex items-center justify-between cursor-pointer hover:bg-accent ${
-                        activeConversationId === conversation.id
-                          ? 'text-primary font-semibold bg-primary/15 border border-primary/30'
-                          : 'text-muted-foreground border border-transparent'
-                      }`}
-                    >
-                      <div className="truncate pr-6">{conversation.title}</div>
-                      <div className="flex items-center">
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log('Mobile: Delete button clicked directly for conversation:', conversation.id);
-                            if (onDeleteConversation) {
-                              if (window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
-                                onDeleteConversation(conversation.id);
-                              }
-                            }
-                          }}
-                          className="opacity-100 p-1 rounded-full hover:bg-primary/20 cursor-pointer mr-1"
-                        >
-                          <TrashIcon className="h-5 w-5 text-destructive" />
-                        </div>
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log('Mobile: Menu button clicked for conversation:', conversation.id);
-                            setActiveMenuId(activeMenuId === conversation.id ? null : conversation.id);
-                          }}
-                          className="opacity-100 p-1 rounded-full hover:bg-primary/20 cursor-pointer"
-                        >
-                          <EllipsisHorizontalIcon className="h-5 w-5 text-primary" />
-                        </div>
-                      </div>
-                    </div>
+              <div className="divide-y divide-border/60 px-1">
+                {visibleConversations.map((c) =>
+                  renderRow(c, () => {
+                    onSelectConversation(c.id);
+                    handleToggleMobile();
+                  })
+                )}
 
-                    {/* Dropdown menu for conversation options */}
-                    {activeMenuId === conversation.id && (
-                      <div
-                        ref={menuRef}
-                        className="absolute right-2 top-12 z-10 bg-popover backdrop-blur-md rounded-xl shadow-lg w-48 overflow-hidden border border-border"
-                      >
-                        <div className="py-1">
-                          <button
-                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Rename logic would go here
-                              setActiveMenuId(null);
-                            }}
-                          >
-                            <PencilIcon className="h-4 w-4 text-primary" />
-                            Rename
-                          </button>
-                          <button
-                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Share logic would go here
-                              setActiveMenuId(null);
-                            }}
-                          >
-                            <ArrowUpOnSquareIcon className="h-4 w-4 text-primary" />
-                            Share
-                          </button>
-                          <button
-                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('Mobile: Delete button clicked for conversation:', conversation.id);
-                              console.log('Mobile: onDeleteConversation function exists:', !!onDeleteConversation);
-                              if (onDeleteConversation) {
-                                // Confirm before deleting
-                                console.log('Mobile: Showing confirmation dialog');
-                                const confirmed = window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.');
-                                console.log('Mobile: User confirmed deletion:', confirmed);
-                                if (confirmed) {
-                                  console.log('Mobile: Calling onDeleteConversation with ID:', conversation.id);
-                                  onDeleteConversation(conversation.id);
-                                }
-                              }
-                              setActiveMenuId(null);
-                            }}
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {/* Show more/less button */}
                 {conversations.length > 5 && (
-                  <div
+                  <button
                     onClick={() => setShowLess(!showLess)}
-                    className="flex items-center gap-2 w-full text-left py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg cursor-pointer mt-3 transition-colors"
+                    className="flex w-full items-center justify-center gap-1.5 py-3 font-mono text-[0.7rem] text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {showLess ? (
                       <>
-                        <span>Show more</span>
-                        <ChevronDownIcon className="h-4 w-4" />
+                        Show all {conversations.length} <ChevronDownIcon className="h-3.5 w-3.5" />
                       </>
                     ) : (
                       <>
-                        <span>Show less</span>
-                        <ChevronUpIcon className="h-4 w-4" />
+                        Show less <ChevronUpIcon className="h-3.5 w-3.5" />
                       </>
                     )}
-                  </div>
+                  </button>
                 )}
               </div>
             ) : (
-              <div className="text-center text-muted-foreground text-sm py-6">
-                No conversations yet
+              <div className="px-4 py-8 text-center">
+                <p className="font-mono text-[0.7rem] text-muted-foreground">No conversations yet</p>
               </div>
             )}
           </div>
 
-          {/* Settings section */}
-          <div className="mt-auto p-4 border-t border-border">
-            <div
-              className="flex items-center gap-3 py-3 px-4 rounded-xl transition-colors w-full cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-              </svg>
-              <span className="font-semibold">Settings and help</span>
-            </div>
+          {/* Settings */}
+          <div className="mt-auto border-t border-border p-3">
+            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+              <Cog6ToothIcon className="h-5 w-5" />
+              Settings and help
+            </button>
           </div>
         </div>
       </div>

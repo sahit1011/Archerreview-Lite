@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 interface WeeklySchedulePreviewProps {
   availableDays: string[];
@@ -9,26 +9,52 @@ interface WeeklySchedulePreviewProps {
 }
 
 const daysOfWeek = [
-  { id: 'Monday', label: 'Mon' },
-  { id: 'Tuesday', label: 'Tue' },
-  { id: 'Wednesday', label: 'Wed' },
-  { id: 'Thursday', label: 'Thu' },
-  { id: 'Friday', label: 'Fri' },
-  { id: 'Saturday', label: 'Sat' },
-  { id: 'Sunday', label: 'Sun' },
+  { id: 'Monday', letter: 'M' },
+  { id: 'Tuesday', letter: 'T' },
+  { id: 'Wednesday', letter: 'W' },
+  { id: 'Thursday', letter: 'T' },
+  { id: 'Friday', letter: 'F' },
+  { id: 'Saturday', letter: 'S' },
+  { id: 'Sunday', letter: 'S' },
 ];
 
-// Helper function to get time range based on preference
-const getTimeRange = (preference: 'morning' | 'afternoon' | 'evening' | 'night') => {
+// Single accent at stepped opacity — Watch / Read / Quiz / Review. Same tokens
+// and legend grammar as the landing HowItWorks StepWeek schematic.
+const TIER_BY_TYPE = [
+  'bg-primary',
+  'bg-primary/60',
+  'bg-primary/30',
+  'border border-primary/30 bg-transparent',
+] as const;
+
+const LEGEND = [
+  { label: 'Watch', sw: 'bg-primary' },
+  { label: 'Read', sw: 'bg-primary/60' },
+  { label: 'Quiz', sw: 'bg-primary/30' },
+  { label: 'Review', sw: 'border border-primary/30 bg-transparent' },
+] as const;
+
+// Deterministic block pattern per weekday index — a representative day shape that
+// scales with the chosen daily hours. This is a schematic, not the real schedule
+// (generated server-side after onboarding).
+const DAY_SHAPES = [
+  [0, 1],
+  [0, 2, 1],
+  [1, 2],
+  [0, 1, 3],
+  [2, 1],
+  [0],
+  [3],
+];
+
+const getTimeRange = (preference: 'morning' | 'afternoon' | 'evening') => {
   switch (preference) {
     case 'morning':
-      return '6:00 AM - 12:00 PM';
+      return '6:00 AM – 12:00 PM';
     case 'afternoon':
-      return '12:00 PM - 6:00 PM';
+      return '12:00 PM – 6:00 PM';
     case 'evening':
-      return '6:00 PM - 9:00 PM';
-    case 'night':
-      return '9:00 PM - 2:00 AM';
+      return '6:00 PM – 9:00 PM';
     default:
       return '';
   }
@@ -37,61 +63,88 @@ const getTimeRange = (preference: 'morning' | 'afternoon' | 'evening' | 'night')
 export default function WeeklySchedulePreview({
   availableDays,
   studyHoursPerDay,
-  preferredStudyTime
+  preferredStudyTime,
 }: WeeklySchedulePreviewProps) {
-  // Get time range based on preference
+  const reduce = useReducedMotion() === true;
   const timeRange = getTimeRange(preferredStudyTime);
+  const activeCount = availableDays.length;
+
+  // Cap blocks per active day by the daily-hours budget so denser plans read denser.
+  const maxBlocks = Math.max(1, Math.min(3, Math.round(studyHoursPerDay)));
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <span>Weekly Schedule Preview</span>
-      </h2>
-      <div className="grid grid-cols-7 gap-2 mb-4">
-        {daysOfWeek.map((day, index) => {
-          const isAvailable = availableDays.includes(day.id);
-          return (
-            <motion.div
-              key={day.id}
-              className="text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 + index * 0.05 }}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Weekly schedule
+          </p>
+          <h2 className="mt-2 font-display text-xl font-semibold text-foreground">A typical week</h2>
+        </div>
+        <span className="font-mono text-[0.7rem] text-muted-foreground">
+          {activeCount} active {activeCount === 1 ? 'day' : 'days'}
+        </span>
+      </div>
+
+      {/* Schematic — grid-cols-7 day letters + stepped-opacity task blocks */}
+      <div className="mt-5 rounded-xl border border-border bg-secondary/40 p-4 sm:p-5">
+        <div className="grid grid-cols-7 gap-1.5">
+          {daysOfWeek.map((d, i) => (
+            <span
+              key={i}
+              className={`text-center font-mono text-[0.6rem] uppercase ${
+                availableDays.includes(d.id) ? 'text-foreground' : 'text-muted-foreground/50'
+              }`}
             >
-              <div className="mb-2 text-sm font-medium text-muted-foreground">{day.label}</div>
-              <div
-                className={`h-28 rounded-xl flex items-center justify-center border ${
-                  isAvailable
-                    ? 'bg-primary/10 border-primary/20'
-                    : 'bg-secondary border-border'
-                }`}
-              >
-                {isAvailable ? (
-                  <div className="text-center p-2">
-                    <div className="text-primary font-bold text-xl">{studyHoursPerDay}h</div>
-                    <div className="text-muted-foreground text-xs capitalize">{preferredStudyTime}</div>
-                  </div>
+              {d.letter}
+            </span>
+          ))}
+        </div>
+        <div className="mt-1.5 grid grid-cols-7 items-start gap-1.5">
+          {daysOfWeek.map((d, col) => {
+            const isActive = availableDays.includes(d.id);
+            const blocks = isActive ? DAY_SHAPES[col].slice(0, maxBlocks) : [];
+            return (
+              <div key={d.id} className="flex flex-col gap-1">
+                {isActive ? (
+                  blocks.map((type, bi) => (
+                    <motion.div
+                      key={bi}
+                      className={`h-4 origin-bottom rounded-[4px] ${TIER_BY_TYPE[type]}`}
+                      initial={reduce ? false : { scaleY: 0, opacity: 0 }}
+                      whileInView={{ scaleY: 1, opacity: 1 }}
+                      viewport={{ once: true, margin: '-60px' }}
+                      transition={
+                        reduce
+                          ? { duration: 0 }
+                          : { duration: 0.35, delay: 0.04 * col + 0.03 * bi, ease: [0.22, 1, 0.36, 1] }
+                      }
+                    />
+                  ))
                 ) : (
-                  <div className="text-muted-foreground text-sm">Off</div>
+                  <div className="h-4 rounded-[4px] border border-dashed border-border" aria-label="rest day" />
                 )}
               </div>
-            </motion.div>
-          );
-        })}
-      </div>
-      <div className="bg-card p-4 rounded-xl border border-border text-sm text-muted-foreground shadow-sm">
-        <div className="flex items-center">
-          <svg className="h-5 w-5 text-primary mr-3" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-          </svg>
-          <span>
-            Your preferred study time is during the <span className="font-medium text-primary capitalize">{preferredStudyTime}</span> ({timeRange}).
-          </span>
+            );
+          })}
+        </div>
+
+        {/* Typed legend — same 4-item grammar as StepWeek */}
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-border pt-3">
+          {LEGEND.map((l) => (
+            <div key={l.label} className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-[3px] ${l.sw}`} />
+              <span className="font-mono text-[0.65rem] text-muted-foreground">{l.label}</span>
+            </div>
+          ))}
         </div>
       </div>
+
+      <p className="mt-3 font-mono text-[0.7rem] text-muted-foreground">
+        {studyHoursPerDay}h / day · sessions land in the{' '}
+        <span className="text-primary">{preferredStudyTime}</span>
+        {timeRange ? ` (${timeRange})` : ''}
+      </p>
     </div>
   );
 }

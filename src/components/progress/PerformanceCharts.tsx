@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { LineChart, BarChart3, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+
+// One accent at stepped opacity — never a rainbow.
+const SUBJECT_BAR = ['bg-primary', 'bg-primary/60', 'bg-primary/30'] as const;
 
 interface PerformanceData {
   date: string;
@@ -30,14 +34,7 @@ export default function PerformanceCharts({
   const [visibleRange, setVisibleRange] = useState({ start: 0, end: 7 });
   const [loading, setLoading] = useState(false);
   const [realData, setRealData] = useState<PerformanceData[]>([]);
-
-  // Get category score color based on score
-  const getCategoryScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-green-500';
-    if (score >= 70) return 'bg-yellow-500';
-    if (score >= 60) return 'bg-orange-500';
-    return 'bg-red-500';
-  };
+  const reduceMotion = useReducedMotion();
 
   // Format category name for display
   const formatCategoryName = (category: string) => {
@@ -269,7 +266,10 @@ export default function PerformanceCharts({
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
             <BarChart3 className="h-5 w-5" />
           </div>
-          <h2 className="text-lg font-semibold text-foreground">Performance Analytics</h2>
+          <div>
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Telemetry</p>
+            <h2 className="text-lg font-semibold text-foreground">Performance Analytics</h2>
+          </div>
         </div>
         <div className="flex gap-2">
           <button className={tabBtn(activeView === 'trend')} onClick={() => setActiveView('trend')}>
@@ -429,36 +429,49 @@ export default function PerformanceCharts({
           </div>
         </div>
       ) : (
-        <div className="space-y-5 rounded-2xl border border-border bg-secondary/30 p-6">
-          <div className="mb-2 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-success" />
-            <h3 className="text-base font-semibold text-foreground">Topic Performance Breakdown</h3>
+        <div className="rounded-2xl border border-border bg-secondary/30 p-6">
+          <div className="mb-5 flex items-center justify-between">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              Subject breakdown
+            </p>
+            <span className="font-mono text-[0.7rem] text-muted-foreground">
+              {categoryScores.length} subjects
+            </span>
           </div>
 
-          <div className="space-y-4">
-            {categoryScores.map((category) => (
-              <div
-                key={category.category}
-                className="rounded-xl border border-border bg-card/60 p-5"
-              >
-                <div className="mb-3 flex items-center justify-between text-sm">
-                  <span className="font-medium text-foreground">
+          {categoryScores.length > 0 ? (
+            <div className="space-y-4">
+              {categoryScores.map((category, i) => (
+                <div
+                  key={category.category}
+                  className="flex items-center gap-3"
+                  role="img"
+                  aria-label={`${formatCategoryName(category.category)} ${category.score} percent`}
+                >
+                  <span className="w-28 shrink-0 text-sm text-foreground">
                     {formatCategoryName(category.category)}
                   </span>
-                  <span className="rounded-lg bg-primary/15 px-3 py-1 font-semibold text-primary">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+                    <motion.div
+                      className={`h-full origin-left rounded-full ${SUBJECT_BAR[i % SUBJECT_BAR.length]}`}
+                      style={{ width: `${category.score}%` }}
+                      initial={reduceMotion ? false : { scaleX: 0 }}
+                      whileInView={{ scaleX: 1 }}
+                      viewport={{ once: true, margin: '-60px' }}
+                      transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 20, delay: 0.08 * i }}
+                    />
+                  </div>
+                  <span className="w-10 shrink-0 text-right font-mono text-[0.75rem] text-muted-foreground">
                     {category.score}%
                   </span>
                 </div>
-
-                <div className="h-4 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={`${getCategoryScoreColor(category.score)} h-4 rounded-full`}
-                    style={{ width: `${category.score}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
+              No subject data yet — complete quizzes and assessments to populate this breakdown.
+            </p>
+          )}
         </div>
       )}
     </div>

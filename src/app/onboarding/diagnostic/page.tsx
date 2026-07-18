@@ -43,42 +43,51 @@ export default function DiagnosticPage() {
   return (
     <OnboardingLayout>
       <motion.div
-        className="text-center mb-8"
+        className="mx-auto mb-8 max-w-2xl text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3">Step 3 of 5</p>
-        <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-5">
-          Diagnostic Assessment
-        </h1>
-        <p className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm">
-          <Clock className="h-4 w-4 text-primary" />
-          Optional · takes about 15–20 minutes
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          Step 3 of 5 · Diagnostic
         </p>
-        <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-          This quick assessment helps us personalize your NEET / JEE study plan around what you already know.
+        <h1 className="mt-3 font-display text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl">
+          Diagnostic assessment
+        </h1>
+        <p className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 font-mono text-[0.7rem] uppercase tracking-[0.06em] text-muted-foreground shadow-sm">
+          <Clock className="h-3.5 w-3.5 text-primary" />
+          Optional · about 15–20 min
+        </p>
+        <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">
+          This quick assessment helps us personalize your NEET / JEE study plan around what you
+          already know.
         </p>
 
         <OnboardingProgressBar currentStep="assessment" />
       </motion.div>
 
       <motion.div
-        className="max-w-2xl mx-auto rounded-2xl border border-border bg-card p-8 shadow-lg shadow-primary/5"
+        className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <h2 className="font-display text-2xl font-semibold text-foreground mb-6">Why take the assessment?</h2>
-        <ul className="space-y-6">
+        <div className="border-b border-border px-6 py-4 sm:px-8">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Why take it
+          </p>
+          <h2 className="mt-2 font-display text-xl font-semibold text-foreground">
+            What the diagnostic buys you
+          </h2>
+        </div>
+        {/* Benefit ledger — hairline rows, primary-accent glyphs (no icon tiles) */}
+        <ul className="divide-y divide-border">
           {benefits.map(({ icon: Icon, title, description }) => (
-            <li key={title} className="flex items-start">
-              <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mr-4">
-                <Icon className="h-6 w-6 text-primary" />
-              </div>
+            <li key={title} className="flex items-start gap-4 px-6 py-5 sm:px-8">
+              <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <div>
-                <h3 className="text-foreground font-semibold mb-1">{title}</h3>
-                <p className="text-muted-foreground">{description}</p>
+                <h3 className="font-display text-sm font-semibold text-foreground">{title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{description}</p>
               </div>
             </li>
           ))}

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { PaperAirplaneIcon, MicrophoneIcon, PhotoIcon } from '@heroicons/react/24/solid';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -40,68 +41,67 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
     }
   };
 
+  const canSend = message.trim().length > 0 && !isLoading;
+
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex items-end w-full bg-card backdrop-blur-md rounded-2xl border border-border shadow-sm overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-ring transition-colors">
-          <div className="flex-grow relative">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask your AI tutor anything about NEET/JEE..."
-              className="w-full px-6 py-4 bg-transparent focus:outline-none resize-none min-h-[56px] max-h-32 text-foreground placeholder:text-muted-foreground text-base leading-relaxed"
-              rows={1}
+        <div className="flex items-end gap-2 rounded-2xl border border-border bg-secondary/40 py-2 pl-3 pr-2 shadow-sm transition-colors focus-within:border-primary/40 focus-within:bg-card">
+          <textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask your AI tutor anything about NEET/JEE…"
+            className="min-h-[40px] max-h-32 flex-grow resize-none bg-transparent py-2 text-[0.95rem] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
+            rows={1}
+            disabled={isLoading}
+          />
+
+          <div className="flex items-center gap-1 pb-1">
+            <button
+              type="button"
+              className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
               disabled={isLoading}
-            />
+              title="Voice input (coming soon)"
+            >
+              <MicrophoneIcon className="h-[18px] w-[18px]" />
+            </button>
 
-            <div className="absolute right-4 bottom-4 flex items-center space-x-3">
-              <button
-                type="button"
-                className="p-2 text-muted-foreground rounded-full hover:bg-accent hover:text-foreground transition-all disabled:opacity-50"
-                disabled={isLoading}
-                title="Voice input (coming soon)"
-              >
-                <MicrophoneIcon className="h-5 w-5" />
-              </button>
+            <button
+              type="button"
+              className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+              disabled={isLoading}
+              title="Attach image (coming soon)"
+            >
+              <PhotoIcon className="h-[18px] w-[18px]" />
+            </button>
 
-              <button
-                type="button"
-                className="p-2 text-muted-foreground rounded-full hover:bg-accent hover:text-foreground transition-all disabled:opacity-50"
-                disabled={isLoading}
-                title="Attach image (coming soon)"
-              >
-                <PhotoIcon className="h-5 w-5" />
-              </button>
-
-              <button
-                type="submit"
-                className={`p-3 rounded-full transition-all duration-200 ${
-                  message.trim() && !isLoading
-                    ? 'brand-gradient text-white shadow-button hover:brightness-110'
-                    : 'bg-muted text-muted-foreground cursor-not-allowed'
-                }`}
-                disabled={!message.trim() || isLoading}
-              >
-                {isLoading ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                ) : (
-                  <PaperAirplaneIcon className="h-5 w-5" />
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              className={`grid h-9 w-9 place-items-center rounded-lg transition-all ${
+                canSend
+                  ? 'brand-gradient text-white shadow-button hover:brightness-110'
+                  : 'cursor-not-allowed bg-muted text-muted-foreground'
+              }`}
+              disabled={!canSend}
+              title="Send"
+            >
+              {isLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+              ) : (
+                <PaperAirplaneIcon className="h-[18px] w-[18px]" />
+              )}
+            </button>
           </div>
         </div>
       </form>
 
-      <div className="flex items-center justify-center mt-3">
-        <div className="text-xs text-muted-foreground flex items-center bg-secondary px-3 py-1 rounded-full backdrop-blur-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-2 flex-shrink-0 text-warning" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          <span>AI responses may contain inaccuracies</span>
-        </div>
+      <div className="mt-2.5 flex items-center justify-center gap-1.5 text-muted-foreground">
+        <ExclamationTriangleIcon className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+        <span className="font-mono text-[0.65rem] tracking-tight">
+          AI responses may contain inaccuracies · verify before your exam
+        </span>
       </div>
     </div>
   );

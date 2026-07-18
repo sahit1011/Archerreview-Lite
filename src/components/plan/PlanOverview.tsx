@@ -1,11 +1,53 @@
 "use client";
 
-import { motion } from 'framer-motion';
+import { useRef, useState, useEffect } from 'react';
+import { useInView, useReducedMotion } from 'framer-motion';
+import { AnimateNumber } from '@/components/ui/animated-blur-number';
 
 interface PlanOverviewProps {
   examDate: Date;
   studyHoursPerDay: number;
   availableDays: string[];
+}
+
+const COUNT_UP_STEPS = 26;
+const COUNT_UP_DURATION_MS = 1100;
+
+// Eases a value from 0 to `target` once it scrolls into view, in discrete steps so
+// each tick drives the digit-blur transition — an odometer roll. Respects
+// reduced-motion by settling instantly. (Same instrument as the landing stat strip.)
+function StatNumber({ value }: { value: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const reduceMotion = useReducedMotion();
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    if (reduceMotion) {
+      setDisplay(value);
+      return;
+    }
+    let step = 0;
+    const id = setInterval(() => {
+      step += 1;
+      const progress = step / COUNT_UP_STEPS;
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      if (step >= COUNT_UP_STEPS) {
+        setDisplay(value);
+        clearInterval(id);
+      } else {
+        setDisplay(Math.round(value * eased));
+      }
+    }, COUNT_UP_DURATION_MS / COUNT_UP_STEPS);
+    return () => clearInterval(id);
+  }, [inView, value, reduceMotion]);
+
+  return (
+    <span ref={ref}>
+      <AnimateNumber value={display} duration={420} blur={14} />
+    </span>
+  );
 }
 
 export default function PlanOverview({ examDate, studyHoursPerDay, availableDays }: PlanOverviewProps) {
@@ -22,47 +64,32 @@ export default function PlanOverview({ examDate, studyHoursPerDay, availableDays
   // Calculate total study hours
   const totalStudyHours = totalStudyDays * studyHoursPerDay;
 
-  const overviewItems = [
-    {
-      label: 'Study Duration',
-      value: `${weeksUntilExam} Weeks`,
-      subValue: `${daysUntilExam} days until exam`,
-    },
-    {
-      label: 'Daily Study Time',
-      value: `${studyHoursPerDay} Hours`,
-      subValue: `${availableDays.length} days per week`,
-    },
-    {
-      label: 'Total Study Hours',
-      value: `${totalStudyHours} Hours`,
-      subValue: `Across ${totalStudyDays} study days`,
-    },
+  const stats = [
+    { value: weeksUntilExam, unit: 'weeks', label: 'Study window', sub: `${daysUntilExam} days until exam` },
+    { value: studyHoursPerDay, unit: 'hrs / day', label: 'Daily cadence', sub: `${availableDays.length} days per week` },
+    { value: totalStudyHours, unit: 'hours', label: 'Total study hours', sub: `across ${totalStudyDays} study days` },
   ];
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-        </svg>
-        <span>Plan Overview</span>
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {overviewItems.map((item, index) => (
-          <motion.div
-            key={index}
-            className="bg-card p-4 rounded-xl shadow-sm border border-border transition-colors hover:border-primary/30"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 + index * 0.1 }}
-          >
-            <div className="text-muted-foreground text-sm mb-1">{item.label}</div>
-            <div className="text-3xl font-bold text-primary">{item.value}</div>
-            <div className="text-muted-foreground text-xs mt-1">{item.subValue}</div>
-          </motion.div>
+      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Plan overview</p>
+      <h2 className="mt-2 font-display text-xl font-semibold text-foreground">Your prep at a glance</h2>
+
+      {/* Stat band — borderless, divider-separated readouts (landing hero grammar) */}
+      <dl className="mt-5 grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-secondary/40 sm:grid-cols-3 sm:divide-x sm:divide-border">
+        {stats.map((s) => (
+          <div key={s.label} className="flex flex-col px-5 py-4">
+            <dt className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              {s.label}
+            </dt>
+            <dd className="mt-2 flex items-baseline gap-1.5 font-display text-3xl font-bold leading-none tracking-tight text-foreground">
+              <StatNumber value={s.value} />
+              <span className="font-mono text-[0.7rem] font-medium tracking-normal text-muted-foreground">{s.unit}</span>
+            </dd>
+            <span className="mt-2 font-mono text-[0.7rem] text-muted-foreground">{s.sub}</span>
+          </div>
         ))}
-      </div>
+      </dl>
     </div>
   );
 }

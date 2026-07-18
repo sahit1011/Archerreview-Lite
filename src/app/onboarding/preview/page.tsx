@@ -10,7 +10,7 @@ import FocusAreas, { TopicPriority } from '@/components/plan/FocusAreas';
 import { useOnboarding } from '@/context/OnboardingContext';
 import OnboardingProgressBar from '@/components/onboarding/OnboardingProgressBar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, ListChecks, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -211,95 +211,117 @@ export default function PreviewPage() {
   return (
     <OnboardingLayout>
       <motion.div
-        className="text-center mb-10"
+        className="mx-auto mb-10 max-w-2xl text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-3">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          Step 5 of 5 · Your plan
+        </p>
+        <h1 className="mt-3 font-display text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl">
           Review your study plan
         </h1>
-        <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
-          Based on your inputs, we&apos;ve built a personalized plan to help you prepare for your {examType || 'NEET / JEE'} exam. Take a look, then start studying.
+        <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">
+          Built from your inputs — a personalized plan to get you ready for your{' '}
+          {examType || 'NEET / JEE'} exam. Take a look, then start studying.
         </p>
 
         <OnboardingProgressBar currentStep="preview" />
       </motion.div>
 
       <motion.div
-        className="max-w-4xl mx-auto rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-lg shadow-primary/5"
+        className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <div className="space-y-12">
+        {/* Framed plan summary — hairline-divided sections */}
+        <div className="divide-y divide-border">
           {/* Plan Overview */}
           {examDate && (
-            <PlanOverview
-              examDate={examDate}
-              studyHoursPerDay={studyHoursPerDay}
-              availableDays={availableDays}
-            />
+            <div className="p-6 sm:p-8">
+              <PlanOverview
+                examDate={examDate}
+                studyHoursPerDay={studyHoursPerDay}
+                availableDays={availableDays}
+              />
+            </div>
           )}
 
           {/* Weekly Schedule */}
-          <WeeklySchedulePreview
-            availableDays={availableDays}
-            studyHoursPerDay={studyHoursPerDay}
-            preferredStudyTime={preferredStudyTime}
-          />
+          <div className="p-6 sm:p-8">
+            <WeeklySchedulePreview
+              availableDays={availableDays}
+              studyHoursPerDay={studyHoursPerDay}
+              preferredStudyTime={preferredStudyTime}
+            />
+          </div>
 
           {/* Focus Areas */}
-          <FocusAreas
-            diagnosticCompleted={diagnosticCompleted}
-            diagnosticSkipped={diagnosticSkipped}
-            categoryScores={categoryScores}
-            onUpdatePriorities={setCustomizedTopics}
-          />
+          <div className="p-6 sm:p-8">
+            <FocusAreas
+              diagnosticCompleted={diagnosticCompleted}
+              diagnosticSkipped={diagnosticSkipped}
+              categoryScores={categoryScores}
+              onUpdatePriorities={setCustomizedTopics}
+            />
+          </div>
 
-          {/* Weekly Breakdown — only once plan data exists */}
+          {/* Weekly Breakdown — hairline ledger, only once plan data exists */}
           {getWeeklyBreakdown().length > 0 && (
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-3">
-                <ListChecks className="h-6 w-6 text-primary" />
-                <span>Weekly Breakdown</span>
-              </h2>
-              <div className="space-y-3">
+            <div className="p-6 sm:p-8">
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                Weekly breakdown
+              </p>
+              <h2 className="mt-2 font-display text-xl font-semibold text-foreground">The first weeks</h2>
+              <ol className="mt-5 overflow-hidden rounded-xl border border-border bg-secondary/40 divide-y divide-border">
                 {getWeeklyBreakdown().map((week, index) => (
-                  <motion.div
+                  <motion.li
                     key={week.weekNumber}
-                    className="rounded-xl border border-border bg-secondary/60 p-4 transition-colors hover:bg-secondary"
-                    initial={{ opacity: 0, x: -20 }}
+                    className="grid grid-cols-1 gap-1.5 px-5 py-4 sm:grid-cols-12 sm:items-baseline sm:gap-4"
+                    initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 + (index * 0.1) }}
+                    transition={{ delay: 0.6 + index * 0.08, duration: 0.35 }}
                   >
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-semibold text-primary">Week {week.weekNumber}</h3>
-                      <span className="text-sm text-muted-foreground">{week.dateRange}</span>
+                    <div className="flex items-baseline gap-2 sm:col-span-3">
+                      <span className="font-mono text-[0.7rem] text-muted-foreground">
+                        {String(week.weekNumber).padStart(2, '0')}
+                      </span>
+                      <span className="font-display text-sm font-semibold text-foreground">
+                        Week {week.weekNumber}
+                      </span>
                     </div>
-                    <div className="text-foreground">{week.topics}</div>
-                  </motion.div>
+                    <span className="font-mono text-[0.7rem] text-muted-foreground sm:col-span-3">
+                      {week.dateRange}
+                    </span>
+                    <span className="text-sm text-foreground sm:col-span-6">{week.topics}</span>
+                  </motion.li>
                 ))}
-              </div>
+              </ol>
             </div>
           )}
 
-          <motion.div
-            className="rounded-xl border border-primary/20 bg-primary/5 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            <div className="flex items-start gap-3">
-              <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+          {/* Adaptive note — quiet framed callout, single accent */}
+          <div className="p-6 sm:p-8">
+            <motion.div
+              className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/[0.04] p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <div>
-                <h3 className="font-semibold text-foreground">This plan adapts to your progress</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  As you complete tasks and quizzes, our AI adjusts your plan to focus on the topics where you need more practice.
+                <h3 className="font-display text-sm font-semibold text-foreground">
+                  This plan adapts to your progress
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  As you complete tasks and quizzes, the AI adjusts your plan to focus on the topics
+                  where you need more practice.
                 </p>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
       </motion.div>
 
