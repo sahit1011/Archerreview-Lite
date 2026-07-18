@@ -21,23 +21,20 @@ const Step = ({ label, isActive, isCompleted }: { label: string; isActive: boole
         <div
           className={`w-12 h-12 rounded-xl flex items-center justify-center transform transition-all duration-300 ${
             isActive
-              ? 'brand-gradient shadow-lg shadow-primary/30'
+              ? 'brand-gradient shadow-sm'
               : isCompleted
-              ? 'brand-gradient opacity-90 shadow-md shadow-primary/20'
+              ? 'bg-primary/10 border border-primary shadow-sm'
               : 'bg-muted shadow-sm'
           }`}
         >
           {isCompleted ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           ) : (
             <div className={`w-3 h-3 rounded-full transition-all duration-300 ${isActive ? 'bg-white' : 'bg-muted-foreground/40'}`}></div>
           )}
         </div>
-        {isActive && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary border-2 border-card animate-pulse"></div>
-        )}
       </div>
       <span className={`mt-2 text-sm font-medium transition-colors ${isActive || isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
         {label}

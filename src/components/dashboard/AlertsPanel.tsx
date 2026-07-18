@@ -69,59 +69,39 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
     }
   };
 
+  // Severity → destructive / warning / muted tokens only (no red/amber/blue rainbow).
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'HIGH':
-        return 'bg-red-500/15 text-red-400 border border-red-500/30';
+        return 'bg-destructive/10 text-destructive border border-destructive/30';
       case 'MEDIUM':
-        return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
+        return 'bg-warning/10 text-warning border border-warning/30';
       case 'LOW':
-        return 'bg-blue-500/15 text-blue-400 border border-blue-500/30';
+        return 'bg-secondary text-muted-foreground border border-border';
       default:
         return 'bg-secondary text-muted-foreground border border-border';
     }
   };
 
-  const getTypeIcon = (type: string) => {
+  // Type icon chips carry the semantic tone of the alert; MISSED_TASK is the only
+  // one that maps to destructive, warnings to warning, the rest stay neutral.
+  const getTypeChip = (type: string) => {
     switch (type) {
       case 'MISSED_TASK':
-        return (
-          <div className="w-8 h-8 rounded-full bg-red-400/20 flex items-center justify-center shadow-button">
-            <ExclamationCircleIcon className="h-5 w-5 text-red-400" />
-          </div>
-        );
+        return 'bg-destructive/10 text-destructive';
       case 'LOW_PERFORMANCE':
-        return (
-          <div className="w-8 h-8 rounded-full bg-yellow-400/20 flex items-center justify-center shadow-button">
-            <ExclamationCircleIcon className="h-5 w-5 text-yellow-400" />
-          </div>
-        );
       case 'SCHEDULE_DEVIATION':
-        return (
-          <div className="w-8 h-8 rounded-full bg-orange-400/20 flex items-center justify-center shadow-button">
-            <ExclamationCircleIcon className="h-5 w-5 text-orange-400" />
-          </div>
-        );
-      case 'TOPIC_DIFFICULTY':
-        return (
-          <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shadow-button">
-            <ExclamationCircleIcon className="h-5 w-5 text-primary" />
-          </div>
-        );
-      case 'STUDY_PATTERN':
-        return (
-          <div className="w-8 h-8 rounded-full bg-blue-400/20 flex items-center justify-center shadow-button">
-            <ExclamationCircleIcon className="h-5 w-5 text-blue-400" />
-          </div>
-        );
+        return 'bg-warning/10 text-warning';
       default:
-        return (
-          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shadow-button">
-            <ExclamationCircleIcon className="h-5 w-5 text-muted-foreground" />
-          </div>
-        );
+        return 'bg-muted text-muted-foreground';
     }
   };
+
+  const getTypeIcon = (type: string) => (
+    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getTypeChip(type)}`}>
+      <ExclamationCircleIcon className="h-5 w-5" />
+    </div>
+  );
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -135,7 +115,7 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-card backdrop-blur-sm transition-all p-6 mb-6">
+      <div className="rounded-xl border border-border bg-card shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-semibold text-foreground">Alerts</h2>
           <div className="animate-pulse h-8 w-8 bg-muted rounded-full"></div>
@@ -157,16 +137,16 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-border bg-card backdrop-blur-sm transition-all p-6 mb-6">
+      <div className="rounded-xl border border-border bg-card shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-semibold text-foreground">Alerts</h2>
           <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
             <BellIcon className="h-5 w-5 text-muted-foreground" />
           </div>
         </div>
-        <div className="p-4 bg-red-500/15 text-red-400 rounded-lg border border-red-500/30">
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/30">
           <div className="flex items-center">
-            <svg className="h-5 w-5 text-red-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-destructive mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <p>Error: {error}</p>
@@ -177,12 +157,12 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ userId }) => {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card backdrop-blur-sm transition-all p-6 mb-6">
+    <div className="rounded-xl border border-border bg-card shadow-sm p-6 mb-6">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-semibold text-foreground">Alerts</h2>
         <div className="flex items-center">
           {alerts.length > 0 && (
-            <span className="inline-flex items-center justify-center px-2.5 py-1 mr-3 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+            <span className="inline-flex items-center justify-center px-2.5 py-1 mr-3 text-xs font-semibold leading-none text-destructive bg-destructive/15 rounded-full">
               {alerts.length}
             </span>
           )}

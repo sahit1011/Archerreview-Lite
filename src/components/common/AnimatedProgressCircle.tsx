@@ -15,6 +15,12 @@ interface AnimatedProgressCircleProps {
   delay?: number;
 }
 
+/**
+ * Readiness/progress ring: a single stroke that draws in once on mount. The
+ * pulsing glow ring, the >=80% "floating particles", the spring pop on the
+ * number, and the green/amber/red multi-hue thresholds were all decorative
+ * noise — removed. One quiet primary accent, one one-shot fill.
+ */
 const AnimatedProgressCircle: React.FC<AnimatedProgressCircleProps> = ({
   percentage,
   size = 144,
@@ -23,7 +29,7 @@ const AnimatedProgressCircle: React.FC<AnimatedProgressCircleProps> = ({
   backgroundColor = 'var(--border)',
   showPercentage = true,
   label,
-  duration = 2,
+  duration = 1.1,
   delay = 0
 }) => {
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
@@ -40,15 +46,6 @@ const AnimatedProgressCircle: React.FC<AnimatedProgressCircleProps> = ({
     return () => clearTimeout(timer);
   }, [percentage, delay]);
 
-  const getColorByPercentage = (percent: number) => {
-    if (percent >= 80) return '#10B981'; // Green
-    if (percent >= 65) return '#F59E0B'; // Amber
-    if (percent >= 50) return '#EF4444'; // Red
-    return 'var(--primary)'; // Theme primary
-  };
-
-  const dynamicColor = color === 'var(--primary)' ? getColorByPercentage(percentage) : color;
-
   return (
     <div className="relative flex items-center justify-center">
       <svg
@@ -56,7 +53,7 @@ const AnimatedProgressCircle: React.FC<AnimatedProgressCircleProps> = ({
         height={size}
         className="transform -rotate-90"
       >
-        {/* Background circle */}
+        {/* Background track */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -64,15 +61,15 @@ const AnimatedProgressCircle: React.FC<AnimatedProgressCircleProps> = ({
           stroke={backgroundColor}
           strokeWidth={strokeWidth}
           fill="transparent"
-          className="opacity-20"
+          className="opacity-40"
         />
-        
-        {/* Progress circle */}
+
+        {/* Progress ring — draws in once */}
         <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={dynamicColor}
+          stroke={color}
           strokeWidth={strokeWidth}
           fill="transparent"
           strokeLinecap="round"
@@ -81,106 +78,36 @@ const AnimatedProgressCircle: React.FC<AnimatedProgressCircleProps> = ({
           animate={{ strokeDashoffset }}
           transition={{
             duration,
-            ease: [0.25, 0.46, 0.45, 0.94],
+            ease: [0.22, 1, 0.36, 1],
             delay
           }}
-          className="drop-shadow-sm"
-        />
-        
-        {/* Glow effect */}
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={dynamicColor}
-          strokeWidth={strokeWidth / 2}
-          fill="transparent"
-          strokeLinecap="round"
-          strokeDasharray={strokeDasharray}
-          initial={{ strokeDashoffset: circumference, opacity: 0 }}
-          animate={{ 
-            strokeDashoffset,
-            opacity: [0, 0.6, 0]
-          }}
-          transition={{
-            duration,
-            ease: [0.25, 0.46, 0.45, 0.94],
-            delay,
-            opacity: {
-              duration: duration * 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }
-          }}
-          className="blur-sm"
         />
       </svg>
-      
+
       {/* Center content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {showPercentage && (
           <motion.div
-            className="text-3xl font-bold"
-            style={{ color: dynamicColor }}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{
-              duration: 0.8,
-              delay: delay + duration * 0.5,
-              type: "spring",
-              stiffness: 200
-            }}
+            className="text-3xl font-bold text-foreground"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: delay + duration * 0.5 }}
           >
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: delay + duration * 0.7 }}
-            >
-              {Math.round(animatedPercentage)}%
-            </motion.span>
+            {Math.round(animatedPercentage)}%
           </motion.div>
         )}
-        
+
         {label && (
           <motion.div
             className="text-sm text-muted-foreground mt-1 font-medium"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.6,
-              delay: delay + duration * 0.8
-            }}
+            transition={{ duration: 0.5, delay: delay + duration * 0.6 }}
           >
             {label}
           </motion.div>
         )}
       </div>
-      
-      {/* Floating particles effect */}
-      {percentage >= 80 && (
-        <>
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-green-400 rounded-full opacity-60"
-              style={{
-                top: `${20 + i * 15}%`,
-                left: `${80 + i * 5}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0.6, 1, 0.6],
-                scale: [1, 1.2, 1]
-              }}
-              transition={{
-                duration: 2 + i * 0.5,
-                repeat: Infinity,
-                delay: i * 0.3
-              }}
-            />
-          ))}
-        </>
-      )}
     </div>
   );
 };

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 
 interface StudyHoursSliderProps {
   value: number;
@@ -19,7 +18,6 @@ export default function StudyHoursSlider({
   step = 0.5
 }: StudyHoursSliderProps) {
   const [localValue, setLocalValue] = useState(value);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Update local value when prop changes
   useEffect(() => {
@@ -49,22 +47,14 @@ export default function StudyHoursSlider({
           step={step}
           value={localValue}
           onChange={handleSliderChange}
-          onMouseDown={() => setIsDragging(true)}
-          onMouseUp={() => setIsDragging(false)}
-          onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={() => setIsDragging(false)}
           className="w-full h-3 appearance-none cursor-pointer rounded-full bg-secondary"
           style={{
             background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${percentage}%, var(--secondary) ${percentage}%, var(--secondary) 100%)`
           }}
         />
-        <motion.div
-          className="ml-4 min-w-[4rem] text-center font-bold text-primary-foreground bg-primary px-3 py-2 rounded-lg shadow-lg shadow-primary/30"
-          animate={{ scale: isDragging ? 1.1 : 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        >
+        <div className="ml-4 min-w-[4rem] text-center font-bold text-primary-foreground bg-primary px-3 py-2 rounded-lg shadow-button">
           {displayValue}
-        </motion.div>
+        </div>
       </div>
       <div className="flex justify-between text-xs text-muted-foreground px-1 mt-2">
         <span>{min} hour</span>

@@ -292,7 +292,7 @@ const PlanVersionManagement: React.FC<PlanVersionManagementProps> = ({ userId })
             {planVersions.map((version) => (
               <div
                 key={version._id}
-                className={`p-4 rounded-lg cursor-pointer transition-all transform hover:-translate-y-1 ${
+                className={`p-4 rounded-lg cursor-pointer transition-colors ${
                   version._id === selectedVersion
                     ? 'bg-primary/10 border border-primary/40'
                     : 'bg-muted hover:bg-muted/70'

@@ -193,55 +193,71 @@ export default function TaskDetailPopover({
     }
   };
 
-  // Get status badge color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return 'bg-green-500/15 text-green-300 border border-green-500/30';
-      case 'IN_PROGRESS':
-        return 'bg-blue-500/15 text-blue-300 border border-blue-500/30';
-      case 'PENDING':
-        return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
-      case 'SKIPPED':
-        return 'bg-muted text-muted-foreground border border-border';
-      default:
-        return 'bg-muted text-muted-foreground border border-border';
-    }
-  };
-
-  // Get task type badge color
-  const getTypeColor = (type: string) => {
+  // Token-driven badge classes for task type
+  const getTypeBadgeClasses = (type: string) => {
     switch (type) {
       case 'VIDEO':
-        return 'bg-blue-500/15 text-blue-300 border border-blue-500/30';
+        return 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30';
       case 'QUIZ':
         return 'bg-primary/12 text-primary border border-primary/30';
       case 'READING':
-        return 'bg-green-500/15 text-green-300 border border-green-500/30';
+        return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
       case 'PRACTICE':
-        return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
+        return 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30';
       case 'REVIEW':
-        return 'bg-red-500/15 text-red-300 border border-red-500/30';
+        return 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30';
       default:
         return 'bg-muted text-muted-foreground border border-border';
     }
   };
 
-  // Get task type header gradient
-  const getTypeGradient = (type: string) => {
+  // Token-driven badge classes for task status
+  const getStatusBadgeClasses = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'bg-success/15 text-success border border-success/30';
+      case 'IN_PROGRESS':
+        return 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30';
+      case 'PENDING':
+        return 'bg-warning/15 text-warning border border-warning/30';
+      case 'SKIPPED':
+      default:
+        return 'bg-muted text-muted-foreground border border-border';
+    }
+  };
+
+  // Token-driven tint for the task type icon tile
+  const getTypeIconTint = (type: string) => {
     switch (type) {
       case 'VIDEO':
-        return 'from-blue-600 to-blue-500';
+        return 'bg-sky-500/12 text-sky-600 dark:text-sky-400';
       case 'QUIZ':
-        return 'from-primary to-primary';
+        return 'bg-primary/12 text-primary';
       case 'READING':
-        return 'from-green-600 to-green-500';
+        return 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400';
       case 'PRACTICE':
-        return 'from-amber-600 to-amber-500';
+        return 'bg-amber-500/12 text-amber-600 dark:text-amber-400';
       case 'REVIEW':
-        return 'from-red-600 to-red-500';
+        return 'bg-rose-500/12 text-rose-600 dark:text-rose-400';
       default:
-        return 'from-primary to-primary';
+        return 'bg-primary/12 text-primary';
+    }
+  };
+
+  // Lucide-free inline icon per task type for the header tile
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'VIDEO':
+        return <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /><path d="M14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" /></svg>;
+      case 'READING':
+        return <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg>;
+      case 'PRACTICE':
+        return <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clipRule="evenodd" /></svg>;
+      case 'REVIEW':
+        return <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" /></svg>;
+      case 'QUIZ':
+      default:
+        return <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" /></svg>;
     }
   };
 
@@ -266,12 +282,12 @@ export default function TaskDetailPopover({
               </div>
             ) : error ? (
               <div className="p-6">
-                <div className="bg-red-500/15 border-l-4 border-red-500 p-4 rounded-md mb-4">
+                <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-lg mb-4">
                   <div className="flex">
-                    <svg className="h-6 w-6 text-red-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-6 w-6 text-destructive mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                    <p className="text-red-300">{error}</p>
+                    <p className="text-destructive">{error}</p>
                   </div>
                 </div>
                 <button
@@ -283,12 +299,17 @@ export default function TaskDetailPopover({
               </div>
             ) : task ? (
               <>
-                {/* Header with task type-specific gradient background */}
-                <div className={`bg-gradient-to-r ${getTypeGradient(task.type)} p-6`}>
-                  <div className="flex justify-between items-start">
-                    <h2 className="text-xl font-bold text-white">{task.title}</h2>
+                {/* Clean header: card surface, hairline divider, single accent icon tile */}
+                <div className="bg-secondary/60 border-b border-border p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <span className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${getTypeIconTint(task.type)}`}>
+                        {getTypeIcon(task.type)}
+                      </span>
+                      <h2 className="text-xl font-bold text-foreground min-w-0">{task.title}</h2>
+                    </div>
                     <button
-                      className="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-1.5 transition-colors"
+                      className="flex-shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       onClick={onClose}
                       aria-label="Close"
                     >
@@ -299,13 +320,13 @@ export default function TaskDetailPopover({
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTypeBadgeClasses(task.type)}`}>
                       {task.type}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClasses(task.status)}`}>
                       {task.status.replace('_', ' ')}
                     </span>
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
                       {task.duration} min
                     </span>
                   </div>
@@ -351,20 +372,18 @@ export default function TaskDetailPopover({
                       <h3 className="text-sm font-semibold text-muted-foreground mb-3">Update Status</h3>
                       <div className="grid grid-cols-2 gap-3">
                         {['PENDING', 'IN_PROGRESS', 'COMPLETED', 'SKIPPED'].map((status) => (
-                          <motion.button
+                          <button
                             key={status}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className={`px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
+                            className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center active:scale-[0.98] ${
                               task.status === status
-                                ? `bg-gradient-to-r ${getTypeGradient(task.type)} text-white shadow-lg`
+                                ? 'bg-primary text-primary-foreground shadow-sm'
                                 : status === 'COMPLETED'
-                                  ? 'bg-green-500/15 text-green-300 hover:bg-green-500/25 border border-green-500/30'
+                                  ? 'bg-success/15 text-success hover:bg-success/25 border border-success/30'
                                   : status === 'IN_PROGRESS'
-                                    ? 'bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 border border-blue-500/30'
+                                    ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 hover:bg-sky-500/25 border border-sky-500/30'
                                     : status === 'SKIPPED'
                                       ? 'bg-secondary text-foreground hover:bg-muted border border-border'
-                                      : 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/30'
+                                      : 'bg-warning/15 text-warning hover:bg-warning/25 border border-warning/30'
                             }`}
                             onClick={() => handleStatusChange(status)}
                             disabled={updatingStatus || task.status === status}
@@ -381,7 +400,7 @@ export default function TaskDetailPopover({
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
                             )}
-                          </motion.button>
+                          </button>
                         ))}
                       </div>
                       {updatingStatus && (
@@ -398,10 +417,8 @@ export default function TaskDetailPopover({
 
                   <div className="mt-8 flex justify-between items-center">
                     {/* Delete button */}
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-4 py-2 bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 rounded-lg font-medium transition-all flex items-center"
+                    <button
+                      className="px-4 py-2 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/30 rounded-lg font-medium transition-colors flex items-center active:scale-[0.98]"
                       onClick={() => setShowDeleteConfirm(true)}
                       disabled={isDeleting}
                     >
@@ -409,20 +426,18 @@ export default function TaskDetailPopover({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                       Delete Task
-                    </motion.button>
+                    </button>
 
                     <div className="flex space-x-3">
                       {task.type === 'QUIZ' ? (
                         <>
                           {task.content ? (
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              className={`px-5 py-2.5 bg-gradient-to-r ${getTypeGradient(task.type)} text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all`}
+                            <button
+                              className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium shadow-sm transition-colors hover:bg-primary/90 active:scale-[0.98]"
                               onClick={handleStartQuiz}
                             >
                               Start Quiz
-                            </motion.button>
+                            </button>
                           ) : (
                             <div className="text-sm text-muted-foreground italic mr-auto">
                               This quiz is not yet available
@@ -430,14 +445,12 @@ export default function TaskDetailPopover({
                           )}
                         </>
                       ) : null}
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`px-5 py-2.5 bg-gradient-to-r ${getTypeGradient(task.type)} text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all`}
+                      <button
+                        className="px-5 py-2.5 rounded-lg border border-border bg-secondary font-medium text-foreground shadow-sm transition-colors hover:bg-muted active:scale-[0.98]"
                         onClick={onClose}
                       >
                         Close
-                      </motion.button>
+                      </button>
                     </div>
                   </div>
 
@@ -458,13 +471,13 @@ export default function TaskDetailPopover({
                             Cancel
                           </button>
                           <button
-                            className="px-4 py-2 bg-red-500/90 hover:bg-red-500 text-white rounded-lg font-medium transition-colors flex items-center"
+                            className="px-4 py-2 bg-destructive/90 hover:bg-destructive text-destructive-foreground rounded-lg font-medium transition-colors flex items-center active:scale-[0.98]"
                             onClick={handleDeleteTask}
                             disabled={isDeleting}
                           >
                             {isDeleting ? (
                               <>
-                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
@@ -491,14 +504,12 @@ export default function TaskDetailPopover({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 <p className="text-muted-foreground mb-6">No task selected</p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md hover:brightness-110 transition-all"
+                <button
+                  className="px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg shadow-sm transition-colors hover:bg-primary/90 active:scale-[0.98]"
                   onClick={onClose}
                 >
                   Close
-                </motion.button>
+                </button>
               </div>
             )}
           </motion.div>

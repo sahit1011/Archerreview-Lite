@@ -23,9 +23,11 @@ const AnimatedCard: React.FC<AnimatedCardProps> = ({
   onClick,
   gradient = false
 }) => {
+  // Clean bg-card surface (was a from-white/10 glass gradient — off-system).
+  // hoverScale/hoverGlow are now a quiet lift + neutral elevation (see animationUtils).
   const baseClasses = `
     dashboard-card rounded-xl
-    ${gradient ? 'bg-gradient-to-br from-white/10 to-white/5 border border-white/10 backdrop-blur-sm' : ''}
+    ${gradient ? 'bg-secondary/40' : ''}
     ${onClick ? 'cursor-pointer' : ''}
     ${className}
   `;

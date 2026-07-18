@@ -3,14 +3,11 @@
 import React, { ButtonHTMLAttributes, ReactNode } from 'react';
 import { motion, Variants } from 'framer-motion';
 
-// Variants for the button's rest/hover/tap states.
+// Press feedback only. The hover scale (1.02) + lift (-2) was a bouncy gimmick;
+// hover state now comes from the CSS variant (brightness/bg color change).
 const buttonHover: Variants = {
-  rest: { scale: 1, y: 0 },
-  hover: {
-    scale: 1.02,
-    y: -2,
-    transition: { duration: 0.2, ease: 'easeOut' },
-  },
+  rest: {},
+  hover: {},
   tap: {
     scale: 0.98,
     transition: { duration: 0.1, ease: 'easeOut' },

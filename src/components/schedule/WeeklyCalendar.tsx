@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-
 interface WeeklyCalendarProps {
   selectedDays: string[];
   onChange: (days: string[]) => void;
@@ -38,13 +35,11 @@ export default function WeeklyCalendar({ selectedDays, onChange }: WeeklyCalenda
           return (
             <div key={day.id} className="text-center">
               <div className="mb-2 text-sm font-medium text-muted-foreground">{day.label}</div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={() => toggleDay(day.id)}
-                className={`w-full h-12 rounded-lg transition-all duration-300 flex items-center justify-center font-bold text-lg border ${
+                className={`w-full h-12 rounded-lg transition-colors flex items-center justify-center font-bold text-lg border ${
                   isSelected
-                    ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/30'
+                    ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                     : 'bg-card border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
                 }`}
                 aria-label={`Toggle ${day.id}`}
@@ -59,7 +54,7 @@ export default function WeeklyCalendar({ selectedDays, onChange }: WeeklyCalenda
                     />
                   </svg>
                 ) : <div className="w-2 h-2 rounded-full bg-muted-foreground/30"></div>}
-              </motion.button>
+              </button>
             </div>
           );
         })}

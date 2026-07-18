@@ -276,19 +276,20 @@ export default function DashboardPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  // Clean task-type styling for the redesigned task list
+  // Clean task-type styling. Primary accent is reserved for QUIZ (the actionable
+  // type); every other type uses a neutral chip so the list reads calm, not rainbow.
   const getTaskMeta = (type: string) => {
     switch (type) {
       case 'VIDEO':
-        return { icon: Video, color: 'text-sky-500', bg: 'bg-sky-500/10', label: 'Video' };
+        return { icon: Video, color: 'text-muted-foreground', bg: 'bg-secondary', label: 'Video' };
       case 'QUIZ':
         return { icon: FileQuestion, color: 'text-primary', bg: 'bg-primary/10', label: 'Quiz' };
       case 'READING':
-        return { icon: BookOpen, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Reading' };
+        return { icon: BookOpen, color: 'text-muted-foreground', bg: 'bg-secondary', label: 'Reading' };
       case 'PRACTICE':
-        return { icon: PenLine, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Practice' };
+        return { icon: PenLine, color: 'text-muted-foreground', bg: 'bg-secondary', label: 'Practice' };
       case 'REVIEW':
-        return { icon: RefreshCw, color: 'text-rose-500', bg: 'bg-rose-500/10', label: 'Review' };
+        return { icon: RefreshCw, color: 'text-muted-foreground', bg: 'bg-secondary', label: 'Review' };
       default:
         return { icon: ClipboardList, color: 'text-muted-foreground', bg: 'bg-secondary', label: 'Task' };
     }
@@ -351,9 +352,9 @@ export default function DashboardPage() {
           <RevealGroup className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {[
               { label: 'Exam readiness', value: readinessScore.overallScore, suffix: '%', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', dash: false },
-              { label: "Today's tasks", value: todaysTasks.length, suffix: '', icon: ListTodo, color: 'text-sky-500', bg: 'bg-sky-500/10', dash: false },
-              { label: 'Completed', value: completedToday, suffix: '', icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10', dash: false },
-              { label: 'Days to exam', value: daysToExam ?? 0, suffix: '', icon: CalendarDays, color: 'text-amber-500', bg: 'bg-amber-500/10', dash: daysToExam === null },
+              { label: "Today's tasks", value: todaysTasks.length, suffix: '', icon: ListTodo, color: 'text-muted-foreground', bg: 'bg-secondary', dash: false },
+              { label: 'Completed', value: completedToday, suffix: '', icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10', dash: false },
+              { label: 'Days to exam', value: daysToExam ?? 0, suffix: '', icon: CalendarDays, color: 'text-muted-foreground', bg: 'bg-secondary', dash: daysToExam === null },
             ].map((kpi) => (
               <RevealItem key={kpi.label}>
                 <div className="card-hover rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -427,7 +428,7 @@ export default function DashboardPage() {
                             {done && <CheckCircle2 className="h-4 w-4" />}
                           </button>
                           <div
-                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105 ${meta.bg} ${meta.color}`}
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta.bg} ${meta.color}`}
                           >
                             <meta.icon className="h-[18px] w-[18px]" />
                           </div>
@@ -547,7 +548,7 @@ export default function DashboardPage() {
               <Reveal delay={0.1}>
                 <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <div className="mb-4 flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <Timer className="h-5 w-5" />
                     </div>
                     <h2 className="font-display text-lg font-semibold">Exam countdown</h2>

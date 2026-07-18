@@ -13,7 +13,7 @@ interface OnboardingLayoutProps {
 export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
   return (
     <div className="relative flex min-h-screen flex-col aurora-bg">
-      {/* subtle animated backdrop, consistent with the landing */}
+      {/* subtle static tint backdrop, consistent with the landing */}
       <div aria-hidden className="pointer-events-none absolute inset-0 grid-pattern opacity-60" />
 
       {/* Brand bar */}

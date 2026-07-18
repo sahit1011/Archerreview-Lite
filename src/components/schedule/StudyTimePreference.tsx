@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from 'framer-motion';
-
 interface StudyTimePreferenceProps {
   value: 'morning' | 'afternoon' | 'evening' | 'night';
   onChange: (preference: 'morning' | 'afternoon' | 'evening' | 'night') => void;
@@ -58,13 +56,11 @@ export default function StudyTimePreference({ value, onChange }: StudyTimePrefer
       {timeOptions.map((option) => {
         const isSelected = value === option.id;
         return (
-          <motion.div
+          <div
             key={option.id}
-            whileHover={{ y: -5, transition: { type: 'spring', stiffness: 300 } }}
-            whileTap={{ scale: 0.95 }}
-            className={`rounded-xl p-4 cursor-pointer transition-all duration-300 shadow-lg border ${
+            className={`rounded-xl p-4 cursor-pointer border transition-transform hover:-translate-y-0.5 ${
               isSelected
-                ? 'bg-primary border-primary text-primary-foreground'
+                ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                 : 'bg-card border-border hover:bg-secondary'
             }`}
             onClick={() => onChange(option.id)}
@@ -82,7 +78,7 @@ export default function StudyTimePreference({ value, onChange }: StudyTimePrefer
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         );
       })}
     </div>

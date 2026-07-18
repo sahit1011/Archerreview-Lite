@@ -112,7 +112,7 @@ export default function HowItWorksCinematic() {
                         className={cn(
                           "z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all duration-300",
                           isActive
-                            ? "brand-gradient border-transparent text-white shadow-button scale-110"
+                            ? "brand-gradient border-transparent text-white shadow-button"
                             : isDone
                               ? "border-success/40 bg-success/10 text-success"
                               : "border-border bg-card text-muted-foreground"
@@ -140,7 +140,6 @@ export default function HowItWorksCinematic() {
               (no unmount gaps even under fast scrolling) */}
           <div className="relative hidden h-[420px] lg:block">
             <div className="absolute inset-0 rounded-3xl border border-border bg-card shadow-sm" />
-            <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/15 blur-3xl" aria-hidden />
             {STEPS.map((s, i) => (
               <motion.div
                 key={s.title}

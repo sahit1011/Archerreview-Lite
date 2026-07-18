@@ -107,7 +107,7 @@ export default function ChatSidebar({
                 <div key={conversation.id} className="relative group mb-3">
                   <div
                     onClick={() => onSelectConversation(conversation.id)}
-                    className={`w-full text-left py-3 px-4 rounded-xl transition-all flex items-center justify-between cursor-pointer hover:bg-accent transform hover:-translate-y-0.5 ${activeConversationId === conversation.id ? 'text-primary font-semibold bg-primary/15 border border-primary/30' : 'text-muted-foreground border border-transparent'} ${isCollapsed ? 'justify-center' : ''}`}
+                    className={`w-full text-left py-3 px-4 rounded-xl transition-colors flex items-center justify-between cursor-pointer hover:bg-accent ${activeConversationId === conversation.id ? 'text-primary font-semibold bg-primary/15 border border-primary/30' : 'text-muted-foreground border border-transparent'} ${isCollapsed ? 'justify-center' : ''}`}
                   >
                     {isCollapsed ? (
                       <ChatBubbleLeftRightIcon className="h-5 w-5" />
@@ -304,7 +304,7 @@ export default function ChatSidebar({
                         onSelectConversation(conversation.id);
                         handleToggleMobile(); // Close sidebar after selection on mobile
                       }}
-                      className={`w-full text-left py-3 px-4 rounded-xl transition-all flex items-center justify-between cursor-pointer hover:bg-accent transform hover:-translate-y-0.5 ${
+                      className={`w-full text-left py-3 px-4 rounded-xl transition-colors flex items-center justify-between cursor-pointer hover:bg-accent ${
                         activeConversationId === conversation.id
                           ? 'text-primary font-semibold bg-primary/15 border border-primary/30'
                           : 'text-muted-foreground border border-transparent'

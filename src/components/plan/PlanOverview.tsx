@@ -52,11 +52,10 @@ export default function PlanOverview({ examDate, studyHoursPerDay, availableDays
         {overviewItems.map((item, index) => (
           <motion.div
             key={index}
-            className="bg-card p-4 rounded-xl shadow-lg border border-border"
+            className="bg-card p-4 rounded-xl shadow-sm border border-border transition-colors hover:border-primary/30"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 + index * 0.1 }}
-            whileHover={{ y: -5, scale: 1.02, boxShadow: '0 10px 20px rgba(0,0,0,0.2)' }}
           >
             <div className="text-muted-foreground text-sm mb-1">{item.label}</div>
             <div className="text-3xl font-bold text-primary">{item.value}</div>

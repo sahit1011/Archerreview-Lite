@@ -1,15 +1,14 @@
 "use client";
 import React from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 /**
- * Animated hero beams (adapted from Aceternity's Background Beams via 21st.dev),
- * recolored to the StudyArc brand ramp (indigo → violet → cyan) and wired to
- * design tokens + prefers-reduced-motion (static faint paths when reduced).
+ * Static hero line-art (adapted from Aceternity's Background Beams via 21st.dev).
+ * The original swept 15 gradient beams on an infinite loop — perpetual decorative
+ * motion, a "flashy AI" tell. Now it renders only faint static rails: subtle
+ * depth that never moves. Kept as a component so the hero import stays valid.
  */
 export const BackgroundBeams = React.memo(({ className }: { className?: string }) => {
-  const reduceMotion = useReducedMotion();
   const paths = [
     "M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875",
     "M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843",
@@ -44,7 +43,6 @@ export const BackgroundBeams = React.memo(({ className }: { className?: string }
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* faint static rails so the layout reads even before/without animation */}
         {paths.map((path, index) => (
           <path
             key={`rail-${index}`}
@@ -54,44 +52,6 @@ export const BackgroundBeams = React.memo(({ className }: { className?: string }
             strokeWidth="0.5"
           />
         ))}
-
-        {!reduceMotion &&
-          paths.map((path, index) => (
-            <motion.path
-              key={`beam-${index}`}
-              d={path}
-              stroke={`url(#ar-beam-${index})`}
-              strokeOpacity="0.5"
-              strokeWidth="0.6"
-            />
-          ))}
-        <defs>
-          {!reduceMotion &&
-            paths.map((_, index) => (
-              <motion.linearGradient
-                id={`ar-beam-${index}`}
-                key={`ar-beam-grad-${index}`}
-                initial={{ x1: "0%", x2: "0%", y1: "0%", y2: "0%" }}
-                animate={{
-                  x1: ["0%", "100%"],
-                  x2: ["0%", "95%"],
-                  y1: ["0%", "100%"],
-                  y2: ["0%", `${93 + (index % 4) * 2}%`],
-                }}
-                transition={{
-                  duration: 10 + ((index * 7) % 10),
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                  delay: (index * 1.3) % 10,
-                }}
-              >
-                <stop stopColor="var(--brand-to)" stopOpacity="0" />
-                <stop stopColor="var(--brand-to)" />
-                <stop offset="32.5%" stopColor="var(--brand-from)" />
-                <stop offset="100%" stopColor="var(--brand-via)" stopOpacity="0" />
-              </motion.linearGradient>
-            ))}
-        </defs>
       </svg>
     </div>
   );

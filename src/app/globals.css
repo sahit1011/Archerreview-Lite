@@ -384,20 +384,10 @@
 /* =============================================================================
    MOTION & VIBE — animated backgrounds, gradient borders, shimmer, shine, lift
    ========================================================================== */
-@keyframes aurora-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(5%, -4%) scale(1.1); }
-  66% { transform: translate(-4%, 5%) scale(0.94); }
-}
-@keyframes float-y {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
-}
 @keyframes shimmer-text { to { background-position: 200% center; } }
 @keyframes shine-sweep { 0% { transform: translateX(-130%) skewX(-12deg); } 60%, 100% { transform: translateX(230%) skewX(-12deg); } }
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes glow-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.85; } }
-@keyframes border-spin { to { transform: rotate(360deg); } }
 
 /* Animated aurora background — drifting brand blobs behind content */
 .aurora-bg {
@@ -414,7 +404,7 @@
   filter: blur(72px);
   z-index: -1;
   pointer-events: none;
-  animation: aurora-drift 20s ease-in-out infinite;
+  /* Static brand tint — the drifting animation was a "flashy AI" tell. */
 }
 .aurora-bg::before {
   width: 42rem; height: 42rem; top: -14rem; left: -10rem;
@@ -423,7 +413,6 @@
 .aurora-bg::after {
   width: 40rem; height: 40rem; top: -8rem; right: -12rem;
   background: radial-gradient(circle, rgba(139, 92, 246, 0.28), transparent 60%);
-  animation-duration: 26s; animation-direction: reverse;
 }
 [data-theme="dark"] .aurora-bg::before { background: radial-gradient(circle, rgba(99, 102, 241, 0.22), transparent 60%); }
 [data-theme="dark"] .aurora-bg::after { background: radial-gradient(circle, rgba(139, 92, 246, 0.20), transparent 60%); }
@@ -475,13 +464,14 @@
 }
 .marquee-wrap:hover .marquee { animation-play-state: paused; }
 
-/* Float + lift helpers */
-.float-y { animation: float-y 6s ease-in-out infinite; }
+/* Lift helper. (.float-y retired — a perpetual bob is decorative noise; kept as
+   a no-op selector so any stray call site stays valid.) */
+.float-y { }
 .card-hover { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease; }
-.card-hover:hover { transform: translateY(-4px); box-shadow: 0 22px 48px -22px rgba(99, 102, 241, 0.4); }
+.card-hover:hover { transform: translateY(-4px); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10), 0 16px 40px -20px rgba(15, 23, 42, 0.22); }
 [data-theme="dark"] .card-hover:hover {
-  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent), 0 18px 44px -18px var(--glow-primary);
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -20px rgba(0, 0, 0, 0.6);
 }
 
 /* =============================================================================
@@ -576,55 +566,23 @@
   border-radius: 0.5rem;
 }
 
-/* Slow grid of boxes panning left → right (sits behind glass cards) */
-@keyframes boxes-pan { from { background-position: 0 0, 0 0; } to { background-position: 64px 0, 64px 0; } }
+/* Static masked grid texture for section depth (was a left→right panning
+   animation — perpetual background motion is a vibecoded tell). */
 .moving-boxes {
   background-image:
     linear-gradient(90deg, color-mix(in srgb, var(--primary) 14%, transparent) 1px, transparent 1px),
     linear-gradient(0deg, color-mix(in srgb, var(--primary) 14%, transparent) 1px, transparent 1px);
   background-size: 64px 64px;
-  animation: boxes-pan 26s linear infinite;
   -webkit-mask-image: radial-gradient(ellipse 85% 80% at 50% 50%, #000 55%, transparent 92%);
   mask-image: radial-gradient(ellipse 85% 80% at 50% 50%, #000 55%, transparent 92%);
 }
 
-/* Individual translucent squares drifting across left → right */
-@keyframes drift-x {
-  0% { transform: translateX(-8vw) translateY(0) rotate(0deg); }
-  100% { transform: translateX(108vw) translateY(0) rotate(45deg); }
-}
-.drift-box {
-  position: absolute;
-  border-radius: 0.6rem;
-  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
-  pointer-events: none;
-}
-.drift-1 { animation: drift-x 34s linear infinite; }
-.drift-2 { animation: drift-x 26s linear infinite -8s; }
-.drift-3 { animation: drift-x 44s linear infinite -18s; }
-.drift-4 { animation: drift-x 38s linear infinite -26s; }
-
-/* Animated border beam — a light arc traveling around the card edge */
+/* .drift-box / .beam retired — drifting squares and a spinning border-beam were
+   decorative perpetual motion. Kept as no-op selectors so any call site is valid. */
 .beam { position: relative; }
-.beam::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(from var(--beam-start, 0deg), transparent 0 62%, var(--brand-from) 76%, #c4b5fd 84%, var(--brand-to) 92%, transparent 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: border-spin 7s linear infinite;
-  pointer-events: none;
-}
 
 @media (prefers-reduced-motion: reduce) {
-  .aurora-bg::before, .aurora-bg::after, .shimmer-text, .marquee, .float-y,
-  .moving-boxes, .drift-1, .drift-2, .drift-3, .drift-4, .beam::after,
-  .glow-breathe, .skeleton { animation: none !important; }
+  .marquee, .skeleton { animation: none !important; }
   .rise-in, .bar-grow, .check-pop { animation-duration: 0.01ms !important; animation-delay: 0ms !important; }
   .card-hover:hover, .lift:hover, .press:active { transform: none; }
   .ring-draw { transition-duration: 0.01ms; }

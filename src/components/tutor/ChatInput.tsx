@@ -79,7 +79,7 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
                 type="submit"
                 className={`p-3 rounded-full transition-all duration-200 ${
                   message.trim() && !isLoading
-                    ? 'brand-gradient text-white shadow-button hover:brightness-110 transform hover:scale-105'
+                    ? 'brand-gradient text-white shadow-button hover:brightness-110'
                     : 'bg-muted text-muted-foreground cursor-not-allowed'
                 }`}
                 disabled={!message.trim() || isLoading}

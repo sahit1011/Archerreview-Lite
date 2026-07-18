@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChartBarIcon, LightBulbIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
+import { LightBulbIcon } from '@heroicons/react/24/outline';
 
 interface PredictivePerformanceProps {
   userId: string;
@@ -276,35 +276,35 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
                   </div>
                 </div>
               </div>
-              <svg className="h-full w-full circular-chart" viewBox="0 0 36 36">
-                {/* Background circle */}
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15.9155"
-                  className="circular-chart-background"
+              <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                {/* Track */}
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="var(--border)"
+                  strokeWidth="3"
+                  strokeDasharray="100, 100"
+                />
+
+                {/* Projected readiness arc (lower opacity, sits behind current) */}
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="var(--primary)"
+                  strokeOpacity="0.4"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${activeScenarioData.projectedReadiness}, 100`}
                 />
 
                 {/* Current readiness arc */}
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15.9155"
-                  className="circular-chart-current"
-                  strokeDasharray={`${predictionData.currentReadiness * 0.01 * 2 * Math.PI * 15.9155} ${2 * Math.PI * 15.9155}`}
-                  strokeDashoffset={`${2 * Math.PI * 15.9155 * 0.25}`}
-                  transform="rotate(-90 18 18)"
-                />
-
-                {/* Projected readiness arc */}
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15.9155"
-                  className="circular-chart-projected"
-                  strokeDasharray={`${activeScenarioData.projectedReadiness * 0.01 * 2 * Math.PI * 15.9155} ${2 * Math.PI * 15.9155}`}
-                  strokeDashoffset={`${2 * Math.PI * 15.9155 * 0.25}`}
-                  transform="rotate(-90 18 18)"
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="var(--primary)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${predictionData.currentReadiness}, 100`}
                 />
               </svg>
             </div>
@@ -329,7 +329,7 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
                       {week.projected}%
                     </div>
                     <div
-                      className="w-4/5 bg-gradient-to-t from-primary to-accent-foreground rounded-t-md shadow-button chart-bar"
+                      className="w-4/5 bg-primary rounded-t-md"
                       style={{ height: `${scaledHeight}px` }}
                     ></div>
                     <div className="text-xs text-muted-foreground mt-2 text-center">
@@ -390,7 +390,7 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
                 <span className="text-xs text-muted-foreground w-16">Current:</span>
                 <div className="flex-grow bg-secondary rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-primary h-2 rounded-full transition-all duration-500 ease-in-out"
+                    className="bg-primary/40 h-2 rounded-full transition-all duration-500 ease-in-out"
                     style={{ width: `${category.current}%` }}
                   ></div>
                 </div>
@@ -400,7 +400,7 @@ const PredictivePerformance: React.FC<PredictivePerformanceProps> = ({ userId })
                 <span className="text-xs text-muted-foreground w-16">Projected:</span>
                 <div className="flex-grow bg-secondary rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-accent-foreground h-2 rounded-full transition-all duration-500 ease-in-out"
+                    className="bg-primary h-2 rounded-full transition-all duration-500 ease-in-out"
                     style={{ width: `${category.projected}%` }}
                   ></div>
                 </div>

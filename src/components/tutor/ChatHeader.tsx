@@ -1,7 +1,6 @@
 "use client";
 
 import { SparklesIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
 interface ChatHeaderProps {
@@ -26,11 +25,9 @@ export default function ChatHeader({ onNewChat }: ChatHeaderProps) {
         </div>
 
         <div className="flex items-center space-x-2">
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-            <Button variant="brand" size="sm" onClick={onNewChat} className="rounded-full">
-              New Chat
-            </Button>
-          </motion.div>
+          <Button variant="brand" size="sm" onClick={onNewChat} className="rounded-full">
+            New Chat
+          </Button>
 
           <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground">
             <InformationCircleIcon className="h-5 w-5" />

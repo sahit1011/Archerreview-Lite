@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface TopicPriority {
   category: string;
@@ -60,7 +60,7 @@ export default function TopicPriorityEditor({
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="bg-card border border-border rounded-2xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-card border border-border rounded-2xl shadow-sm max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
@@ -94,9 +94,9 @@ export default function TopicPriorityEditor({
                   <div className="flex gap-2 flex-shrink-0">
                     <button
                       onClick={() => handlePriorityChange(topic.category, 'High')}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                         topic.importance === 'High'
-                          ? 'bg-destructive text-white shadow-md'
+                          ? 'bg-destructive text-primary-foreground shadow-sm'
                           : 'bg-secondary text-destructive hover:bg-muted'
                       }`}
                     >
@@ -104,9 +104,9 @@ export default function TopicPriorityEditor({
                     </button>
                     <button
                       onClick={() => handlePriorityChange(topic.category, 'Medium')}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                         topic.importance === 'Medium'
-                          ? 'bg-warning text-white shadow-md'
+                          ? 'bg-warning text-primary-foreground shadow-sm'
                           : 'bg-secondary text-warning hover:bg-muted'
                       }`}
                     >
@@ -114,9 +114,9 @@ export default function TopicPriorityEditor({
                     </button>
                     <button
                       onClick={() => handlePriorityChange(topic.category, 'Low')}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                         topic.importance === 'Low'
-                          ? 'bg-primary text-primary-foreground shadow-md'
+                          ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'bg-secondary text-primary hover:bg-muted'
                       }`}
                     >
@@ -131,13 +131,13 @@ export default function TopicPriorityEditor({
           <div className="flex justify-end gap-3">
             <button
               onClick={onCancel}
-              className="px-6 py-2 rounded-xl bg-secondary hover:bg-muted text-foreground font-medium transition-all duration-200"
+              className="px-6 py-2 rounded-xl bg-secondary hover:bg-muted text-foreground font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={() => onSave(editedTopics)}
-              className="px-6 py-2 rounded-xl bg-primary text-primary-foreground font-medium transform hover:translate-y-[-1px] hover:shadow-lg transition-all duration-200"
+              className="px-6 py-2 rounded-xl bg-primary text-primary-foreground font-medium shadow-button hover:opacity-90 transition-opacity"
             >
               Save Priorities
             </button>

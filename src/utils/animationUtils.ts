@@ -1,274 +1,114 @@
 import { Variants } from 'framer-motion';
 
-// Enhanced animation variants for better user engagement
+/**
+ * Shared motion variants. De-vibecoded: entrances fade + translate only (no
+ * scale/rotate pop), the perpetual loops (pulse/float/shimmer/particle) are
+ * neutralized to static no-ops, and hover helpers drop the colored glow +
+ * scale. Legit one-shot/loader variants (progress, checkmark, spinner) kept.
+ * Every export is preserved so existing import sites keep working.
+ */
+
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+
 export const fadeIn: Variants = {
-  hidden: { 
-    opacity: 0,
-    y: 20,
-    scale: 0.95
-  },
-  visible: { 
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
-  }
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_OUT } }
 };
 
 export const fadeInUp: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 30,
-    scale: 0.9
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.7,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
-  }
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE_OUT } }
 };
 
 export const fadeInDown: Variants = {
-  hidden: {
-    opacity: 0,
-    y: -30,
-    scale: 0.9
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.7,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
-  }
+  hidden: { opacity: 0, y: -24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE_OUT } }
 };
 
 export const fadeInLeft: Variants = {
-  hidden: { 
-    opacity: 0,
-    x: -30,
-    scale: 0.95
-  },
-  visible: { 
-    opacity: 1,
-    x: 0,
-    scale: 1,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
-  }
+  hidden: { opacity: 0, x: -24 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: EASE_OUT } }
 };
 
 export const fadeInRight: Variants = {
-  hidden: { 
-    opacity: 0,
-    x: 30,
-    scale: 0.95
-  },
-  visible: { 
-    opacity: 1,
-    x: 0,
-    scale: 1,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
-  }
+  hidden: { opacity: 0, x: 24 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: EASE_OUT } }
 };
 
+// Subtle fade (was scale 0.8 + rotate -5 — a pop-in gimmick).
 export const scaleIn: Variants = {
-  hidden: { 
-    opacity: 0,
-    scale: 0.8,
-    rotate: -5
-  },
-  visible: { 
-    opacity: 1,
-    scale: 1,
-    rotate: 0,
-    transition: {
-      duration: 0.8,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
-  }
+  hidden: { opacity: 0, scale: 0.98 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: EASE_OUT } }
 };
 
 export const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-      duration: 0.6
-    }
+    transition: { staggerChildren: 0.08, delayChildren: 0.1, duration: 0.5 }
   }
 };
 
 export const slideInFromBottom: Variants = {
-  hidden: { 
-    opacity: 0,
-    y: 50,
-    scale: 0.9
-  },
-  visible: { 
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.8,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
-  }
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT } }
 };
 
+// Was a spring bounce (scale 0.3 + rotate). Now a calm fade-up, matching Reveal.
 export const bounceIn: Variants = {
-  hidden: { 
-    opacity: 0,
-    scale: 0.3,
-    rotate: -10
-  },
-  visible: { 
-    opacity: 1,
-    scale: 1,
-    rotate: 0,
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 300,
-      duration: 1.2
-    }
-  }
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE_OUT } }
 };
 
-export const pulseAnimation: Variants = {
-  pulse: {
-    scale: [1, 1.05, 1],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }
-  }
-};
+// Retired perpetual loops — kept as no-op variants so animate="pulse|float|shimmer"
+// call sites stay valid but produce no motion.
+export const pulseAnimation: Variants = { pulse: {} };
+export const floatingAnimation: Variants = { float: {} };
+export const shimmerAnimation: Variants = { shimmer: {} };
+export const particleFloat: Variants = { float: {} };
 
-export const floatingAnimation: Variants = {
-  float: {
-    y: [0, -10, 0],
-    transition: {
-      duration: 3,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }
-  }
-};
-
-export const shimmerAnimation: Variants = {
-  shimmer: {
-    backgroundPosition: ["200% 0", "-200% 0"],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "linear"
-    }
-  }
-};
-
-// Hover animations
+// Hover helpers — quiet lift + neutral elevation (was scale 1.02 + colored glow).
 export const hoverScale = {
-  scale: 1.02,
   y: -2,
-  transition: {
-    duration: 0.2,
-    ease: "easeOut"
-  }
+  transition: { duration: 0.2, ease: "easeOut" }
 };
 
 export const hoverGlow = {
-  boxShadow: "0 10px 30px rgba(99, 102, 241, 0.3), 0 0 0 1px rgba(99, 102, 241, 0.1)",
-  transition: {
-    duration: 0.3,
-    ease: "easeOut"
-  }
+  boxShadow: "0 1px 2px rgba(15, 23, 42, 0.10), 0 12px 32px -16px rgba(15, 23, 42, 0.18)",
+  transition: { duration: 0.25, ease: "easeOut" }
 };
 
-// Progress bar animation
+// One-shot progress fill (legit).
 export const progressBarAnimation: Variants = {
   hidden: { width: 0 },
   visible: (width: number) => ({
     width: `${width}%`,
-    transition: {
-      duration: 1.5,
-      ease: [0.25, 0.46, 0.45, 0.94],
-      delay: 0.5
-    }
+    transition: { duration: 1.2, ease: EASE_OUT, delay: 0.3 }
   })
 };
 
-// Card flip animation
 export const cardFlip: Variants = {
-  front: {
-    rotateY: 0,
-    transition: { duration: 0.6 }
-  },
-  back: {
-    rotateY: 180,
-    transition: { duration: 0.6 }
-  }
+  front: { rotateY: 0, transition: { duration: 0.6 } },
+  back: { rotateY: 180, transition: { duration: 0.6 } }
 };
 
-// Number counting animation
 export const numberCount = (from: number, to: number, duration: number = 2) => ({
   from,
   to,
-  transition: {
-    duration,
-    ease: "easeOut"
-  }
+  transition: { duration, ease: "easeOut" }
 });
 
-// Particle system animation
-export const particleFloat: Variants = {
-  float: {
-    y: [0, -20, 0],
-    x: [0, 10, -10, 0],
-    opacity: [0.3, 0.8, 0.3],
-    transition: {
-      duration: 4,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }
-  }
-};
-
-// Loading spinner variants
+// Loading spinner (legit loader — kept).
 export const spinnerVariants: Variants = {
   spin: {
     rotate: 360,
-    transition: {
-      duration: 1,
-      repeat: Infinity,
-      ease: "linear"
-    }
+    transition: { duration: 1, repeat: Infinity, ease: "linear" }
   }
 };
 
-// Success checkmark animation
+// Success checkmark draw-in (legit one-shot — kept).
 export const checkmarkVariants: Variants = {
-  hidden: {
-    pathLength: 0,
-    opacity: 0
-  },
+  hidden: { pathLength: 0, opacity: 0 },
   visible: {
     pathLength: 1,
     opacity: 1,
@@ -279,29 +119,8 @@ export const checkmarkVariants: Variants = {
   }
 };
 
-// Page transition animation
 export const pageTransition: Variants = {
-  initial: {
-    opacity: 0,
-    y: 20,
-    scale: 0.95
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
-  },
-  exit: {
-    opacity: 0,
-    y: -20,
-    scale: 0.95,
-    transition: {
-      duration: 0.4,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
-  }
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_OUT } },
+  exit: { opacity: 0, y: -16, transition: { duration: 0.35, ease: EASE_OUT } }
 };

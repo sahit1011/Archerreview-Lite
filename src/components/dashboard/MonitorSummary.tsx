@@ -140,7 +140,7 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
   if (error) {
     return (
       <div className="rounded-xl border border-border bg-card backdrop-blur-sm p-6 mb-6">
-        <div className="p-4 bg-red-500/15 text-red-400 rounded-lg border border-red-500/30">
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/30">
           <p>Error: {error}</p>
         </div>
       </div>
@@ -151,12 +151,8 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
     return null;
   }
 
-  const getReadinessColor = (score: number) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 65) return 'text-amber-400';
-    if (score >= 50) return 'text-orange-400';
-    return 'text-red-400';
-  };
+  // Two states only (was a 4-hue rainbow): on-target → success, below → destructive.
+  const getReadinessColor = (score: number) => (score >= 65 ? 'text-success' : 'text-destructive');
 
   return (
     <AnimatedCard className="monitor-card p-8 mb-8">
@@ -191,10 +187,9 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
         >
           {/* @ts-ignore - Framer Motion type issue with className */}
           <motion.div
-            className="rounded-xl border border-border bg-secondary backdrop-blur-sm p-5 flex flex-col items-center justify-center transition-all hover:bg-muted"
+            className="rounded-xl border border-border bg-secondary p-5 flex flex-col items-center justify-center transition-colors hover:bg-muted"
             variants={fadeInUp}
             transition={{ delay: 0.1 }}
-            whileHover={{ scale: 1.03, y: -2, transition: { duration: 0.2 } }}
           >
             <div className="text-sm font-semibold text-muted-foreground mb-2">Current Readiness</div>
             <div className={`text-4xl font-bold ${getReadinessColor(stats.readinessScore)}`}>
@@ -207,10 +202,9 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
 
           {/* @ts-ignore - Framer Motion type issue with className */}
           <motion.div
-            className="rounded-xl border border-border bg-secondary backdrop-blur-sm p-5 flex flex-col items-center justify-center transition-all hover:bg-muted"
+            className="rounded-xl border border-border bg-secondary p-5 flex flex-col items-center justify-center transition-colors hover:bg-muted"
             variants={fadeInUp}
             transition={{ delay: 0.2 }}
-            whileHover={{ scale: 1.03, y: -2, transition: { duration: 0.2 } }}
           >
             <div className="text-sm font-semibold text-muted-foreground mb-2">Projected Score</div>
             <div className={`text-4xl font-bold ${getReadinessColor(stats.projectedScore)}`}>
@@ -223,10 +217,9 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
 
           {/* @ts-ignore - Framer Motion type issue with className */}
           <motion.div
-            className="rounded-xl border border-border bg-secondary backdrop-blur-sm p-5 flex flex-col items-center justify-center transition-all hover:bg-muted"
+            className="rounded-xl border border-border bg-secondary p-5 flex flex-col items-center justify-center transition-colors hover:bg-muted"
             variants={fadeInUp}
             transition={{ delay: 0.3 }}
-            whileHover={{ scale: 1.03, y: -2, transition: { duration: 0.2 } }}
           >
             <div className="text-sm font-semibold text-muted-foreground mb-2">Task Completion</div>
             <div className="text-4xl font-bold text-primary">
@@ -239,10 +232,9 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
 
           {/* @ts-ignore - Framer Motion type issue with className */}
           <motion.div
-            className="rounded-xl border border-border bg-secondary backdrop-blur-sm p-5 flex flex-col items-center justify-center transition-all hover:bg-muted"
+            className="rounded-xl border border-border bg-secondary p-5 flex flex-col items-center justify-center transition-colors hover:bg-muted"
             variants={fadeInUp}
             transition={{ delay: 0.4 }}
-            whileHover={{ scale: 1.03, y: -2, transition: { duration: 0.2 } }}
           >
             <div className="text-sm font-semibold text-muted-foreground mb-2">Exam Countdown</div>
             <div className="text-4xl font-bold text-primary">
@@ -282,24 +274,24 @@ const MonitorSummary: React.FC<MonitorSummaryProps> = ({ userId }) => {
             transition={{ delay: 0.6, duration: 0.3 }}
           >
             <div className="flex items-start">
-              <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mr-4">
-                <ExclamationCircleIcon className="h-6 w-6 text-red-400" />
+              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mr-4">
+                <ExclamationCircleIcon className="h-6 w-6 text-destructive" />
               </div>
               <div className="flex-grow">
-                <p className="text-base font-bold text-red-400">Attention Needed</p>
-                <p className="text-sm text-muted-foreground mt-3 bg-red-500/10 p-4 rounded-xl border border-red-500/30">
+                <p className="text-base font-bold text-destructive">Attention Needed</p>
+                <p className="text-sm text-muted-foreground mt-3 bg-destructive/10 p-4 rounded-xl border border-destructive/30">
                   You have {stats.missedTasks} missed {stats.missedTasks === 1 ? 'task' : 'tasks'}. Consider rescheduling or completing them soon.
                 </p>
 
                 {rescheduleMessage && (
-                  <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${rescheduleMessage.type === 'success' ? 'bg-green-500/15 text-green-400 border border-green-500/30' : 'bg-red-500/15 text-red-400 border border-red-500/30'}`}>
+                  <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${rescheduleMessage.type === 'success' ? 'bg-success/10 text-success border border-success/30' : 'bg-destructive/10 text-destructive border border-destructive/30'}`}>
                     {rescheduleMessage.text}
                   </div>
                 )}
 
                 <div className="mt-5">
                   <button
-                    className="inline-flex items-center px-5 py-2.5 bg-red-500 text-white rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50"
+                    className="press inline-flex items-center px-5 py-2.5 bg-destructive text-white rounded-lg font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
                     onClick={handleRescheduleMissedTasks}
                     disabled={isRescheduling}
                   >

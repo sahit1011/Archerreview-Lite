@@ -101,9 +101,9 @@ export default function FocusAreas({
         {diagnosticSkipped && (
           <button
             onClick={handleEditClick}
-            className="px-4 py-2 rounded-lg bg-secondary hover:bg-muted text-foreground font-medium text-sm transition-all duration-200 flex items-center gap-2 group"
+            className="px-4 py-2 rounded-lg bg-secondary hover:bg-muted text-foreground font-medium text-sm transition-colors flex items-center gap-2"
           >
-            <svg className="w-4 h-4 mr-1 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
             Customize Priorities
@@ -112,7 +112,7 @@ export default function FocusAreas({
       </div>
 
       {diagnosticSkipped && (
-        <div className="bg-card p-4 rounded-xl border border-border mb-4 shadow-lg">
+        <div className="bg-card p-4 rounded-xl border border-border mb-4 shadow-sm">
           <div className="flex items-start">
             <svg className="h-5 w-5 text-primary mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
@@ -150,11 +150,10 @@ export default function FocusAreas({
           return (
             <motion.div
               key={area.category}
-              className={`p-3 rounded-lg border flex justify-between items-center shadow-lg ${colorClass}`}
+              className={`p-3 rounded-lg border flex justify-between items-center transition-colors hover:opacity-90 ${colorClass}`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 + index * 0.05 }}
-              whileHover={{ scale: 1.02, y: -2, boxShadow: '0 8px 16px rgba(0,0,0,0.2)' }}
             >
               <div>
                 <div className="font-medium">{getCategoryDisplayName(area.category)}</div>

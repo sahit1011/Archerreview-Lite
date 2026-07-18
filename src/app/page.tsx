@@ -30,12 +30,12 @@ import HowItWorksCinematic from "@/components/landing/HowItWorksCinematic";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const features = [
-  { icon: Brain, color: "text-indigo-500", bg: "bg-indigo-500/12", title: "Adaptive AI Study Plan", desc: "A day-by-day plan that rebalances automatically as your performance changes." },
-  { icon: GraduationCap, color: "text-violet-500", bg: "bg-violet-500/12", title: "Smart Diagnostic", desc: "A quick diagnostic maps your strengths and weak chapters across every subject." },
-  { icon: CalendarDays, color: "text-emerald-500", bg: "bg-emerald-500/12", title: "Interactive Calendar", desc: "Drag-and-drop scheduling that fits your availability, mocks, and revision cycles." },
-  { icon: Sparkles, color: "text-sky-500", bg: "bg-sky-500/12", title: "24/7 AI Tutor", desc: "Contextual explanations and doubt-solving for any topic, the moment you're stuck." },
-  { icon: LineChart, color: "text-amber-500", bg: "bg-amber-500/12", title: "Readiness Analytics", desc: "A live readiness score and trend lines so you always know where you stand." },
-  { icon: Repeat2, color: "text-rose-500", bg: "bg-rose-500/12", title: "Spaced Repetition", desc: "An SM-2 engine resurfaces weak concepts at the perfect time to lock them in." },
+  { icon: Brain, color: "text-primary", bg: "bg-primary/10", title: "Adaptive AI Study Plan", desc: "A day-by-day plan that rebalances automatically as your performance changes." },
+  { icon: GraduationCap, color: "text-primary", bg: "bg-primary/10", title: "Smart Diagnostic", desc: "A quick diagnostic maps your strengths and weak chapters across every subject." },
+  { icon: CalendarDays, color: "text-primary", bg: "bg-primary/10", title: "Interactive Calendar", desc: "Drag-and-drop scheduling that fits your availability, mocks, and revision cycles." },
+  { icon: Sparkles, color: "text-primary", bg: "bg-primary/10", title: "24/7 AI Tutor", desc: "Contextual explanations and doubt-solving for any topic, the moment you're stuck." },
+  { icon: LineChart, color: "text-primary", bg: "bg-primary/10", title: "Readiness Analytics", desc: "A live readiness score and trend lines so you always know where you stand." },
+  { icon: Repeat2, color: "text-primary", bg: "bg-primary/10", title: "Spaced Repetition", desc: "An SM-2 engine resurfaces weak concepts at the perfect time to lock them in." },
 ];
 
 const marqueeTopics = [
@@ -143,10 +143,8 @@ export default function Home() {
     target: heroRef,
     offset: ["start start", "end start"],
   });
-  const beamsY = useTransform(heroProgress, [0, 1], [0, 90]);
   const headlineY = useTransform(heroProgress, [0, 1], [0, -70]);
   const headlineOpacity = useTransform(heroProgress, [0, 0.75], [1, 0.15]);
-  const orbY = useTransform(heroProgress, [0, 1], [0, 190]);
 
   const handleStartOnboarding = () => {
     localStorage.removeItem("token");
@@ -180,18 +178,11 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero — parallax depth planes: beams (slow) < headline (recedes) < orb (fast) */}
+      {/* Hero — static aurora tint + faint line-art rails; headline recedes on scroll */}
       <section ref={heroRef} className="aurora-bg relative overflow-hidden">
-        <motion.div className="absolute inset-0" style={reduceMotion ? undefined : { y: beamsY }}>
+        <div className="pointer-events-none absolute inset-0">
           <BackgroundBeams />
-        </motion.div>
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute left-[8%] top-32 h-24 w-24 rounded-2xl brand-gradient opacity-20 blur-xl float-y"
-          animate={{ rotate: [0, 12, 0] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          style={reduceMotion ? undefined : { y: orbY }}
-        />
+        </div>
 
         <motion.div
           className="relative mx-auto max-w-6xl px-5 pt-16 pb-14 text-center sm:pt-24"
@@ -286,7 +277,7 @@ export default function Home() {
           {features.map((f) => (
             <RevealItem key={f.title}>
               <SpotlightCard className="h-full">
-                <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${f.bg} ${f.color} transition-all duration-300 group-hover:brand-gradient group-hover:text-white group-hover:shadow-button`}>
+                <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${f.bg} ${f.color} transition-colors duration-300 group-hover:bg-primary/15`}>
                   <f.icon className="h-5 w-5" />
                 </div>
                 <h3 className="font-display text-lg font-semibold">{f.title}</h3>
@@ -420,12 +411,6 @@ export default function Home() {
         <Reveal>
           <div className="relative overflow-hidden rounded-3xl brand-gradient px-8 py-16 text-center text-white shadow-xl">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.22),transparent_45%)]" />
-            <motion.div
-              aria-hidden
-              className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-              transition={{ duration: 6, repeat: Infinity }}
-            />
             <div className="relative">
               <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Ready to start your rank journey?</h2>
               <p className="mx-auto mt-3 max-w-xl text-white/85">

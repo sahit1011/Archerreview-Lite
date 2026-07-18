@@ -377,42 +377,38 @@ export default function InteractiveCalendar({
         }
 
         .interactive-calendar .fc-event.video-task {
-          --event-bg: rgba(14, 165, 233, 0.12);
-          --event-border: rgba(14, 165, 233, 0.3);
-          --event-text: #0369a1;
+          --event-bg: color-mix(in srgb, var(--color-sky-500, #0ea5e9) 12%, transparent);
+          --event-border: color-mix(in srgb, var(--color-sky-500, #0ea5e9) 30%, transparent);
+          --event-text: color-mix(in srgb, var(--color-sky-500, #0ea5e9) 85%, var(--foreground));
         }
         .interactive-calendar .fc-event.quiz-task {
-          --event-bg: color-mix(in srgb, var(--primary) 12%, transparent);
+          --event-bg: color-mix(in srgb, var(--primary) 13%, transparent);
           --event-border: color-mix(in srgb, var(--primary) 32%, transparent);
-          --event-text: var(--accent-foreground);
+          --event-text: color-mix(in srgb, var(--primary) 82%, var(--foreground));
         }
         .interactive-calendar .fc-event.reading-task {
-          --event-bg: rgba(16, 185, 129, 0.12);
-          --event-border: rgba(16, 185, 129, 0.3);
-          --event-text: #047857;
+          --event-bg: color-mix(in srgb, var(--color-emerald-500, #10b981) 12%, transparent);
+          --event-border: color-mix(in srgb, var(--color-emerald-500, #10b981) 30%, transparent);
+          --event-text: color-mix(in srgb, var(--color-emerald-500, #10b981) 85%, var(--foreground));
         }
         .interactive-calendar .fc-event.practice-task {
-          --event-bg: rgba(245, 158, 11, 0.14);
-          --event-border: rgba(245, 158, 11, 0.35);
-          --event-text: #b45309;
+          --event-bg: color-mix(in srgb, var(--color-amber-500, #f59e0b) 14%, transparent);
+          --event-border: color-mix(in srgb, var(--color-amber-500, #f59e0b) 35%, transparent);
+          --event-text: color-mix(in srgb, var(--color-amber-500, #f59e0b) 85%, var(--foreground));
         }
         .interactive-calendar .fc-event.review-task {
-          --event-bg: rgba(244, 63, 94, 0.12);
-          --event-border: rgba(244, 63, 94, 0.3);
-          --event-text: #be123c;
+          --event-bg: color-mix(in srgb, var(--color-rose-500, #f43f5e) 12%, transparent);
+          --event-border: color-mix(in srgb, var(--color-rose-500, #f43f5e) 30%, transparent);
+          --event-text: color-mix(in srgb, var(--color-rose-500, #f43f5e) 85%, var(--foreground));
         }
         .interactive-calendar .fc-event.missed-task {
-          --event-bg: rgba(249, 115, 22, 0.14);
-          --event-border: rgba(249, 115, 22, 0.4);
-          --event-text: #c2410c;
+          --event-bg: color-mix(in srgb, var(--color-orange-500, #f97316) 14%, transparent);
+          --event-border: color-mix(in srgb, var(--color-orange-500, #f97316) 40%, transparent);
+          --event-text: color-mix(in srgb, var(--color-orange-500, #f97316) 85%, var(--foreground));
         }
 
-        [data-theme='dark'] .interactive-calendar .fc-event.video-task { --event-text: #7dd3fc; }
-        [data-theme='dark'] .interactive-calendar .fc-event.quiz-task { --event-text: #c7d2fe; }
-        [data-theme='dark'] .interactive-calendar .fc-event.reading-task { --event-text: #6ee7b7; }
-        [data-theme='dark'] .interactive-calendar .fc-event.practice-task { --event-text: #fcd34d; }
-        [data-theme='dark'] .interactive-calendar .fc-event.review-task { --event-text: #fda4af; }
-        [data-theme='dark'] .interactive-calendar .fc-event.missed-task { --event-text: #fdba74; }
+        /* Text blends each hue toward --foreground, so it adapts to light/dark
+           automatically — no per-theme hex overrides needed. */
 
         .interactive-calendar .fc-event,
         .interactive-calendar .fc-event .fc-event-main {
@@ -428,15 +424,12 @@ export default function InteractiveCalendar({
           font-size: 0.7rem !important;
           padding: 0.15rem 0.4rem !important;
           font-weight: 600 !important;
-          transition: filter 0.15s ease !important;
+          transition: border-color 0.15s ease, opacity 0.15s ease !important;
         }
 
         .interactive-calendar .fc-daygrid-event:hover {
-          filter: brightness(0.96);
-        }
-
-        [data-theme='dark'] .interactive-calendar .fc-daygrid-event:hover {
-          filter: brightness(1.2);
+          border-color: color-mix(in srgb, var(--event-text) 55%, transparent) !important;
+          opacity: 0.9;
         }
 
         .interactive-calendar .fc-daygrid-event .fc-event-main {

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { fadeInUp, hoverScale } from '@/utils/animationUtils';
+import { fadeInUp } from '@/utils/animationUtils';
 
 interface Task {
   _id: string;
@@ -77,54 +77,12 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
     }
   };
 
-  const getTaskColors = (type: string) => {
-    switch (type) {
-      case 'VIDEO':
-        return {
-          bg: 'from-blue-500/15 to-blue-600/10',
-          border: 'border-blue-500/30',
-          icon: 'bg-blue-500/15 text-blue-400',
-          accent: 'bg-blue-500'
-        };
-      case 'QUIZ':
-        return {
-          bg: 'from-primary/15 to-primary/10',
-          border: 'border-primary/30',
-          icon: 'bg-primary/15 text-primary',
-          accent: 'bg-primary'
-        };
-      case 'READING':
-        return {
-          bg: 'from-green-500/15 to-green-600/10',
-          border: 'border-green-500/30',
-          icon: 'bg-green-500/15 text-green-400',
-          accent: 'bg-green-500'
-        };
-      case 'PRACTICE':
-        return {
-          bg: 'from-amber-500/15 to-amber-600/10',
-          border: 'border-amber-500/30',
-          icon: 'bg-amber-500/15 text-amber-400',
-          accent: 'bg-amber-500'
-        };
-      case 'REVIEW':
-        return {
-          bg: 'from-red-500/15 to-red-600/10',
-          border: 'border-red-500/30',
-          icon: 'bg-red-500/15 text-red-400',
-          accent: 'bg-red-500'
-        };
-      default:
-        return {
-          bg: 'from-muted to-muted/50',
-          border: 'border-border',
-          icon: 'bg-muted text-muted-foreground',
-          accent: 'bg-muted-foreground/40'
-        };
-    }
-  };
+  // Flat, on-system surface. The single restrained accent lives in the icon chip:
+  // primary for QUIZ (the actionable type), neutral for everything else.
+  const getIconChip = (type: string) =>
+    type === 'QUIZ' ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground';
 
-  const colors = getTaskColors(task.type);
+  const iconChip = getIconChip(task.type);
   const isClickable = task.type === 'QUIZ' && task.content;
 
   const handleComplete = async (e: React.MouseEvent) => {
@@ -153,57 +111,27 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
       animate="visible"
       variants={fadeInUp}
       transition={{ delay: index * 0.1 }}
-      whileHover={hoverScale}
       className={`
-        relative overflow-hidden rounded-xl border backdrop-blur-sm
-        bg-gradient-to-br ${colors.bg} ${colors.border}
-        p-4 transition-all duration-300 hover:shadow-lg
+        relative overflow-hidden rounded-xl border border-border bg-card
+        p-4 transition-colors hover:bg-secondary/50 hover:border-primary/30
         ${isClickable ? 'cursor-pointer' : ''}
       `}
       onClick={handleCardClick}
     >
-      {/* Accent line */}
-      <div className={`absolute top-0 left-0 w-full h-1 ${colors.accent}`} />
-      
-      {/* Floating particles for completed tasks */}
-      {task.status === 'COMPLETED' && (
-        <>
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-green-400 rounded-full"
-              style={{
-                top: `${20 + i * 15}%`,
-                right: `${10 + i * 5}%`,
-              }}
-              animate={{
-                y: [0, -10, 0],
-                opacity: [0.4, 1, 0.4],
-                scale: [1, 1.5, 1]
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                delay: i * 0.2
-              }}
-            />
-          ))}
-        </>
-      )}
+      {/* Hairline accent line */}
+      <div className="absolute top-0 left-0 w-full h-px bg-border" />
 
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3 flex-1">
           {/* Task Icon */}
-          <motion.div
+          <div
             className={`
-              flex-shrink-0 w-10 h-10 rounded-lg ${colors.icon}
-              flex items-center justify-center shadow-sm
+              flex-shrink-0 w-10 h-10 rounded-lg ${iconChip}
+              flex items-center justify-center
             `}
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 400 }}
           >
             {getTaskIcon(task.type)}
-          </motion.div>
+          </div>
 
           {/* Task Content */}
           <div className="flex-1 min-w-0">
@@ -226,16 +154,12 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
               </div>
 
               {task.status === 'COMPLETED' && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="flex items-center space-x-1 text-green-400"
-                >
+                <div className="flex items-center space-x-1 text-success">
                   <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <span className="text-xs font-medium">Done</span>
-                </motion.div>
+                </div>
               )}
             </div>
           </div>
@@ -243,21 +167,19 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
 
         {/* Action Button */}
         {task.status !== 'COMPLETED' && (
-          <motion.button
+          <button
             onClick={handleComplete}
             disabled={isCompleting}
             className={`
-              flex-shrink-0 w-8 h-8 rounded-full
-              bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/30
-              flex items-center justify-center transition-all
+              press flex-shrink-0 w-8 h-8 rounded-full
+              bg-success/10 text-success hover:bg-success/20 border border-success/30
+              flex items-center justify-center transition-colors
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
           >
             {isCompleting ? (
               <motion.div
-                className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full"
+                className="w-3 h-3 border-2 border-success border-t-transparent rounded-full"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
@@ -266,7 +188,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
             )}
-          </motion.button>
+          </button>
         )}
       </div>
 

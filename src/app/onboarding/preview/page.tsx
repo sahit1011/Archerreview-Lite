@@ -268,11 +268,10 @@ export default function PreviewPage() {
                 {getWeeklyBreakdown().map((week, index) => (
                   <motion.div
                     key={week.weekNumber}
-                    className="rounded-xl border border-border bg-secondary/60 p-4 transition-all duration-300 hover:bg-secondary"
+                    className="rounded-xl border border-border bg-secondary/60 p-4 transition-colors hover:bg-secondary"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.6 + (index * 0.1) }}
-                    whileHover={{ y: -3 }}
                   >
                     <div className="flex justify-between items-center mb-2">
                       <h3 className="font-semibold text-primary">Week {week.weekNumber}</h3>

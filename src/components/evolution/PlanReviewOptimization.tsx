@@ -424,7 +424,7 @@ const PlanReviewOptimization: React.FC<PlanReviewOptimizationProps> = ({ userId 
             {planReviews.map((review) => (
               <div
                 key={review._id}
-                className={`p-4 rounded-lg cursor-pointer transition-all transform hover:-translate-y-1 ${
+                className={`p-4 rounded-lg cursor-pointer transition-colors ${
                   review._id === selectedReview
                     ? 'bg-primary/10 border border-primary/40'
                     : 'bg-muted hover:bg-muted/70'

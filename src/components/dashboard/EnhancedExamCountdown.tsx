@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { fadeIn, bounceIn, pulseAnimation } from '@/utils/animationUtils';
+import { PartyPopper, AlertTriangle } from 'lucide-react';
 
 interface EnhancedExamCountdownProps {
   examDate: Date | string;
@@ -12,7 +12,6 @@ interface EnhancedExamCountdownProps {
 interface TimeUnit {
   value: number;
   label: string;
-  color: string;
 }
 
 const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate }) => {
@@ -20,18 +19,14 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
   const [formattedDate, setFormattedDate] = useState<string>('');
   const [isUrgent, setIsUrgent] = useState(false);
 
-  // Log component rendering
-  console.log('EnhancedExamCountdown rendering');
-
   useEffect(() => {
-    console.log('EnhancedExamCountdown useEffect running');
     const examDateObj = new Date(examDate);
     setFormattedDate(format(examDateObj, 'MMMM d, yyyy'));
 
     const calculateTimeLeft = () => {
       const now = new Date();
       const timeDiff = examDateObj.getTime() - now.getTime();
-      
+
       if (timeDiff <= 0) {
         setTimeLeft([]);
         return;
@@ -42,28 +37,13 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
       const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
-      // Determine urgency and colors
-      const urgent = days <= 7;
-      setIsUrgent(urgent);
-
-      const getColor = (unit: string) => {
-        if (urgent) {
-          return unit === 'days' ? 'from-red-500 to-red-600' : 
-                 unit === 'hours' ? 'from-orange-500 to-orange-600' :
-                 unit === 'minutes' ? 'from-yellow-500 to-yellow-600' :
-                 'from-red-400 to-red-500';
-        }
-        return unit === 'days' ? 'from-archer-bright-teal to-teal-600' :
-               unit === 'hours' ? 'from-archer-light-blue to-blue-600' :
-               unit === 'minutes' ? 'from-teal-500 to-teal-600' :
-               'from-cyan-500 to-cyan-600';
-      };
+      setIsUrgent(days <= 7);
 
       setTimeLeft([
-        { value: days, label: days === 1 ? 'Day' : 'Days', color: getColor('days') },
-        { value: hours, label: hours === 1 ? 'Hour' : 'Hours', color: getColor('hours') },
-        { value: minutes, label: minutes === 1 ? 'Minute' : 'Minutes', color: getColor('minutes') },
-        { value: seconds, label: seconds === 1 ? 'Second' : 'Seconds', color: getColor('seconds') }
+        { value: days, label: days === 1 ? 'Day' : 'Days' },
+        { value: hours, label: hours === 1 ? 'Hour' : 'Hours' },
+        { value: minutes, label: minutes === 1 ? 'Minute' : 'Minutes' },
+        { value: seconds, label: seconds === 1 ? 'Second' : 'Seconds' }
       ]);
     };
 
@@ -78,12 +58,14 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="text-center p-8 rounded-xl border border-green-500/30"
+        transition={{ duration: 0.5 }}
+        className="text-center p-8 rounded-xl border border-border bg-card"
       >
-        <div className="text-6xl mb-4">🎉</div>
-        <h3 className="text-2xl font-bold text-green-400 mb-2">Exam Day!</h3>
-        <p className="text-green-300/80">Good luck with your NEET/JEE exam!</p>
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <PartyPopper className="h-7 w-7" />
+        </div>
+        <h3 className="text-2xl font-bold text-foreground mb-2">Exam Day!</h3>
+        <p className="text-muted-foreground">Good luck with your NEET/JEE exam!</p>
       </motion.div>
     );
   }
@@ -92,102 +74,41 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="relative overflow-hidden"
-      onAnimationComplete={() => console.log('EnhancedExamCountdown animation completed')}
+      transition={{ duration: 0.5 }}
+      className="relative"
     >
-      {/* Background particles for urgent countdown */}
-      {isUrgent && (
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-red-400 rounded-full opacity-30"
-              style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0.3, 0.8, 0.3],
-                scale: [1, 1.5, 1]
-              }}
-              transition={{
-                duration: 2 + Math.random(),
-                repeat: Infinity,
-                delay: Math.random() * 2
-              }}
-            />
-          ))}
-        </div>
-      )}
-
       {/* Main countdown display */}
       <div className="text-center mb-6">
         <p className="text-muted-foreground text-sm mb-2">
           {formattedDate}
         </p>
         {isUrgent && (
-          <motion.div
-            className="text-red-400 text-sm font-semibold mb-2"
-            variants={pulseAnimation}
-            animate="pulse"
-          >
-            ⚠️ Exam Soon!
-          </motion.div>
+          <div className="inline-flex items-center gap-1.5 text-destructive text-sm font-semibold mb-2">
+            <AlertTriangle className="h-4 w-4" />
+            Exam Soon!
+          </div>
         )}
       </div>
 
       {/* Time units grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        {timeLeft.slice(0, 4).map((unit, index) => (
-          <motion.div
+        {timeLeft.slice(0, 4).map((unit) => (
+          <div
             key={unit.label}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{
-              delay: index * 0.1,
-              type: "spring",
-              stiffness: 200,
-              damping: 15
-            }}
-            className="relative"
+            className={`
+              rounded-xl p-3 text-center border border-border shadow-sm
+              ${isUrgent ? 'bg-destructive/10 text-destructive' : 'bg-secondary text-foreground'}
+            `}
           >
-            <div className={`
-              bg-gradient-to-br ${unit.color} rounded-xl p-3 text-white shadow-lg
-              text-center
-            `}>
-              {/* Removed glow effect background */}
-              
-              <motion.div
-                key={unit.value}
-                initial={{ scale: 1.2, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="flex flex-col items-center justify-center"
-              >
-                <div className="text-2xl font-bold mb-1 leading-none">
-                  {unit.value.toString().padStart(2, '0')}
-                </div>
-                <div className="text-xs font-medium opacity-90 leading-none">
-                  {unit.label}
-                </div>
-              </motion.div>
-
-              {/* Animated border */}
-              <motion.div
-                className="absolute inset-0 rounded-xl border-2 border-white/30"
-                animate={{
-                  borderColor: ['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,0.3)']
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
+            <div className="flex flex-col items-center justify-center">
+              <div className="text-2xl font-bold mb-1 leading-none">
+                {unit.value.toString().padStart(2, '0')}
+              </div>
+              <div className="text-xs font-medium text-muted-foreground leading-none">
+                {unit.label}
+              </div>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -199,75 +120,36 @@ const EnhancedExamCountdown: React.FC<EnhancedExamCountdownProps> = ({ examDate 
         </div>
         <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
           <motion.div
-            className={`h-full bg-gradient-to-r ${isUrgent ? 'from-red-500 to-red-600' : 'from-archer-bright-teal to-teal-600'} rounded-full relative`}
+            className={`h-full rounded-full ${isUrgent ? 'bg-destructive' : 'bg-primary'}`}
             initial={{ width: 0 }}
-            animate={{ 
+            animate={{
               width: `${Math.max(10, Math.min(100, ((90 - (timeLeft[0]?.value || 0)) / 90) * 100))}%`
             }}
             transition={{ duration: 1.5, ease: "easeOut" }}
-          >
-            {/* Shimmer effect */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-              animate={{
-                x: ['-100%', '100%']
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            />
-          </motion.div>
+          />
         </div>
       </div>
 
       {/* Motivational message */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
+        transition={{ delay: 0.4 }}
         className={`
-          text-center p-4 rounded-lg
+          text-center p-4 rounded-lg border
           ${isUrgent
-            ? 'border border-red-500/30 bg-red-500/10 text-red-500'
-            : 'border border-primary/30 bg-primary/10 text-primary'
+            ? 'border-destructive/30 bg-destructive/10 text-destructive'
+            : 'border-primary/30 bg-primary/10 text-primary'
           }
         `}
       >
         <p className="text-sm font-medium">
-          {isUrgent 
-            ? "🔥 Final stretch! Stay focused and review your weak areas."
-            : "💪 You've got this! Keep up the consistent study routine."
+          {isUrgent
+            ? "Final stretch! Stay focused and review your weak areas."
+            : "You've got this! Keep up the consistent study routine."
           }
         </p>
       </motion.div>
-
-      {/* Floating success indicators for good progress */}
-      {!isUrgent && timeLeft[0]?.value > 30 && (
-        <>
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-green-400 rounded-full opacity-60"
-              style={{
-                top: `${20 + i * 20}%`,
-                right: `${10 + i * 10}%`,
-              }}
-              animate={{
-                y: [0, -15, 0],
-                opacity: [0.6, 1, 0.6],
-                scale: [1, 1.3, 1]
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                delay: i * 0.5
-              }}
-            />
-          ))}
-        </>
-      )}
     </motion.div>
   );
 };

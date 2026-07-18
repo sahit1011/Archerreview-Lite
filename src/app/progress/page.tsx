@@ -355,7 +355,6 @@ export default function ProgressPage() {
                   {/* Readiness Score */}
                   <Reveal>
                     <div className="card-hover group relative h-full overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
-                      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
                       <div className="mb-6 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
                           <ShieldCheck className="h-5 w-5" />
@@ -403,9 +402,8 @@ export default function ProgressPage() {
                   {/* Task Completion */}
                   <Reveal delay={0.08}>
                     <div className="card-hover group relative h-full overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
-                      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-sky-500/10 blur-2xl" />
                       <div className="mb-6 flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/12 text-sky-600 dark:text-sky-400">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
                           <CheckCircle2 className="h-5 w-5" />
                         </div>
                         <h2 className="text-lg font-semibold text-foreground">Task Completion</h2>
@@ -470,7 +468,7 @@ export default function ProgressPage() {
                 <Reveal>
                   <div className="mb-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
                     <div className="mb-6 flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600 dark:text-emerald-400">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary">
                         <Zap className="h-5 w-5" />
                       </div>
                       <h2 className="text-lg font-semibold text-foreground">Strengths &amp; Weaknesses</h2>

@@ -14,8 +14,7 @@ import {
   XMarkIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
-import { fadeIn, fadeInUp, staggerContainer, hoverScale } from '@/utils/animationUtils';
-import AnimatedCard from '@/components/common/AnimatedCard';
+import { fadeIn, fadeInUp, staggerContainer } from '@/utils/animationUtils';
 
 interface RemediationSuggestion {
   _id: string;
@@ -89,28 +88,38 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
     }
   };
 
-  const getSeverityColor = (severity: string) => {
+  // Severity conveyed with tokens + a text label (no rainbow):
+  // HIGH → destructive, LOW → muted/neutral, MEDIUM → primary accent.
+  const getSeverityBorder = (severity: string) => {
     switch (severity) {
-      case 'HIGH': return 'border-red-500/30 bg-red-500/10';
-      case 'MEDIUM': return 'border-blue-500/30 bg-blue-500/10';
-      case 'LOW': return 'border-primary/30 bg-primary/10';
-      default: return 'border-border bg-secondary';
+      case 'HIGH': return 'border-l-2 border-l-destructive';
+      case 'MEDIUM': return 'border-l-2 border-l-primary';
+      case 'LOW': return 'border-l-2 border-l-border';
+      default: return '';
+    }
+  };
+
+  const getSeverityLabel = (severity: string) => {
+    switch (severity) {
+      case 'HIGH': return 'High priority';
+      case 'MEDIUM': return 'Medium priority';
+      case 'LOW': return 'Low priority';
+      default: return '';
     }
   };
 
   const getSeverityIconColor = (severity: string) => {
     switch (severity) {
-      case 'HIGH': return 'bg-red-500/15 text-red-400';
-      case 'MEDIUM': return 'bg-blue-500/15 text-blue-400';
-      case 'LOW': return 'bg-primary/15 text-primary';
+      case 'HIGH': return 'bg-destructive/10 text-destructive';
+      case 'MEDIUM': return 'bg-primary/10 text-primary';
       default: return 'bg-muted text-muted-foreground';
     }
   };
 
   const getFocusAreaBgColor = (type: string) => {
     switch (type) {
-      case 'weak': return 'bg-red-500/15 text-red-400';
-      case 'strong': return 'bg-green-500/15 text-green-400';
+      case 'weak': return 'bg-destructive/10 text-destructive';
+      case 'strong': return 'bg-success/10 text-success';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -182,7 +191,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
   };
 
   return (
-    <AnimatedCard className="p-8 mb-6" gradient>
+    <div className="rounded-xl border border-border bg-card shadow-sm p-8 mb-6">
       <motion.div
         initial="hidden"
         animate="visible"
@@ -198,12 +207,10 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
             </svg>
             Learning Focus & Remediation
           </h2>
-          <motion.button
+          <button
             onClick={activeTab === 'focus' ? onRefreshFocusAreas : onGenerateRemediationSuggestions}
             disabled={activeTab === 'focus' ? isRefreshingFocusAreas : isGeneratingSuggestions}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={hoverScale}
-            whileTap={{ scale: 0.95 }}
+            className="press px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {activeTab === 'focus' ? (
               isRefreshingFocusAreas ? (
@@ -232,46 +239,37 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                 'Get Suggestions'
               )
             )}
-          </motion.button>
+          </button>
         </motion.div>
 
         <motion.div
           className="flex border-b border-border mb-6"
           variants={fadeIn}
         >
-          <motion.button
+          <button
             onClick={() => setActiveTab('focus')}
-            className={`py-3 px-6 text-sm font-semibold transition-all ${
+            className={`py-3 px-6 text-sm font-semibold transition-colors ${
               activeTab === 'focus'
                 ? 'text-primary border-b-2 border-primary bg-primary/10'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             } rounded-t-lg`}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.95 }}
           >
             Focus Areas
-          </motion.button>
-          <motion.button
+          </button>
+          <button
             onClick={() => setActiveTab('remediation')}
-            className={`py-3 px-6 text-sm font-semibold transition-all ${
+            className={`py-3 px-6 text-sm font-semibold transition-colors ${
               activeTab === 'remediation'
                 ? 'text-primary border-b-2 border-primary bg-primary/10'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             } rounded-t-lg`}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.95 }}
           >
             Remediation Suggestions {remediationSuggestions.length > 0 && (
-              <motion.span
-                className="ml-2 px-2 py-0.5 bg-primary text-primary-foreground rounded-full text-xs font-semibold"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 500 }}
-              >
+              <span className="ml-2 px-2 py-0.5 bg-primary text-primary-foreground rounded-full text-xs font-semibold">
                 {remediationSuggestions.length}
-              </motion.span>
+              </span>
             )}
-          </motion.button>
+          </button>
         </motion.div>
 
         {activeTab === 'focus' && (
@@ -286,31 +284,17 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                 className="text-center py-12"
                 variants={fadeIn}
               >
-                <motion.div
-                  animate={{
-                    y: [0, -10, 0],
-                    rotate: [0, 5, -5, 0]
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  <svg className="mx-auto h-16 w-16 text-muted-foreground mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                </motion.div>
+                <svg className="mx-auto h-16 w-16 text-muted-foreground mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
                 <h3 className="text-xl font-bold text-foreground mb-2">No focus areas yet</h3>
                 <p className="text-muted-foreground mb-6">
                   Complete some tasks to get personalized focus area recommendations.
                 </p>
-                <motion.button
+                <button
                   onClick={onRefreshFocusAreas}
                   disabled={isRefreshingFocusAreas}
-                  className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  whileHover={hoverScale}
-                  whileTap={{ scale: 0.95 }}
+                  className="press px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isRefreshingFocusAreas ? (
                     <>
@@ -322,7 +306,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                       Refreshing...
                     </>
                   ) : 'Refresh Focus Areas'}
-                </motion.button>
+                </button>
               </motion.div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -330,19 +314,16 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                   <motion.div
                     key={index}
                     className={`
-                      bg-secondary backdrop-blur-sm rounded-xl p-6 border border-border
-                      hover:bg-muted transition-all transform hover:-translate-y-2
-                      ${area.type === 'weak' ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-green-500'}
+                      bg-secondary rounded-xl p-6 border border-border
+                      transition-colors hover:bg-muted hover:border-primary/30 hover:-translate-y-0.5
+                      ${area.type === 'weak' ? 'border-l-2 border-l-destructive' : 'border-l-2 border-l-success'}
                     `}
                     variants={fadeInUp}
                     transition={{ delay: index * 0.1 }}
-                    whileHover={hoverScale}
                   >
                     <div className="flex items-center mb-4">
-                      <motion.div
-                        className={`h-12 w-12 rounded-xl ${getFocusAreaBgColor(area.type)} flex items-center justify-center mr-4 shadow-sm`}
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        transition={{ type: "spring", stiffness: 400 }}
+                      <div
+                        className={`h-12 w-12 rounded-xl ${getFocusAreaBgColor(area.type)} flex items-center justify-center mr-4`}
                       >
                         <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                           {area.type === 'weak' ? (
@@ -351,7 +332,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           )}
                         </svg>
-                      </motion.div>
+                      </div>
                       <h3 className="font-bold text-foreground text-lg">
                         {area.name || (area.category && area.category.replace(/_/g, ' ').toLowerCase())}
                       </h3>
@@ -363,26 +344,19 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                       {area._id && (
                         <>
                           {scheduledFocusAreas[area._id] ? (
-                            <motion.div
-                              className="inline-flex items-center px-4 py-2 bg-green-500/15 text-green-400 border border-green-500/30 text-sm rounded-lg font-medium"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ type: "spring", stiffness: 500 }}
-                            >
+                            <div className="inline-flex items-center px-4 py-2 bg-success/10 text-success border border-success/30 text-sm rounded-lg font-medium">
                               <CheckCircleIcon className="mr-2 h-5 w-5" />
                               Review Scheduled: {formatScheduledTime(scheduledFocusAreas[area._id]!.startTime, scheduledFocusAreas[area._id]!.endTime)}
-                            </motion.div>
+                            </div>
                           ) : (
-                            <motion.button
+                            <button
                               onClick={() => {
                                 if (area._id) {
                                   handleScheduleReview(area._id, 'focus-' + index);
                                 }
                               }}
                               disabled={isScheduling['focus-' + index] || !area._id}
-                              className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50"
-                              whileHover={hoverScale}
-                              whileTap={{ scale: 0.95 }}
+                              className="press inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
                             >
                               {isScheduling['focus-' + index] ? (
                                 <>
@@ -398,19 +372,17 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                                   Schedule Review <CalendarIcon className="ml-2 h-5 w-5" />
                                 </>
                               )}
-                            </motion.button>
+                            </button>
                           )}
-                          <motion.button
+                          <button
                             onClick={() => onStartTutorSession(
                               `I need help understanding ${area.name || area.category}. Can you explain the key concepts and provide some practice questions?`,
                               area.name || area.category
                             )}
-                            className="inline-flex items-center px-4 py-2 border border-border text-foreground text-sm rounded-lg font-medium hover:bg-muted transition-all"
-                            whileHover={hoverScale}
-                            whileTap={{ scale: 0.95 }}
+                            className="press inline-flex items-center px-4 py-2 border border-border text-foreground text-sm rounded-lg font-medium hover:bg-muted transition-colors"
                           >
                             Chat with AI Tutor <ChatBubbleLeftRightIcon className="ml-2 h-5 w-5" />
-                          </motion.button>
+                          </button>
                         </>
                       )}
                     </div>
@@ -433,19 +405,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                 className="text-center py-12"
                 variants={fadeIn}
               >
-                <motion.div
-                  animate={{
-                    y: [0, -10, 0],
-                    rotate: [0, 5, -5, 0]
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  <LightBulbIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                </motion.div>
+                <LightBulbIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-xl font-bold text-foreground mb-2">No active remediation suggestions</h3>
                 <p className="text-muted-foreground">
                   Click "Get Suggestions" to get personalized recommendations.
@@ -457,35 +417,33 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                   <motion.div
                     key={suggestion._id}
                     className={`
-                      bg-secondary backdrop-blur-sm rounded-xl p-6 border border-border
-                      hover:bg-muted transition-all transform hover:-translate-y-2
-                      ${suggestion.severity === 'HIGH' ? 'border-l-4 border-l-red-500' :
-                        suggestion.severity === 'MEDIUM' ? 'border-l-4 border-l-blue-500' :
-                        'border-l-4 border-l-primary'}
+                      bg-secondary rounded-xl p-6 border border-border
+                      transition-colors hover:bg-muted hover:border-primary/30 hover:-translate-y-0.5
+                      ${getSeverityBorder(suggestion.severity)}
                     `}
                     variants={fadeInUp}
                     transition={{ delay: index * 0.1 }}
-                    whileHover={hoverScale}
                   >
                     <div className="flex items-start">
-                      <motion.div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center mr-4 shadow-sm ${getSeverityIconColor(suggestion.severity)}`}
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        transition={{ type: "spring", stiffness: 400 }}
+                      <div
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center mr-4 ${getSeverityIconColor(suggestion.severity)}`}
                       >
                         {getRemediationIcon(suggestion.metadata.remediationType)}
-                      </motion.div>
+                      </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-center mb-4">
-                          <h3 className="font-bold text-foreground text-lg">{suggestion.metadata.title}</h3>
-                          <motion.button
+                          <div>
+                            <h3 className="font-bold text-foreground text-lg">{suggestion.metadata.title}</h3>
+                            {getSeverityLabel(suggestion.severity) && (
+                              <span className="text-xs font-medium text-muted-foreground">{getSeverityLabel(suggestion.severity)}</span>
+                            )}
+                          </div>
+                          <button
                             onClick={() => onResolve(suggestion._id)}
-                            className="text-muted-foreground hover:text-foreground bg-muted p-2 rounded-full hover:bg-secondary transition-all"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
+                            className="press text-muted-foreground hover:text-foreground bg-muted p-2 rounded-full hover:bg-secondary transition-colors"
                           >
                             <XMarkIcon className="h-5 w-5" />
-                          </motion.button>
+                          </button>
                         </div>
                         <p className="text-sm text-muted-foreground mb-4 bg-card p-4 rounded-lg border border-border">
                           {suggestion.message}
@@ -496,42 +454,36 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                         </div>
                         <div className="flex flex-wrap gap-3">
                           {suggestion.metadata.remediationType === 'AI_TUTOR_SESSION' && (
-                            <motion.button
+                            <button
                               onClick={() => onStartTutorSession(
                                 suggestion.metadata.aiPrompt,
                                 suggestion.relatedTopic?.name || suggestion.metadata.title
                               )}
-                              className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:brightness-110 transition-all"
-                              whileHover={hoverScale}
-                              whileTap={{ scale: 0.95 }}
+                              className="press inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:brightness-110 transition-colors"
                             >
                               Chat with AI Tutor <ChatBubbleLeftRightIcon className="ml-2 h-5 w-5" />
-                            </motion.button>
+                            </button>
                           )}
                           {suggestion.metadata.remediationType === 'CONCEPT_REVIEW' && (
                             <>
-                              <motion.button
+                              <button
                                 onClick={() => onStartTutorSession(
                                   `I need help reviewing the topic ${suggestion.relatedTopic?.name || suggestion.metadata.title}. Can you explain the key concepts and provide some practice questions?`,
                                   suggestion.relatedTopic?.name || suggestion.metadata.title
                                 )}
-                                className="inline-flex items-center px-4 py-2 border border-border text-foreground text-sm rounded-lg font-medium hover:bg-muted transition-all"
-                                whileHover={hoverScale}
-                                whileTap={{ scale: 0.95 }}
+                                className="press inline-flex items-center px-4 py-2 border border-border text-foreground text-sm rounded-lg font-medium hover:bg-muted transition-colors"
                               >
                                 Review Topic <ArrowRightIcon className="ml-2 h-5 w-5" />
-                              </motion.button>
+                              </button>
                               {!suggestion.metadata.scheduledTaskId && suggestion.relatedTopic && suggestion.relatedTopic._id && (
-                                <motion.button
+                                <button
                                   onClick={() => {
                                     if (suggestion.relatedTopic && suggestion.relatedTopic._id) {
                                       handleScheduleReview(suggestion.relatedTopic._id, suggestion._id);
                                     }
                                   }}
                                   disabled={isScheduling[suggestion._id]}
-                                  className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50"
-                                  whileHover={hoverScale}
-                                  whileTap={{ scale: 0.95 }}
+                                  className="press inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
                                 >
                                   {isScheduling[suggestion._id] ? (
                                     <>
@@ -547,18 +499,13 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
                                       Schedule Review <CalendarIcon className="ml-2 h-5 w-5" />
                                     </>
                                   )}
-                                </motion.button>
+                                </button>
                               )}
                               {suggestion.metadata.scheduledTaskId && (
-                                <motion.div
-                                  className="inline-flex items-center px-4 py-2 bg-green-500/15 text-green-400 border border-green-500/30 text-sm rounded-lg font-medium"
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ type: "spring", stiffness: 500 }}
-                                >
+                                <div className="inline-flex items-center px-4 py-2 bg-success/10 text-success border border-success/30 text-sm rounded-lg font-medium">
                                   <CheckCircleIcon className="mr-2 h-5 w-5" />
                                   Review Scheduled
-                                </motion.div>
+                                </div>
                               )}
                             </>
                           )}
@@ -572,7 +519,7 @@ const CombinedFocusRemediationCard: React.FC<CombinedFocusRemediationCardProps> 
           </motion.div>
         )}
       </motion.div>
-    </AnimatedCard>
+    </div>
   );
 };
 

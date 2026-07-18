@@ -89,9 +89,9 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-semibold text-foreground">Monitor Agent Insights</h2>
         </div>
-        <div className="p-4 bg-red-500/15 text-red-400 rounded-lg border border-red-500/30">
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/30">
           <div className="flex items-center">
-            <svg className="h-5 w-5 text-red-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-destructive mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <p>Error: {error}</p>
@@ -121,22 +121,18 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
     );
   }
 
-  // Helper function to get color based on score
+  // Semantic 3-step scale (was a 5-hue rainbow): strong → success, mid → warning,
+  // weak → destructive.
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-green-500';
-    if (score >= 70) return 'bg-lime-500';
-    if (score >= 60) return 'bg-yellow-500';
-    if (score >= 50) return 'bg-orange-500';
-    return 'bg-red-500';
+    if (score >= 70) return 'bg-success';
+    if (score >= 50) return 'bg-warning';
+    return 'bg-destructive';
   };
 
-  // Helper function to get text color based on score
   const getScoreTextColor = (score: number) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 70) return 'text-lime-400';
-    if (score >= 60) return 'text-yellow-400';
-    if (score >= 50) return 'text-orange-400';
-    return 'text-red-400';
+    if (score >= 70) return 'text-success';
+    if (score >= 50) return 'text-warning';
+    return 'text-destructive';
   };
 
   return (
@@ -265,8 +261,8 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
                   <div
                     className={`rounded-lg border p-3 text-sm ${
                       improving
-                        ? 'border-success/30 bg-success/10 text-emerald-700 dark:text-emerald-300'
-                        : 'border-warning/30 bg-warning/10 text-amber-700 dark:text-amber-300'
+                        ? 'border-success/30 bg-success/10 text-success'
+                        : 'border-warning/30 bg-warning/10 text-warning'
                     }`}
                   >
                     <p className="font-medium">
@@ -342,7 +338,7 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
                     <div className="text-xs font-medium text-foreground">{stats.scheduleAdherence.onTime || 0}%</div>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2 mb-3">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${stats.scheduleAdherence.onTime || 0}%` }}></div>
+                    <div className="bg-success h-2 rounded-full" style={{ width: `${stats.scheduleAdherence.onTime || 0}%` }}></div>
                   </div>
 
                   <div className="flex justify-between mb-2">
@@ -350,7 +346,7 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
                     <div className="text-xs font-medium text-foreground">{stats.scheduleAdherence.late || 0}%</div>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2 mb-3">
-                    <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${stats.scheduleAdherence.late || 0}%` }}></div>
+                    <div className="bg-warning h-2 rounded-full" style={{ width: `${stats.scheduleAdherence.late || 0}%` }}></div>
                   </div>
 
                   <div className="flex justify-between mb-2">
@@ -358,7 +354,7 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
                     <div className="text-xs font-medium text-foreground">{stats.scheduleAdherence.missed || 0}%</div>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2 mb-1">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: `${stats.scheduleAdherence.missed || 0}%` }}></div>
+                    <div className="bg-destructive h-2 rounded-full" style={{ width: `${stats.scheduleAdherence.missed || 0}%` }}></div>
                   </div>
                 </div>
               </div>
@@ -390,9 +386,9 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
 
             <div>
               <h3 className="text-sm font-medium text-foreground mb-2">Study Pattern Insights</h3>
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-sm text-blue-300">
-                <p className="font-medium">You study best in the afternoon!</p>
-                <p className="mt-1">45% of your study sessions occur in the afternoon with the highest performance scores. Consider scheduling more challenging topics during this time.</p>
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-sm text-foreground">
+                <p className="font-medium text-primary">You study best in the afternoon!</p>
+                <p className="mt-1 text-muted-foreground">45% of your study sessions occur in the afternoon with the highest performance scores. Consider scheduling more challenging topics during this time.</p>
               </div>
             </div>
           </div>
@@ -455,7 +451,7 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
                         </div>
                         <div className="flex text-xs mt-1">
                           <div className="w-2/3 text-primary">Time Spent</div>
-                          <div className="w-1/3 text-green-400 ml-1">Performance</div>
+                          <div className="w-1/3 text-muted-foreground ml-1">Performance</div>
                         </div>
                       </div>
                     ))}
@@ -475,9 +471,9 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
                 <div className="grid grid-cols-2 gap-3">
                   {stats.topicTimeInvestment.map((topic, index) => {
                     const efficiency = topic.performance / topic.timeSpent;
-                    let efficiencyClass = "text-yellow-400";
-                    if (efficiency > 8) efficiencyClass = "text-green-400";
-                    if (efficiency < 6) efficiencyClass = "text-red-400";
+                    let efficiencyClass = "text-warning";
+                    if (efficiency > 8) efficiencyClass = "text-success";
+                    if (efficiency < 6) efficiencyClass = "text-destructive";
 
                     return (
                       <div key={index} className="bg-card rounded-lg p-3 border border-border">
@@ -500,9 +496,9 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
 
             <div>
               <h3 className="text-sm font-medium text-foreground mb-2">Topic Insights</h3>
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300">
-                <p className="font-medium">Focus areas identified!</p>
-                <p className="mt-1">The Monitor Agent has identified <span className="font-medium">Psychosocial Integrity</span> as your most challenging topic. We recommend allocating more study time to this area.</p>
+              <div className="bg-secondary border border-border rounded-lg p-3 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Focus areas identified!</p>
+                <p className="mt-1">The Monitor Agent has identified <span className="font-medium text-foreground">Psychosocial Integrity</span> as your most challenging topic. We recommend allocating more study time to this area.</p>
               </div>
             </div>
           </div>
@@ -571,10 +567,10 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
                     let statusText = "Average";
 
                     if (value > stats.readinessScore * 1.05) {
-                      colorClass = "text-green-400";
+                      colorClass = "text-success";
                       statusText = "Strong";
                     } else if (value < stats.readinessScore * 0.95) {
-                      colorClass = "text-red-400";
+                      colorClass = "text-destructive";
                       statusText = "Needs attention";
                     }
 
@@ -601,23 +597,23 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
                     </div>
                     <div className="text-xs text-muted-foreground">Above average</div>
                   </div>
-                  <div className="bg-secondary rounded-lg p-3 border border-border transition-all hover:bg-muted">
+                  <div className="bg-secondary rounded-lg p-3 border border-border transition-colors hover:bg-muted">
                     <div className="text-xs text-primary">Test Strategy</div>
-                    <div className="text-2xl font-bold text-yellow-400">
+                    <div className="text-2xl font-bold text-warning">
                       {Math.round((stats.readinessScore || 0) * 0.92)}%
                     </div>
                     <div className="text-xs text-muted-foreground">Needs improvement</div>
                   </div>
-                  <div className="bg-secondary rounded-lg p-3 border border-border transition-all hover:bg-muted">
+                  <div className="bg-secondary rounded-lg p-3 border border-border transition-colors hover:bg-muted">
                     <div className="text-xs text-primary">Time Management</div>
-                    <div className="text-2xl font-bold text-green-400">
+                    <div className="text-2xl font-bold text-success">
                       {Math.round((stats.readinessScore || 0) * 1.1)}%
                     </div>
                     <div className="text-xs text-muted-foreground">Strong</div>
                   </div>
-                  <div className="bg-secondary rounded-lg p-3 border border-border transition-all hover:bg-muted">
+                  <div className="bg-secondary rounded-lg p-3 border border-border transition-colors hover:bg-muted">
                     <div className="text-xs text-primary">Confidence</div>
-                    <div className="text-2xl font-bold text-red-400">
+                    <div className="text-2xl font-bold text-destructive">
                       {Math.round((stats.readinessScore || 0) * 0.85)}%
                     </div>
                     <div className="text-xs text-muted-foreground">Needs attention</div>
@@ -628,8 +624,8 @@ const MonitorInsights: React.FC<MonitorInsightsProps> = ({ userId }) => {
 
             <div>
               <h3 className="text-sm font-medium text-foreground mb-2">Readiness Insights</h3>
-              <div className="bg-green-500/10 text-green-300 rounded-lg p-4 text-sm border border-green-500/30">
-                <p className="font-medium">You're on track!</p>
+              <div className="bg-success/10 text-muted-foreground rounded-lg p-4 text-sm border border-success/30">
+                <p className="font-medium text-success">You're on track!</p>
                 <p className="mt-2">Based on your current progress and performance, the Monitor Agent predicts you'll reach a readiness score of 85% by your exam date if you maintain your current pace.</p>
               </div>
             </div>

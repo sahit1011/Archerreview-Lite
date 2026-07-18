@@ -72,8 +72,8 @@ export default function DiagnosticPage() {
         <h2 className="font-display text-2xl font-semibold text-foreground mb-6">Why take the assessment?</h2>
         <ul className="space-y-6">
           {benefits.map(({ icon: Icon, title, description }) => (
-            <li key={title} className="flex items-start group">
-              <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center transform transition-transform duration-300 group-hover:scale-105 mr-4">
+            <li key={title} className="flex items-start">
+              <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mr-4">
                 <Icon className="h-6 w-6 text-primary" />
               </div>
               <div>
