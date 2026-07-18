@@ -9,56 +9,44 @@ interface ProtectedRouteProps {
   adminOnly?: boolean;
 }
 
+/**
+ * A logged-in user is one who holds a JWT in localStorage. The UserContext verifies
+ * that token against /api/auth/me and clears it if it's invalid, and every /api route
+ * enforces auth server-side — so trusting the token's presence here is safe and keeps
+ * navigation robust. Previously the gate keyed off the in-memory `isAuthenticated` flag
+ * plus a `fromOnboarding=true` URL param; that param only lives on the post-onboarding
+ * dashboard URL, so clicking any nav link (e.g. Notes) dropped it and bounced an already
+ * logged-in user back to /auth/login. Keying off the token fixes that.
+ */
+function hasToken(): boolean {
+  return typeof window !== 'undefined' && !!localStorage.getItem('token');
+}
+
 export default function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
   const { user, isLoading, isAuthenticated } = useUser();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        // Check if we have a userId in localStorage
-        // This handles the case where a user just completed onboarding
-        const userId = localStorage.getItem('userId');
-        const fromOnboarding = window.location.href.includes('fromOnboarding=true');
+  const allowed = isAuthenticated || hasToken();
 
-        if (userId && fromOnboarding) {
-          console.log('User coming from onboarding with userId, allowing access');
-          // Allow access to the dashboard even if not fully authenticated
-          // The dashboard will load the user data based on the userId
-        } else {
-          console.log('User not authenticated, redirecting to login');
-          router.push('/auth/login');
-        }
-      } else if (adminOnly && user?.role !== 'admin') {
-        router.push('/dashboard');
-      }
+  useEffect(() => {
+    if (isLoading) return;
+    if (!allowed) {
+      router.push('/auth/login');
+    } else if (adminOnly && user?.role !== 'admin') {
+      router.push('/dashboard');
     }
-  }, [isLoading, isAuthenticated, user, router, adminOnly]);
+  }, [isLoading, allowed, adminOnly, user, router]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    // Check if we have a userId in localStorage and are coming from onboarding
-    const userId = localStorage.getItem('userId');
-    const fromOnboarding = window.location.href.includes('fromOnboarding=true');
-
-    if (userId && fromOnboarding) {
-      // Allow access to the dashboard
-      console.log('Allowing access to protected route for user from onboarding');
-    } else {
-      return null;
-    }
-  }
-
-  if (adminOnly && user?.role !== 'admin') {
-    return null;
-  }
+  if (!allowed) return null;
+  if (adminOnly && user?.role !== 'admin') return null;
 
   return <>{children}</>;
 }
