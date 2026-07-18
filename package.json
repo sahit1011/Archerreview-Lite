@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "predev": "lsof -ti:3001 | xargs kill -9 2>/dev/null || true",
-    "dev": "next dev -p 3001",
-    "build": "NEXT_DIST_DIR=.next-prod next build",
-    "start": "NEXT_DIST_DIR=.next-prod next start -p 3001",
+    "dev": "NEXT_DIST_DIR=.next-dev next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
     "lint": "next lint",
     "seed": "node scripts/seed-db.cjs",
     "dev:mongo": "node scripts/dev-mongo.cjs"

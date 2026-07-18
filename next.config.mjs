@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Production build/start use a separate dir (NEXT_DIST_DIR=.next-prod) so
-  // `npm run build` can never overwrite the `.next` a running `npm run dev`
-  // is serving from. Dev keeps the default `.next`.
+  // build/start use the default `.next` so Vercel (which runs `next build` and
+  // reads `.next`) works natively. Local `npm run dev` sets NEXT_DIST_DIR=.next-dev
+  // so a local prod build can never overwrite the `.next` a dev server is serving.
   distDir: process.env.NEXT_DIST_DIR || '.next',
   typescript: {
     // Gate ON — the codebase is tsc-clean (was 283 errors; fixed via framer-motion v11,
