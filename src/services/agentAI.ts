@@ -108,12 +108,18 @@ const geminiModelName = process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-1.5-pr
 
 // Initialize OpenRouter configuration
 const openRouterApiKey = process.env.OPENROUTER_API_KEY || '';
+// A usable OpenRouter key looks like `sk-or-...`. Anything else (empty, or a
+// placeholder like REPLACE_WITH_REAL_OPENROUTER_KEY) is treated as "not configured"
+// so agents skip the network round-trip and use their rule-based fallback — and
+// flip to live LLM automatically the instant a real key is set. This lets the
+// USE_LLM_* flags stay ON without wasteful failing calls before the key exists.
+const hasRealOpenRouterKey = /^sk-or-/.test(openRouterApiKey);
 // DeepSeek V3 — strong STEM reasoning for tutor + agent JSON tasks; free tier on
 // OpenRouter. Override via OPENROUTER_MODEL.
 const openRouterModel = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat-v3-0324:free';
 
 console.log('AgentAI - Gemini API Key:', geminiApiKey ? 'API key is set' : 'API key is not set');
-console.log('AgentAI - OpenRouter API Key:', openRouterApiKey ? 'API key is set' : 'API key is not set');
+console.log('AgentAI - OpenRouter API Key:', hasRealOpenRouterKey ? 'API key is set' : 'API key is not set (rule-based fallback)');
 
 // Create Gemini client (only if API key is available)
 const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
@@ -168,7 +174,7 @@ export type AgentType = 'monitor' | 'adaptation' | 'feedback' | 'remediation' | 
  */
 async function callOpenRouter(prompt: string): Promise<string> {
   try {
-    if (!openRouterApiKey) {
+    if (!hasRealOpenRouterKey) {
       throw new Error('OpenRouter API key not configured');
     }
 

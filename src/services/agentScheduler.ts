@@ -187,13 +187,19 @@ export async function getAgentScheduledEntries(agentType: AgentType): Promise<Sc
  * Get scheduled entries due for execution (active + nextRun <= now).
  * @returns Schedule entries due for execution
  */
-export async function getDueEntries(): Promise<ScheduleEntry[]> {
+export async function getDueEntries(limit = 50): Promise<ScheduleEntry[]> {
   await dbConnect();
   const now = new Date();
+  // Cap the batch so one cron invocation can't run unbounded work and hit the
+  // serverless timeout as the user base grows. Highest priority + oldest-due
+  // first; anything not processed this pass is still due and picked up next run.
   const docs = await ScheduledJob.find({
     status: 'active',
     nextRun: { $ne: null, $lte: now }
-  }).lean<IScheduledJob[]>();
+  })
+    .sort({ priority: -1, nextRun: 1 })
+    .limit(limit)
+    .lean<IScheduledJob[]>();
   return docs.map(toEntry);
 }
 
@@ -345,22 +351,23 @@ export async function scheduleStandardMonitoringForAllUsers(): Promise<string[]>
   for (const plan of studyPlans) {
     const userId = plan.user.toString();
 
-    // Avoid piling up duplicate daily entries on every init by reusing an
-    // existing active daily sequence entry for this user if present.
-    const existingDaily = await ScheduledJob.findOne({
+    // Reuse an existing active standard sequence for this user (any cadence) so
+    // we never pile up duplicates — cadence-agnostic so the daily→hourly change
+    // doesn't double-seed users who already have a job.
+    const existingStandard = await ScheduledJob.findOne({
       userId,
       agentType: 'sequence',
-      type: 'daily',
+      sequenceType: 'standard',
       status: 'active'
     }).lean<IScheduledJob | null>();
 
-    if (existingDaily) {
-      entryIds.push(String(existingDaily._id));
+    if (existingStandard) {
+      entryIds.push(String(existingStandard._id));
     } else {
       const dailyId = await scheduleAgent({
         agentType: 'sequence',
         sequenceType: 'standard',
-        scheduleType: 'daily',
+        scheduleType: 'hourly',
         userId,
         priority: 5,
         enabled: true,

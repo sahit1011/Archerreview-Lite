@@ -146,11 +146,12 @@ export async function PUT(
       console.warn('Could not determine user ID for task:', task._id);
     }
 
-    // Completing a task (from the dashboard/calendar checkbox) is the same student
-    // event as finishing a quiz — run the adaptive loop so the plan rebalances
-    // regardless of which UI path marked it done.
+    // Completing OR skipping/missing a task is a plan-affecting student event —
+    // run the adaptive loop so the plan rebalances immediately (not only on the
+    // scheduled/cron pass). Kept awaited so the UI can surface what changed
+    // ("Plan rebalanced · rescheduled 2 tasks"), which showcases the live engine.
     let adaptation = null;
-    if (body.status === 'COMPLETED' && userId) {
+    if ((body.status === 'COMPLETED' || body.status === 'SKIPPED') && userId) {
       adaptation = await runAdaptivityLoop(userId);
     }
 

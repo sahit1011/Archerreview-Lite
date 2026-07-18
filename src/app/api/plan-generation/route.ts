@@ -7,16 +7,17 @@ import { requireAuth } from '@/lib/api-auth';
 
 /**
  * Bootstrap the user's recurring monitoring job the moment their plan exists.
- * Daily standard sequence (monitor -> adaptation) keeps the plan healthy even
- * when the student is inactive (catches missed tasks). Idempotent: skips if the
- * user already has an active daily sequence job. Never blocks plan generation.
+ * Hourly standard sequence (monitor -> adaptation) keeps the plan healthy even
+ * when the student is inactive (catches missed tasks) at a near-real-time cadence
+ * rather than once a day. Idempotent + cadence-agnostic: skips if the user already
+ * has any active standard sequence job. Never blocks plan generation.
  */
-async function ensureDailyMonitoringJob(userId: string) {
+async function ensureMonitoringJob(userId: string) {
   try {
     const existing = await ScheduledJob.findOne({
       userId,
       agentType: 'sequence',
-      type: 'daily',
+      sequenceType: 'standard',
       status: 'active',
     });
     if (existing) return;
@@ -24,13 +25,13 @@ async function ensureDailyMonitoringJob(userId: string) {
       agentType: 'sequence',
       sequenceType: 'standard',
       userId,
-      scheduleType: 'daily',
+      scheduleType: 'hourly',
       priority: 5,
       enabled: true,
     });
-    console.log(`[plan-generation] Scheduled daily monitoring for user ${userId}`);
+    console.log(`[plan-generation] Scheduled hourly monitoring for user ${userId}`);
   } catch (err) {
-    console.error('[plan-generation] Failed to schedule daily monitoring:', err);
+    console.error('[plan-generation] Failed to schedule monitoring:', err);
   }
 }
 
@@ -89,8 +90,8 @@ export async function POST(request: NextRequest) {
     // Generate study plan with tasks
     const generatedPlan = await generateStudyPlan(userId, studyPlan._id as string);
 
-    // Keep the plan self-maintaining: schedule the user's daily monitor->adaptation job
-    await ensureDailyMonitoringJob(userId);
+    // Keep the plan self-maintaining: schedule the user's hourly monitor->adaptation job
+    await ensureMonitoringJob(userId);
 
     // Prepare response message based on validation results
     let message = 'Study plan generated successfully';
