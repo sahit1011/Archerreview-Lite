@@ -14,10 +14,6 @@ import {
   ArrowRight,
   Stethoscope,
   Cog,
-  Atom,
-  FlaskConical,
-  Dna,
-  Sigma,
   BookOpen,
   Target,
 } from "lucide-react";
@@ -30,7 +26,6 @@ import { AnimateNumber } from "@/components/ui/animated-blur-number";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { VelocityMarquee } from "@/components/ui/velocity-marquee";
-import { TiltCard } from "@/components/ui/tilt-card";
 import HowItWorksCinematic from "@/components/landing/HowItWorksCinematic";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -95,6 +90,46 @@ const heroStats: { node: React.ReactNode; label: string }[] = [
   { node: "24/7", label: "AI tutor" },
   { node: <StatNumber value={100} suffix="%" />, label: "Personalized" },
 ];
+
+// Exam-track data. Weightage is a single accent (primary) at stepped opacity —
+// one hue, never a rainbow. Splits are the real, defensible board patterns
+// (NEET: Physics/Chemistry 45q each, Biology 90q → 25/25/50; JEE Main: equal).
+const SUBJECT_BAR = ["bg-primary", "bg-primary/60", "bg-primary/30"] as const;
+
+const examTracks = [
+  {
+    id: "neet",
+    title: "NEET",
+    tag: "Medical",
+    fullName: "National Eligibility cum Entrance Test",
+    pattern: "NEET pattern",
+    Icon: Stethoscope,
+    subjects: [
+      { name: "Physics", pct: 25 },
+      { name: "Chemistry", pct: 25 },
+      { name: "Biology", pct: 50 },
+    ],
+  },
+  {
+    id: "jee",
+    title: "JEE",
+    tag: "Engineering",
+    fullName: "Joint Entrance Examination · Main + Advanced",
+    pattern: "JEE Main pattern",
+    Icon: Cog,
+    subjects: [
+      { name: "Physics", pct: 33 },
+      { name: "Chemistry", pct: 33 },
+      { name: "Maths", pct: 34 },
+    ],
+  },
+] as const;
+
+const trackFeatures = [
+  { icon: BookOpen, label: "Full syllabus" },
+  { icon: Target, label: "Chapter-wise mocks" },
+  { icon: Brain, label: "AI doubt-solving" },
+] as const;
 
 export default function Home() {
   const router = useRouter();
@@ -263,15 +298,10 @@ export default function Home() {
         </RevealGroup>
       </section>
 
-      {/* Tracks — glassmorphic cards over slow drifting boxes */}
-      <section className="relative overflow-hidden py-20">
-        <div aria-hidden className="moving-boxes pointer-events-none absolute inset-0 opacity-80" />
-        <div aria-hidden className="drift-box drift-1 left-0 top-12 h-16 w-16" />
-        <div aria-hidden className="drift-box drift-2 left-0 top-44 h-10 w-10" />
-        <div aria-hidden className="drift-box drift-3 bottom-12 left-0 h-24 w-24" />
-
-        <div className="relative mx-auto max-w-6xl px-5">
-          <Reveal className="mb-10 text-center">
+      {/* Tracks — one framed comparison object, split by a single hairline spine */}
+      <section className="relative py-20 sm:py-24">
+        <div className="relative mx-auto max-w-5xl px-5">
+          <Reveal className="mb-12 text-center">
             <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
               Built for both <span className="gradient-text">NEET &amp; JEE</span>
             </h2>
@@ -279,96 +309,106 @@ export default function Home() {
               Pick your track at onboarding — the whole platform adapts to your syllabus.
             </p>
           </Reveal>
-          <RevealGroup className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {[
-              {
-                icon: Stethoscope,
-                tag: "Medical",
-                title: "NEET",
-                fullName: "National Eligibility cum Entrance Test",
-                subjects: [
-                  { name: "Physics", icon: Atom, color: "text-indigo-500", bg: "bg-indigo-500/12" },
-                  { name: "Chemistry", icon: FlaskConical, color: "text-violet-500", bg: "bg-violet-500/12" },
-                  { name: "Biology", icon: Dna, color: "text-emerald-500", bg: "bg-emerald-500/12" },
-                ],
-              },
-              {
-                icon: Cog,
-                tag: "Engineering",
-                title: "JEE",
-                fullName: "Joint Entrance Examination · Main + Advanced",
-                subjects: [
-                  { name: "Physics", icon: Atom, color: "text-indigo-500", bg: "bg-indigo-500/12" },
-                  { name: "Chemistry", icon: FlaskConical, color: "text-violet-500", bg: "bg-violet-500/12" },
-                  { name: "Maths", icon: Sigma, color: "text-sky-500", bg: "bg-sky-500/12" },
-                ],
-              },
-            ].map((t) => (
-              <RevealItem key={t.title}>
-                <TiltCard className="h-full">
-                <div className="beam glassmorphic group relative h-full overflow-hidden rounded-2xl p-7">
-                  {/* layered glow */}
-                  <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-gradient-to-br from-primary/25 to-violet-400/10 blur-2xl" />
 
-                  {/* header */}
-                  <div className="relative flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl brand-gradient text-white shadow-button transition-transform duration-300 group-hover:scale-110">
-                        <t.icon className="h-6 w-6" />
+          <Reveal>
+            <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2">
+              {examTracks.map((t, ti) => {
+                const srWeightage = `${t.title} weightage — ${t.subjects
+                  .map((s) => `${s.name} ${s.pct} percent`)
+                  .join(", ")}`;
+                return (
+                  <article
+                    key={t.id}
+                    aria-labelledby={`track-${t.id}`}
+                    className="group relative flex h-full flex-col bg-card p-7 transition-colors duration-300 hover:bg-primary/[0.04] sm:p-8"
+                  >
+                    {/* accent seam — draws in on hover (transform + opacity only) */}
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-x-0 top-0 h-px scale-x-0 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 transition-all duration-500 group-hover:scale-x-100 group-hover:opacity-100"
+                    />
+
+                    {/* header */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-secondary">
+                          <t.Icon className="h-[18px] w-[18px] text-primary" />
+                        </div>
+                        <div>
+                          <h3 id={`track-${t.id}`} className="font-display text-2xl font-bold leading-none">
+                            {t.title}
+                          </h3>
+                          <p className="mt-1.5 min-h-[2rem] text-xs leading-snug text-muted-foreground">
+                            {t.fullName}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-display text-2xl font-bold leading-none">{t.title}</h3>
-                        <p className="mt-1 text-xs text-muted-foreground">{t.fullName}</p>
+                      <Badge variant="secondary">{t.tag}</Badge>
+                    </div>
+
+                    <div className="my-5 h-px bg-border" />
+
+                    {/* subject-weightage telemetry strip — the signature */}
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                          Subject weightage
+                        </p>
+                        <span className="font-mono text-[0.7rem] text-muted-foreground">{t.pattern}</span>
+                      </div>
+                      <div
+                        role="img"
+                        aria-label={srWeightage}
+                        className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-secondary"
+                      >
+                        {t.subjects.map((s, si) => (
+                          <div key={s.name} style={{ flexBasis: `${s.pct}%` }} className="h-full">
+                            <motion.div
+                              className={`h-full w-full origin-left rounded-full ${SUBJECT_BAR[si]}`}
+                              initial={reduceMotion ? false : { scaleX: 0 }}
+                              whileInView={{ scaleX: 1 }}
+                              viewport={{ once: true, margin: "-60px" }}
+                              transition={
+                                reduceMotion
+                                  ? { duration: 0 }
+                                  : { type: "spring", stiffness: 120, damping: 20, delay: 0.12 * ti + 0.1 * si }
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {t.subjects.map((s, si) => (
+                          <div key={s.name} className="flex items-center gap-1.5">
+                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${SUBJECT_BAR[si]}`} />
+                            <span className="text-xs text-foreground">{s.name}</span>
+                            <span className="ml-auto font-mono text-[0.7rem] text-muted-foreground">{s.pct}%</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <Badge variant="secondary">{t.tag}</Badge>
-                  </div>
 
-                  {/* subject tiles */}
-                  <div className="relative mt-6 grid grid-cols-3 gap-2.5">
-                    {t.subjects.map((s) => (
-                      <div
-                        key={s.name}
-                        className="flex flex-col items-center gap-2 rounded-xl border border-border/70 bg-card/50 p-3 text-center backdrop-blur-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-primary/30"
-                      >
-                        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.bg} ${s.color}`}>
-                          <s.icon className="h-5 w-5" />
-                        </div>
-                        <span className="text-xs font-semibold">{s.name}</span>
-                      </div>
-                    ))}
-                  </div>
+                    {/* feature ledger — hairline-divided spec rows, not pills */}
+                    <ul className="mt-7 divide-y divide-border border-y border-border">
+                      {trackFeatures.map((f) => (
+                        <li key={f.label} className="flex items-center gap-3 py-3 text-sm">
+                          <f.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span>{f.label}</span>
+                        </li>
+                      ))}
+                    </ul>
 
-                  {/* feature pills */}
-                  <div className="relative mt-5 flex flex-wrap gap-2">
-                    {[
-                      { icon: BookOpen, label: "Full syllabus" },
-                      { icon: Target, label: "Chapter-wise mocks" },
-                      { icon: Sparkles, label: "AI doubt-solving" },
-                    ].map((f) => (
-                      <span
-                        key={f.label}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
-                      >
-                        <f.icon className="h-3 w-3 text-primary" />
-                        {f.label}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* CTA */}
-                  <Button
-                    variant="brand"
-                    className="shine relative mt-6 w-full"
-                    onClick={handleStartOnboarding}
-                  >
-                    Start {t.title} prep <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                </TiltCard>
-              </RevealItem>
-            ))}
-          </RevealGroup>
+                    {/* CTA — bottom-aligned across both halves */}
+                    <div className="mt-auto pt-8">
+                      <Button variant="brand" className="w-full" onClick={handleStartOnboarding}>
+                        Start {t.title} prep <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </Reveal>
         </div>
       </section>
 
