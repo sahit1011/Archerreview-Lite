@@ -2,78 +2,68 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import { useOnboarding } from '@/context/OnboardingContext';
 import OnboardingProgressBar from '@/components/onboarding/OnboardingProgressBar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { CalendarDays, ArrowLeft, ArrowRight, AlertCircle, Stethoscope, Cog, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AlertCircle, Stethoscope, Cog, Check, Clock } from 'lucide-react';
 
 const EXAM_OPTIONS = [
   { type: 'NEET' as const, icon: Stethoscope, tag: 'Medical', subjects: 'Physics · Chemistry · Biology' },
   { type: 'JEE' as const, icon: Cog, tag: 'Engineering', subjects: 'Physics · Chemistry · Maths' },
 ];
 
+// NEET/JEE dates are effectively fixed each year, so we ask how far away the exam
+// is (a window) rather than a specific date. `months` is the planning horizon we
+// pace the full syllabus into — the lower bound of each window, so students peak in
+// time (with revision room if their exam falls at the later end).
+const TIMELINE_OPTIONS = [
+  { months: 3, label: '3–6 months away', sub: 'Intensive sprint — high-focus daily plan', weeks: 13 },
+  { months: 6, label: '6–9 months away', sub: 'Focused build — steady daily pace', weeks: 26 },
+  { months: 9, label: '9–15 months away', sub: 'Strong foundations first, then depth', weeks: 39 },
+  { months: 15, label: '15+ months away', sub: 'Long game — master everything with room to spare', weeks: 65 },
+];
+
+function dateFromMonths(months: number): Date {
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
 export default function WelcomePage() {
-  const router = useRouter();
   const { examType, setExamType, examDate, setExamDate, goToNextStep } = useOnboarding();
 
-  // Local state for the date input
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedMonths, setSelectedMonths] = useState<number | null>(null);
   const [error, setError] = useState<string>('');
 
-  // Set default date to 60 days from now
+  // Returning to this step: infer which window was chosen from the stored date.
   useEffect(() => {
-    const defaultDate = new Date();
-    defaultDate.setDate(defaultDate.getDate() + 60);
-
-    // Format the date as YYYY-MM-DD for the input
-    const formattedDate = defaultDate.toISOString().split('T')[0];
-    setSelectedDate(formattedDate);
-
-    // If no exam date is set in the context, set it to the default
-    if (!examDate) {
-      setExamDate(defaultDate);
-    } else {
-      // If there is an exam date in the context, use it
-      setSelectedDate(examDate.toISOString().split('T')[0]);
+    if (examDate && selectedMonths === null) {
+      const monthsUntil = (examDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30.44);
+      const closest = TIMELINE_OPTIONS.reduce((a, b) =>
+        Math.abs(b.months - monthsUntil) < Math.abs(a.months - monthsUntil) ? b : a
+      );
+      setSelectedMonths(closest.months);
     }
-  }, [examDate, setExamDate]);
+  }, [examDate, selectedMonths]);
 
-  // Handle date change
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = e.target.value;
-    setSelectedDate(newDate);
+  const handleSelectTimeline = (months: number) => {
+    setSelectedMonths(months);
     setError('');
-
-    // Validate the date
-    const selectedDateObj = new Date(newDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDateObj < today) {
-      setError('Please select a future date');
-    } else {
-      setExamDate(selectedDateObj);
-    }
+    setExamDate(dateFromMonths(months));
   };
 
-  // Handle continue button click
   const handleContinue = () => {
     if (!examType) {
       setError('Please choose your exam (NEET or JEE)');
       return;
     }
-    if (!examDate) {
-      setError('Please select a valid exam date');
+    if (selectedMonths === null || !examDate) {
+      setError('Please choose how far away your exam is');
       return;
     }
-
-    // Go to the next step
     goToNextStep();
   };
 
@@ -93,8 +83,8 @@ export default function WelcomePage() {
           Let&apos;s set up your prep
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">
-          Pick your exam and target date. We&apos;ll build a personalized study plan so every day of prep
-          counts toward being ready in time.
+          Pick your exam and how far away it is. We&apos;ll pace your full syllabus into a personalized
+          plan so every day of prep counts toward being ready in time.
         </p>
 
         <OnboardingProgressBar currentStep="examDate" />
@@ -155,36 +145,58 @@ export default function WelcomePage() {
           </div>
         </div>
 
-        {/* Exam date — matching hairline panel */}
+        {/* Timeline — pick the window the exam falls in (no fixed date needed) */}
         <div className="rounded-2xl border border-border bg-card p-6 text-left shadow-sm sm:p-8">
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            Target date
+            Timeline
           </p>
-          <h2 className="mt-2 font-display text-xl font-semibold text-foreground">When is your exam?</h2>
+          <h2 className="mt-2 font-display text-xl font-semibold text-foreground">
+            How far away is your exam?
+          </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            We&apos;ll map your full syllabus into a schedule that has you fully prepared by exam day.
+            Pick the window your attempt falls in — we&apos;ll pace the full syllabus to fit and
+            rebalance as you go.
           </p>
+
           <div className="mt-5 space-y-3">
-            <Label htmlFor="exam-date">Select your exam date</Label>
-            <div className="relative">
-              <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="date"
-                id="exam-date"
-                name="exam-date"
-                className="h-12 pl-9"
-                min={new Date().toISOString().split('T')[0]}
-                value={selectedDate}
-                onChange={handleDateChange}
-              />
-            </div>
-            {error && (
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                {error}
-              </p>
-            )}
+            {TIMELINE_OPTIONS.map((opt) => {
+              const selected = selectedMonths === opt.months;
+              return (
+                <button
+                  key={opt.months}
+                  type="button"
+                  onClick={() => handleSelectTimeline(opt.months)}
+                  className={cn(
+                    'relative flex w-full items-center gap-3.5 rounded-xl border p-4 text-left transition-colors',
+                    selected
+                      ? 'border-primary/40 bg-primary/[0.04]'
+                      : 'border-border bg-card hover:border-primary/30 hover:bg-primary/[0.02]'
+                  )}
+                >
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-border bg-secondary">
+                    <Clock className="h-[18px] w-[18px] text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-display text-base font-semibold text-foreground">{opt.label}</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">{opt.sub}</p>
+                  </div>
+                  <span className="shrink-0 font-mono text-[0.7rem] text-muted-foreground">≈ {opt.weeks} wks</span>
+                  {selected && (
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
+
+          {error && (
+            <p className="mt-4 flex items-center gap-1.5 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error}
+            </p>
+          )}
         </div>
 
         <div className="mt-8 flex items-center justify-between">

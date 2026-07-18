@@ -9,7 +9,7 @@ interface OnboardingProgressBarProps {
 
 const steps = [
   { id: 'account', label: 'Account' },
-  { id: 'examDate', label: 'Exam Date' },
+  { id: 'examDate', label: 'Timeline' },
   { id: 'assessment', label: 'Assessment' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'preview', label: 'Preview' },
