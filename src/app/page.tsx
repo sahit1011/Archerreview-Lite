@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion, useInView } from "framer-motion";
 import {
   Sparkles,
   CalendarDays,
@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { Reveal, RevealGroup, RevealItem } from "@/components/ui/reveal";
-import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { AnimateNumber } from "@/components/ui/animated-blur-number";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { VelocityMarquee } from "@/components/ui/velocity-marquee";
@@ -47,6 +47,53 @@ const marqueeTopics = [
   "Mechanics", "Organic Chemistry", "Human Physiology", "Calculus", "Electrostatics",
   "Genetics", "Thermodynamics", "Coordinate Geometry", "Optics", "Cell Biology",
   "Algebra", "Modern Physics", "Chemical Bonding", "Ecology",
+];
+
+const COUNT_UP_STEPS = 26;
+const COUNT_UP_DURATION_MS = 1100;
+
+// Eases a value from 0 to `target` once the element scrolls into view, in
+// discrete steps so each tick drives the digit-blur transition — an odometer
+// roll rather than a raw count. Respects reduced-motion by settling instantly.
+function StatNumber({ value, suffix }: { value: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const reduceMotion = useReducedMotion();
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    if (reduceMotion) {
+      setDisplay(value);
+      return;
+    }
+    let step = 0;
+    const id = setInterval(() => {
+      step += 1;
+      const progress = step / COUNT_UP_STEPS;
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      if (step >= COUNT_UP_STEPS) {
+        setDisplay(value);
+        clearInterval(id);
+      } else {
+        setDisplay(Math.round(value * eased));
+      }
+    }, COUNT_UP_DURATION_MS / COUNT_UP_STEPS);
+    return () => clearInterval(id);
+  }, [inView, value, reduceMotion]);
+
+  return (
+    <span ref={ref}>
+      <AnimateNumber value={display} suffix={suffix} duration={420} blur={14} />
+    </span>
+  );
+}
+
+const heroStats: { node: React.ReactNode; label: string }[] = [
+  { node: <StatNumber value={2} />, label: "Exam tracks" },
+  { node: <StatNumber value={500} suffix="+" />, label: "Chapters covered" },
+  { node: "24/7", label: "AI tutor" },
+  { node: <StatNumber value={100} suffix="%" />, label: "Personalized" },
 ];
 
 export default function Home() {
@@ -158,22 +205,21 @@ export default function Home() {
 
           <p className="mt-4 text-sm text-muted-foreground">No credit card • Personalized in under 5 minutes</p>
 
-          {/* Stat strip with count-up */}
-          <div className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              { node: <AnimatedCounter value={2} />, label: "Exam tracks" },
-              { node: <AnimatedCounter value={500} suffix="+" />, label: "Chapters covered" },
-              { node: "24/7", label: "AI tutor" },
-              { node: <AnimatedCounter value={100} suffix="%" />, label: "Personalized" },
-            ].map((s, i) => (
-              <Reveal key={s.label} delay={i * 0.06}>
-                <div className="gradient-border card-hover rounded-2xl bg-card/70 p-4 backdrop-blur">
-                  <div className="font-display text-3xl font-bold gradient-text">{s.node}</div>
-                  <div className="mt-0.5 text-sm text-muted-foreground">{s.label}</div>
+          {/* Stat strip — borderless, divider-separated (premium marketing pattern) */}
+          <Reveal className="mx-auto mt-16 w-full max-w-3xl">
+            <dl className="grid grid-cols-2 gap-y-10 sm:grid-cols-4 sm:gap-y-0 sm:divide-x sm:divide-border/50">
+              {heroStats.map((s) => (
+                <div key={s.label} className="flex flex-col items-center px-4 text-center sm:px-6">
+                  <dt className="font-display text-4xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
+                    {s.node}
+                  </dt>
+                  <dd className="mt-3 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    {s.label}
+                  </dd>
                 </div>
-              </Reveal>
-            ))}
-          </div>
+              ))}
+            </dl>
+          </Reveal>
         </motion.div>
 
         {/* Subjects marquee — cruises on its own, accelerates and reverses with your scroll */}
