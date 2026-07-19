@@ -109,8 +109,21 @@ export default function DashboardPage() {
           return;
         }
 
-        // 3. Today's tasks + readiness, in parallel
+        // 3. Catch up missed tasks on load. In the event-driven model this
+        // replaces the background cron: a returning user's overdue tasks
+        // reschedule the moment they open the app. Rule-based + fast; never blocks
+        // the dashboard if it errors.
         const today = format(new Date(), 'yyyy-MM-dd');
+        try {
+          await fetch('/api/tasks/reschedule-missed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: fetchedUser._id }),
+          });
+        } catch {
+          // proceed with whatever is scheduled regardless
+        }
+
         const [tasksRes, readinessRes] = await Promise.all([
           fetch(`/api/tasks?planId=${planData.studyPlan._id}&date=${today}`),
           fetch(`/api/readiness-score?userId=${fetchedUser._id}`),
