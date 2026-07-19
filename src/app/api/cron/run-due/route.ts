@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import dbConnect from '@/lib/db';
 import {
   getDueEntries,
@@ -26,6 +26,8 @@ import { ScheduledJob } from '@/models';
 export const runtime = 'nodejs';
 // Never cache — this mutates state and must run on every invocation.
 export const dynamic = 'force-dynamic';
+// Give the background batch the full Hobby budget to finish.
+export const maxDuration = 60;
 
 /**
  * Compute the next run time for a recurring schedule. One-shot schedules
@@ -107,78 +109,55 @@ function authorizeCron(request: NextRequest): NextResponse | null {
   return null;
 }
 
+// Keep each invocation well under the serverless maxDuration: process a small,
+// time-bounded batch. Leftover due jobs are picked up on the next trigger (the
+// GitHub Actions cron fires ~every 15 min). Each agent runs its RULE-BASED
+// adaptation (and persists it) before the slower LLM-enhancement phase, so even
+// if a job hits the per-job timeout the core rebalance is already saved.
+const MAX_JOBS_PER_RUN = 3;
+const PER_JOB_TIMEOUT_MS = 18_000;
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('job timed out')), ms)),
+  ]);
+}
+
+async function processDueJobs(): Promise<void> {
+  try {
+    await dbConnect();
+    const dueEntries = await getDueEntries(MAX_JOBS_PER_RUN);
+    for (const entry of dueEntries) {
+      const nextRun = computeNextRun(entry) ?? null;
+      try {
+        await withTimeout(runScheduleEntry(entry), PER_JOB_TIMEOUT_MS);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error(`[cron/run-due] entry ${entry.id} failed/timed out:`, msg);
+      }
+      // Always advance so a slow/failed job never wedges the queue.
+      await ScheduledJob.findByIdAndUpdate(entry.id, {
+        $set: { lastRun: new Date(), nextRun },
+      }).catch(() => {});
+    }
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[cron/run-due] processing failed:', msg);
+  }
+}
+
 export async function POST(request: NextRequest) {
   const unauthorized = authorizeCron(request);
   if (unauthorized) return unauthorized;
 
-  try {
-    await dbConnect();
+  // Respond immediately so the external trigger (GitHub Actions) never times out
+  // on heavy LLM work; the bounded batch runs in the background via after().
+  after(processDueJobs);
 
-    const dueEntries = await getDueEntries();
-    const results: Array<{
-      entryId: string;
-      agentType: string;
-      userId?: string;
-      success: boolean;
-      nextRun: Date | null;
-      error?: string;
-    }> = [];
-
-    for (const entry of dueEntries) {
-      const nextRun = computeNextRun(entry) ?? null;
-      try {
-        await runScheduleEntry(entry);
-
-        await ScheduledJob.findByIdAndUpdate(entry.id, {
-          $set: { lastRun: new Date(), nextRun }
-        });
-
-        results.push({
-          entryId: entry.id,
-          agentType: entry.agentType,
-          userId: entry.userId,
-          success: true,
-          nextRun
-        });
-      } catch (error: any) {
-        console.error(`[cron/run-due] Error running schedule entry ${entry.id}:`, error);
-
-        // Still advance lastRun/nextRun so a single failure doesn't wedge the queue.
-        await ScheduledJob.findByIdAndUpdate(entry.id, {
-          $set: { lastRun: new Date(), nextRun }
-        });
-
-        results.push({
-          entryId: entry.id,
-          agentType: entry.agentType,
-          userId: entry.userId,
-          success: false,
-          nextRun,
-          error: error?.message ?? String(error)
-        });
-      }
-    }
-
-    const succeeded = results.filter(r => r.success).length;
-    const failed = results.length - succeeded;
-
-    return NextResponse.json({
-      success: true,
-      message: `Processed ${results.length} due job(s): ${succeeded} succeeded, ${failed} failed`,
-      processed: results.length,
-      succeeded,
-      failed,
-      results
-    });
-  } catch (error: any) {
-    console.error('[cron/run-due] Failed to process due jobs:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Failed to process due jobs',
-        error: error?.message ?? String(error)
-      },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    success: true,
+    accepted: true,
+    message: 'Due-job processing started',
+  });
 }
